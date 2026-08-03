@@ -1,10 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Image as ImageIcon, MapPin, Radio, Search, Sparkles, Users, Video } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
-import { me } from "@/data/demo";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { asPerson } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/publier")({
