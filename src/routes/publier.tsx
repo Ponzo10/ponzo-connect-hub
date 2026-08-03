@@ -33,6 +33,36 @@ const kinds = [
 function Publier() {
   const [kind, setKind] = useState<(typeof kinds)[number]["label"]>("Publication");
   const [text, setText] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const publish = async () => {
+    if (!user) {
+      void navigate({ to: "/auth", search: { redirect: "/publier" } });
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.from("posts").insert({
+      author_id: user.id,
+      body: text.trim(),
+      tag: kind === "Publication" ? null : kind,
+      media_type: mediaUrl ? "image" : null,
+      media_url: mediaUrl || null,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Publication impossible : " + error.message);
+      return;
+    }
+    setText("");
+    setMediaUrl("");
+    void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    toast.success("Publication en ligne 🎉");
+    void navigate({ to: "/" });
+  };
 
   return (
     <AppShell title="Créer">
