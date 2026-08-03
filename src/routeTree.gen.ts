@@ -10,33 +10,180 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as AdminRouteImport } from './routes/admin'
+import { Route as BienvenueRouteImport } from './routes/bienvenue'
+import { Route as DecouvrirRouteImport } from './routes/decouvrir'
+import { Route as MarketplaceRouteImport } from './routes/marketplace'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ParametresRouteImport } from './routes/parametres'
+import { Route as ProfilRouteImport } from './routes/profil'
+import { Route as PublierRouteImport } from './routes/publier'
+import { Route as RechercheRouteImport } from './routes/recherche'
+import { Route as VideosRouteImport } from './routes/videos'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
   getParentRoute: () => rootRouteImport,
 } as any)
+const AdminRoute = AdminRouteImport.update({
+  id: '/admin',
+  path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const BienvenueRoute = BienvenueRouteImport.update({
+  id: '/bienvenue',
+  path: '/bienvenue',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const DecouvrirRoute = DecouvrirRouteImport.update({
+  id: '/decouvrir',
+  path: '/decouvrir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MarketplaceRoute = MarketplaceRouteImport.update({
+  id: '/marketplace',
+  path: '/marketplace',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ParametresRoute = ParametresRouteImport.update({
+  id: '/parametres',
+  path: '/parametres',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfilRoute = ProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublierRoute = PublierRouteImport.update({
+  id: '/publier',
+  path: '/publier',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const RechercheRoute = RechercheRouteImport.update({
+  id: '/recherche',
+  path: '/recherche',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const VideosRoute = VideosRouteImport.update({
+  id: '/videos',
+  path: '/videos',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/bienvenue': typeof BienvenueRoute
+  '/decouvrir': typeof DecouvrirRoute
+  '/marketplace': typeof MarketplaceRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parametres': typeof ParametresRoute
+  '/profil': typeof ProfilRoute
+  '/publier': typeof PublierRoute
+  '/recherche': typeof RechercheRoute
+  '/videos': typeof VideosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/bienvenue': typeof BienvenueRoute
+  '/decouvrir': typeof DecouvrirRoute
+  '/marketplace': typeof MarketplaceRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parametres': typeof ParametresRoute
+  '/profil': typeof ProfilRoute
+  '/publier': typeof PublierRoute
+  '/recherche': typeof RechercheRoute
+  '/videos': typeof VideosRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/admin': typeof AdminRoute
+  '/bienvenue': typeof BienvenueRoute
+  '/decouvrir': typeof DecouvrirRoute
+  '/marketplace': typeof MarketplaceRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/parametres': typeof ParametresRoute
+  '/profil': typeof ProfilRoute
+  '/publier': typeof PublierRoute
+  '/recherche': typeof RechercheRoute
+  '/videos': typeof VideosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/'
+  fullPaths:
+    | '/'
+    | '/admin'
+    | '/bienvenue'
+    | '/decouvrir'
+    | '/marketplace'
+    | '/messages'
+    | '/notifications'
+    | '/parametres'
+    | '/profil'
+    | '/publier'
+    | '/recherche'
+    | '/videos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/'
-  id: '__root__' | '/'
+  to:
+    | '/'
+    | '/admin'
+    | '/bienvenue'
+    | '/decouvrir'
+    | '/marketplace'
+    | '/messages'
+    | '/notifications'
+    | '/parametres'
+    | '/profil'
+    | '/publier'
+    | '/recherche'
+    | '/videos'
+  id:
+    | '__root__'
+    | '/'
+    | '/admin'
+    | '/bienvenue'
+    | '/decouvrir'
+    | '/marketplace'
+    | '/messages'
+    | '/notifications'
+    | '/parametres'
+    | '/profil'
+    | '/publier'
+    | '/recherche'
+    | '/videos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  AdminRoute: typeof AdminRoute
+  BienvenueRoute: typeof BienvenueRoute
+  DecouvrirRoute: typeof DecouvrirRoute
+  MarketplaceRoute: typeof MarketplaceRoute
+  MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ParametresRoute: typeof ParametresRoute
+  ProfilRoute: typeof ProfilRoute
+  PublierRoute: typeof PublierRoute
+  RechercheRoute: typeof RechercheRoute
+  VideosRoute: typeof VideosRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -48,22 +195,100 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof IndexRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/admin': {
+      id: '/admin'
+      path: '/admin'
+      fullPath: '/admin'
+      preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/bienvenue': {
+      id: '/bienvenue'
+      path: '/bienvenue'
+      fullPath: '/bienvenue'
+      preLoaderRoute: typeof BienvenueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/decouvrir': {
+      id: '/decouvrir'
+      path: '/decouvrir'
+      fullPath: '/decouvrir'
+      preLoaderRoute: typeof DecouvrirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/marketplace': {
+      id: '/marketplace'
+      path: '/marketplace'
+      fullPath: '/marketplace'
+      preLoaderRoute: typeof MarketplaceRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/parametres': {
+      id: '/parametres'
+      path: '/parametres'
+      fullPath: '/parametres'
+      preLoaderRoute: typeof ParametresRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profil': {
+      id: '/profil'
+      path: '/profil'
+      fullPath: '/profil'
+      preLoaderRoute: typeof ProfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/publier': {
+      id: '/publier'
+      path: '/publier'
+      fullPath: '/publier'
+      preLoaderRoute: typeof PublierRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/recherche': {
+      id: '/recherche'
+      path: '/recherche'
+      fullPath: '/recherche'
+      preLoaderRoute: typeof RechercheRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/videos': {
+      id: '/videos'
+      path: '/videos'
+      fullPath: '/videos'
+      preLoaderRoute: typeof VideosRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  AdminRoute: AdminRoute,
+  BienvenueRoute: BienvenueRoute,
+  DecouvrirRoute: DecouvrirRoute,
+  MarketplaceRoute: MarketplaceRoute,
+  MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
+  ParametresRoute: ParametresRoute,
+  ProfilRoute: ProfilRoute,
+  PublierRoute: PublierRoute,
+  RechercheRoute: RechercheRoute,
+  VideosRoute: VideosRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
