@@ -1,10 +1,14 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, useNavigate } from "@tanstack/react-router";
+import { useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Image as ImageIcon, MapPin, Radio, Search, Sparkles, Users, Video } from "lucide-react";
 import { useState } from "react";
+import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
-import { me } from "@/data/demo";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { asPerson } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/publier")({
@@ -29,6 +33,36 @@ const kinds = [
 function Publier() {
   const [kind, setKind] = useState<(typeof kinds)[number]["label"]>("Publication");
   const [text, setText] = useState("");
+  const [mediaUrl, setMediaUrl] = useState("");
+  const [busy, setBusy] = useState(false);
+  const { user, profile } = useAuth();
+  const navigate = useNavigate();
+  const queryClient = useQueryClient();
+
+  const publish = async () => {
+    if (!user) {
+      void navigate({ to: "/auth", search: { redirect: "/publier" } });
+      return;
+    }
+    setBusy(true);
+    const { error } = await supabase.from("posts").insert({
+      author_id: user.id,
+      body: text.trim(),
+      tag: kind === "Publication" ? null : kind,
+      media_type: mediaUrl ? "image" : null,
+      media_url: mediaUrl || null,
+    });
+    setBusy(false);
+    if (error) {
+      toast.error("Publication impossible : " + error.message);
+      return;
+    }
+    setText("");
+    setMediaUrl("");
+    void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    toast.success("Publication en ligne 🎉");
+    void navigate({ to: "/" });
+  };
 
   return (
     <AppShell title="Créer">
@@ -54,9 +88,9 @@ function Publier() {
 
         <div className="rounded-2xl bg-surface p-4 shadow-soft">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
-            <Avatar person={me} size={44} />
+            <Avatar person={asPerson(profile)} size={44} />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{me.name}</p>
+              <p className="truncate text-sm font-semibold">{profile?.full_name ?? "Invité"}</p>
               <p className="truncate text-xs text-muted-foreground">Public · Tous les membres</p>
             </div>
           </div>
@@ -75,6 +109,12 @@ function Publier() {
             }
             className="mt-3 w-full resize-none bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
           />
+          <input
+            value={mediaUrl}
+            onChange={(e) => setMediaUrl(e.target.value)}
+            placeholder="Lien d'une image (optionnel)"
+            className="mt-2 w-full rounded-xl bg-muted px-3 py-2 text-xs outline-none"
+          />
           <div className="grid grid-cols-2 gap-2 border-t border-border/70 pt-3">
             <Attach icon={<ImageIcon className="h-4 w-4 text-primary" />} label="Photo" />
             <Attach icon={<Video className="h-4 w-4 text-destructive" />} label="Vidéo" />
@@ -84,10 +124,11 @@ function Publier() {
         </div>
 
         <button
-          disabled={!text.trim()}
+          onClick={publish}
+          disabled={!text.trim() || busy}
           className="w-full rounded-full bg-brand py-3.5 text-sm font-bold text-primary-foreground shadow-lift transition-opacity disabled:opacity-40"
         >
-          Publier
+          {busy ? "Publication…" : user ? "Publier" : "Se connecter pour publier"}
         </button>
       </div>
     </AppShell>

@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
@@ -21,6 +22,7 @@ import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
+import { Route as MembreIdRouteImport } from './routes/membre.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -30,6 +32,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BienvenueRoute = BienvenueRouteImport.update({
@@ -82,10 +89,16 @@ const VideosRoute = VideosRouteImport.update({
   path: '/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MembreIdRoute = MembreIdRouteImport.update({
+  id: '/membre/$id',
+  path: '/membre/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/marketplace': typeof MarketplaceRoute
@@ -96,10 +109,12 @@ export interface FileRoutesByFullPath {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/marketplace': typeof MarketplaceRoute
@@ -110,11 +125,13 @@ export interface FileRoutesByTo {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/marketplace': typeof MarketplaceRoute
@@ -125,12 +142,14 @@ export interface FileRoutesById {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
     | '/admin'
+    | '/auth'
     | '/bienvenue'
     | '/decouvrir'
     | '/marketplace'
@@ -141,10 +160,12 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/membre/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
     | '/admin'
+    | '/auth'
     | '/bienvenue'
     | '/decouvrir'
     | '/marketplace'
@@ -155,10 +176,12 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/membre/$id'
   id:
     | '__root__'
     | '/'
     | '/admin'
+    | '/auth'
     | '/bienvenue'
     | '/decouvrir'
     | '/marketplace'
@@ -169,11 +192,13 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/membre/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AuthRoute: typeof AuthRoute
   BienvenueRoute: typeof BienvenueRoute
   DecouvrirRoute: typeof DecouvrirRoute
   MarketplaceRoute: typeof MarketplaceRoute
@@ -184,6 +209,7 @@ export interface RootRouteChildren {
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
   VideosRoute: typeof VideosRoute
+  MembreIdRoute: typeof MembreIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -200,6 +226,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bienvenue': {
@@ -272,12 +305,20 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/membre/$id': {
+      id: '/membre/$id'
+      path: '/membre/$id'
+      fullPath: '/membre/$id'
+      preLoaderRoute: typeof MembreIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AuthRoute: AuthRoute,
   BienvenueRoute: BienvenueRoute,
   DecouvrirRoute: DecouvrirRoute,
   MarketplaceRoute: MarketplaceRoute,
@@ -288,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
   VideosRoute: VideosRoute,
+  MembreIdRoute: MembreIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
