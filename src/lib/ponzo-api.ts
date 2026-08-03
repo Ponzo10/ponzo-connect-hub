@@ -193,3 +193,95 @@ export async function fetchFollowCounts(userId: string) {
   ]);
   return { followers: followers.count ?? 0, following: following.count ?? 0 };
 }
+
+export async function createProduct(input: {
+  sellerId: string;
+  title: string;
+  description?: string;
+  price: number;
+  category?: string;
+  city?: string;
+  imageUrl?: string;
+}) {
+  const { error } = await supabase.from("products").insert({
+    seller_id: input.sellerId,
+    title: input.title,
+    description: input.description ?? null,
+    price: input.price,
+    category: input.category ?? null,
+    city: input.city ?? null,
+    image_url: input.imageUrl || null,
+  });
+  if (error) throw error;
+}
+
+export async function markNotificationsRead(userId: string) {
+  await supabase
+    .from("notifications")
+    .update({ read_at: new Date().toISOString() })
+    .eq("user_id", userId)
+    .is("read_at", null);
+}
+
+export async function markConversationRead(userId: string, peerId: string) {
+  await supabase
+    .from("messages")
+    .update({ read_at: new Date().toISOString() })
+    .eq("recipient_id", userId)
+    .eq("sender_id", peerId)
+    .is("read_at", null);
+}
+
+export type Conversation = {
+  peer: Profile | null;
+  peerId: string;
+  last: Message;
+  unread: number;
+};
+
+export function buildConversations(messages: Message[], userId: string): Conversation[] {
+  const map = new Map<string, Conversation>();
+  for (const m of messages) {
+    const peerId = m.sender_id === userId ? m.recipient_id : m.sender_id;
+    const peer = m.sender_id === userId ? m.recipient : m.sender;
+    const current = map.get(peerId);
+    const unread = (current?.unread ?? 0) + (m.recipient_id === userId && !m.read_at ? 1 : 0);
+    map.set(peerId, { peerId, peer: peer ?? current?.peer ?? null, last: m, unread });
+  }
+  return [...map.values()].sort(
+    (a, b) => new Date(b.last.created_at).getTime() - new Date(a.last.created_at).getTime(),
+  );
+}
+
+export async function searchPosts(term: string): Promise<FeedPost[]> {
+  let q = supabase
+    .from("posts")
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id)`)
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (term) q = q.ilike("body", `%${term}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as FeedPost[];
+}
+
+export async function searchProducts(term: string): Promise<ProductWithSeller[]> {
+  let q = supabase
+    .from("products")
+    .select("*, seller:profiles!products_seller_profile_fkey(*)")
+    .order("created_at", { ascending: false })
+    .limit(30);
+  if (term) q = q.ilike("title", `%${term}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  return (data ?? []) as unknown as ProductWithSeller[];
+}
+
+export function formatPrice(price: number, currency: string) {
+  return `${new Intl.NumberFormat("fr-FR").format(price)} ${currency}`;
+}
+
+export async function updateProfile(id: string, patch: Partial<Profile>) {
+  const { error } = await supabase.from("profiles").update(patch).eq("id", id);
+  if (error) throw error;
+}

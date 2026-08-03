@@ -1,17 +1,25 @@
-import { createFileRoute } from "@tanstack/react-router";
+import { createFileRoute, Link } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Search } from "lucide-react";
 import { useState } from "react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
-import { hashtags, people, posts, products, reels } from "@/data/demo";
+import {
+  asPerson,
+  fetchProfiles,
+  formatPrice,
+  searchPosts,
+  searchProducts,
+  timeAgo,
+} from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/recherche")({
   head: () => ({
     meta: [
       { title: "Recherche — PONZO" },
-      { name: "description", content: "Recherchez des personnes, publications, vidéos, produits, projets et hashtags sur PONZO." },
+      { name: "description", content: "Recherchez des personnes, publications, produits et projets sur le réseau professionnel PONZO." },
       { property: "og:title", content: "Recherche — PONZO" },
       { property: "og:description", content: "Trouvez des talents, des services et des opportunités en quelques secondes." },
     ],
@@ -19,11 +27,15 @@ export const Route = createFileRoute("/recherche")({
   component: RecherchePage,
 });
 
-const tabs = ["Personnes", "Publications", "Vidéos", "Produits", "Projets", "Hashtags"] as const;
+const tabs = ["Personnes", "Publications", "Produits", "Projets"] as const;
 
 function RecherchePage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Personnes");
   const [q, setQ] = useState("");
+
+  const people = useQuery({ queryKey: ["profiles", q], queryFn: () => fetchProfiles(q || undefined) });
+  const posts = useQuery({ queryKey: ["search-posts", q], queryFn: () => searchPosts(q) });
+  const products = useQuery({ queryKey: ["search-products", q], queryFn: () => searchProducts(q) });
 
   return (
     <AppShell title="Recherche">
@@ -56,70 +68,56 @@ function RecherchePage() {
 
       <div className="mt-4 space-y-2 px-3">
         {tab === "Personnes" &&
-          people.map((p) => (
-            <div key={p.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft">
-              <Avatar person={p} size={46} />
+          (people.data ?? []).map((p) => (
+            <Link
+              key={p.id}
+              to="/membre/$id"
+              params={{ id: p.id }}
+              className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft"
+            >
+              <Avatar person={asPerson(p)} size={46} />
               <div className="min-w-0">
-                <p className="truncate text-sm font-semibold">{p.name}</p>
+                <p className="truncate text-sm font-semibold">{p.full_name}</p>
                 <p className="truncate text-xs text-muted-foreground">
-                  {p.handle} · {p.role}
+                  {p.handle ? `@${p.handle}` : "Membre"} {p.role ? `· ${p.role}` : ""}
                 </p>
               </div>
-              <button className="shrink-0 rounded-full bg-brand px-4 py-2 text-xs font-semibold text-primary-foreground">
-                Suivre
-              </button>
-            </div>
+            </Link>
           ))}
 
         {tab === "Publications" &&
-          posts.map((p) => (
+          (posts.data ?? []).map((p) => (
             <div key={p.id} className="rounded-2xl bg-surface p-4 shadow-soft">
-              <p className="text-xs font-semibold text-primary">{p.author.name}</p>
-              <p className="mt-1 line-clamp-2 text-sm">{p.text}</p>
+              <p className="text-xs font-semibold text-primary">
+                {p.author?.full_name ?? "Membre PONZO"} · {timeAgo(p.created_at)}
+              </p>
+              <p className="mt-1 line-clamp-3 text-sm">{p.body}</p>
             </div>
           ))}
 
-        {tab === "Vidéos" && (
-          <div className="grid grid-cols-3 gap-2">
-            {[...reels, ...reels].map((r, i) => (
-              <div key={`${r.id}-${i}`} className="aspect-[9/16] rounded-xl bg-brand p-2 text-[10px] font-semibold text-primary-foreground">
-                {r.likes} ❤
-              </div>
-            ))}
-          </div>
-        )}
-
         {tab === "Produits" &&
-          products.slice(0, 4).map((p) => (
+          (products.data ?? []).map((p) => (
             <div key={p.id} className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft">
-              <span className="h-12 w-12 shrink-0 rounded-xl bg-gold" />
+              <span className="h-12 w-12 shrink-0 overflow-hidden rounded-xl bg-gold">
+                {p.image_url && <img src={p.image_url} alt={p.title} loading="lazy" className="h-full w-full object-cover" />}
+              </span>
               <div className="min-w-0">
                 <p className="truncate text-sm font-semibold">{p.title}</p>
-                <p className="truncate text-xs text-muted-foreground">{p.seller}</p>
+                <p className="truncate text-xs text-muted-foreground">{p.seller?.full_name ?? "Membre PONZO"}</p>
               </div>
-              <span className="shrink-0 text-sm font-bold text-primary">{p.price}</span>
+              <span className="shrink-0 text-sm font-bold text-primary">{formatPrice(Number(p.price), p.currency)}</span>
             </div>
           ))}
 
         {tab === "Projets" &&
-          posts
+          (posts.data ?? [])
             .filter((p) => p.tag)
             .map((p) => (
               <div key={p.id} className="rounded-2xl bg-surface p-4 shadow-soft">
                 <span className="rounded-full bg-primary-soft px-2.5 py-1 text-[11px] font-semibold text-primary">{p.tag}</span>
-                <p className="mt-2 line-clamp-2 text-sm">{p.text}</p>
+                <p className="mt-2 line-clamp-2 text-sm">{p.body}</p>
               </div>
             ))}
-
-        {tab === "Hashtags" && (
-          <div className="flex flex-wrap gap-2">
-            {hashtags.map((h) => (
-              <span key={h} className="rounded-full bg-surface px-4 py-2 text-sm font-semibold text-primary shadow-soft">
-                {h}
-              </span>
-            ))}
-          </div>
-        )}
       </div>
     </AppShell>
   );
