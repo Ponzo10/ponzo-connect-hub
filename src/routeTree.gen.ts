@@ -22,6 +22,7 @@ import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
+import { Route as MembreIdRouteImport } from './routes/membre.$id'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
@@ -88,6 +89,11 @@ const VideosRoute = VideosRouteImport.update({
   path: '/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const MembreIdRoute = MembreIdRouteImport.update({
+  id: '/membre/$id',
+  path: '/membre/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
@@ -103,6 +109,7 @@ export interface FileRoutesByFullPath {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
@@ -118,6 +125,7 @@ export interface FileRoutesByTo {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
@@ -134,6 +142,7 @@ export interface FileRoutesById {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
@@ -151,6 +160,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/membre/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
@@ -166,6 +176,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/membre/$id'
   id:
     | '__root__'
     | '/'
@@ -181,6 +192,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/membre/$id'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
@@ -197,6 +209,7 @@ export interface RootRouteChildren {
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
   VideosRoute: typeof VideosRoute
+  MembreIdRoute: typeof MembreIdRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -292,6 +305,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/membre/$id': {
+      id: '/membre/$id'
+      path: '/membre/$id'
+      fullPath: '/membre/$id'
+      preLoaderRoute: typeof MembreIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
@@ -309,6 +329,7 @@ const rootRouteChildren: RootRouteChildren = {
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
   VideosRoute: VideosRoute,
+  MembreIdRoute: MembreIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
