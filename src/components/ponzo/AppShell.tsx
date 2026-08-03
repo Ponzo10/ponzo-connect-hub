@@ -1,31 +1,73 @@
-import { Link, useRouterState } from "@tanstack/react-router";
+import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
+import { useQuery } from "@tanstack/react-query";
 import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
-import type { ReactNode } from "react";
+import { useEffect, type ReactNode } from "react";
 
-import { PonzoLogo } from "./PonzoLogo";
+import { PonzoLogo, PonzoMark } from "./PonzoLogo";
 import { Avatar } from "./Avatar";
-import { me } from "@/data/demo";
+import { supabase } from "@/integrations/supabase/client";
+import { useAuth } from "@/lib/auth";
+import { asPerson, unreadCounts } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", label: "Accueil", icon: Home },
   { to: "/decouvrir", label: "Découvrir", icon: Compass },
   { to: "/publier", label: "Publier", icon: Plus, primary: true },
-  { to: "/messages", label: "Messages", icon: MessageCircle, badge: 2 },
-  { to: "/notifications", label: "Alertes", icon: Bell, badge: 3 },
+  { to: "/marketplace", label: "Boutique", icon: Search },
   { to: "/profil", label: "Profil", icon: User },
 ] as const;
 
+function useUnread() {
+  const { user } = useAuth();
+  const query = useQuery({
+    queryKey: ["unread", user?.id],
+    queryFn: () => unreadCounts(user!.id),
+    enabled: !!user,
+    refetchInterval: 20000,
+  });
+
+  useEffect(() => {
+    if (!user) return;
+    const channel = supabase
+      .channel(`unread-${user.id}`)
+      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => void query.refetch())
+      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => void query.refetch())
+      .subscribe();
+    return () => {
+      void supabase.removeChannel(channel);
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user?.id]);
+
+  return query.data ?? { notifications: 0, messages: 0 };
+}
+
+function Count({ n }: { n: number }) {
+  if (!n) return null;
+  return (
+    <span className="absolute right-0.5 top-0.5 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
+      {n > 99 ? "99+" : n}
+    </span>
+  );
+}
+
 export function TopBar({ title }: { title?: string | undefined }) {
+  const unread = useUnread();
+  const { profile } = useAuth();
+
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-surface/85 backdrop-blur-xl">
       <div className="mx-auto grid max-w-2xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
         <div className="flex min-w-0 items-center gap-3">
           {title ? (
-            <h1 className="truncate text-xl font-bold">{title}</h1>
+            <span className="flex min-w-0 items-center gap-2">
+              <PonzoMark size={30} />
+              <h1 className="truncate text-xl font-bold">{title}</h1>
+            </span>
           ) : (
             <Link to="/" aria-label="PONZO — accueil">
-              <PonzoLogo />
+              <PonzoLogo size={38} />
             </Link>
           )}
         </div>
@@ -40,9 +82,10 @@ export function TopBar({ title }: { title?: string | undefined }) {
           <Link
             to="/messages"
             aria-label="Messages"
-            className="grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
+            className="relative grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
           >
             <MessageCircle className="h-5 w-5" />
+            <Count n={unread.messages} />
           </Link>
           <Link
             to="/notifications"
@@ -50,9 +93,7 @@ export function TopBar({ title }: { title?: string | undefined }) {
             className="relative grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
           >
             <Bell className="h-5 w-5" />
-            <span className="absolute right-1 top-1 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[10px] font-bold text-destructive-foreground">
-              3
-            </span>
+            <Count n={unread.notifications} />
           </Link>
           <Link
             to="/parametres"
@@ -60,6 +101,9 @@ export function TopBar({ title }: { title?: string | undefined }) {
             className="grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
           >
             <Settings className="h-5 w-5" />
+          </Link>
+          <Link to="/profil" aria-label="Mon profil" className="ml-1">
+            <Avatar person={asPerson(profile)} size={30} />
           </Link>
         </div>
       </div>
@@ -103,20 +147,10 @@ export function BottomNav() {
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <span className="relative">
-                  <Icon className={cn("h-[22px] w-[22px]", active && "stroke-[2.4]")} />
-                  {"badge" in item && item.badge ? (
-                    <span className="absolute -right-2 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-destructive px-1 text-[9px] font-bold text-destructive-foreground">
-                      {item.badge}
-                    </span>
-                  ) : null}
-                </span>
+                <Icon className={cn("h-[22px] w-[22px]", active && "stroke-[2.4]")} />
                 <span>{item.label}</span>
                 <span
-                  className={cn(
-                    "h-0.5 w-6 rounded-full transition-colors",
-                    active ? "bg-primary" : "bg-transparent",
-                  )}
+                  className={cn("h-0.5 w-6 rounded-full transition-colors", active ? "bg-primary" : "bg-transparent")}
                 />
               </Link>
             </li>
@@ -127,24 +161,54 @@ export function BottomNav() {
   );
 }
 
+/** Empêche l'accès au contenu PONZO sans compte connecté. */
+export function AuthGate({ children }: { children: ReactNode }) {
+  const { user, loading } = useAuth();
+  const navigate = useNavigate();
+  const pathname = useRouterState({ select: (s) => s.location.href });
+
+  useEffect(() => {
+    if (!loading && !user) void navigate({ to: "/bienvenue", search: { redirect: pathname }, replace: true });
+  }, [loading, user, navigate, pathname]);
+
+  if (loading || !user) {
+    return (
+      <div className="grid min-h-screen place-items-center bg-background">
+        <div className="flex flex-col items-center gap-3">
+          <PonzoMark size={72} className="animate-pulse" />
+          <p className="text-xs text-muted-foreground">Chargement de PONZO…</p>
+        </div>
+      </div>
+    );
+  }
+
+  return <>{children}</>;
+}
+
 export function AppShell({
   children,
   title,
   bare,
+  publicAccess,
 }: {
   children: ReactNode;
   title?: string | undefined;
   bare?: boolean | undefined;
+  publicAccess?: boolean | undefined;
 }) {
-  return (
+  const content = (
     <div className="min-h-screen bg-background pb-24">
       {!bare && <TopBar title={title} />}
       <main className="mx-auto max-w-2xl px-0 pb-4">{children}</main>
       <BottomNav />
     </div>
   );
+
+  if (publicAccess) return content;
+  return <AuthGate>{content}</AuthGate>;
 }
 
 export function MeAvatar({ size = 40 }: { size?: number }) {
-  return <Avatar person={me} size={size} />;
+  const { profile } = useAuth();
+  return <Avatar person={asPerson(profile)} size={size} />;
 }

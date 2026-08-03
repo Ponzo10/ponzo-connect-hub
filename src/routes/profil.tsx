@@ -1,22 +1,34 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { Pencil, Settings, ShieldCheck } from "lucide-react";
-import { useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { BookMarked, Camera, Crown, Pencil, Settings, ShieldCheck, Store } from "lucide-react";
+import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
+import { Badge3D } from "@/components/ponzo/Badge3D";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { useAuth } from "@/lib/auth";
-import { asPerson, fetchFollowCounts, fetchPostsByAuthor, updateProfile } from "@/lib/ponzo-api";
-import { cn } from "@/lib/utils";
+import {
+  asPerson,
+  claimOwnership,
+  displayFollowers,
+  fetchFollowCounts,
+  fetchPostsByAuthor,
+  updateProfile,
+  type Profile,
+} from "@/lib/ponzo-api";
+import { uploadMedia } from "@/lib/upload";
 
 export const Route = createFileRoute("/profil")({
   head: () => ({
     meta: [
-      { title: "Profil — PONZO" },
-      { name: "description", content: "Ton profil PONZO : bio, ville, publications, abonnés et paramètres de confidentialité." },
-      { property: "og:title", content: "Profil — PONZO" },
+      { title: "Mon profil — PONZO" },
+      {
+        name: "description",
+        content: "Ton profil PONZO : photo, couverture, bio, badge, publications, abonnés et boutique.",
+      },
+      { property: "og:title", content: "Mon profil — PONZO" },
       { property: "og:description", content: "Ton identité professionnelle sur PONZO." },
     ],
   }),
@@ -24,8 +36,10 @@ export const Route = createFileRoute("/profil")({
 });
 
 function Profil() {
-  const { user, profile, refreshProfile } = useAuth();
+  const { user, profile, isOwner, isStaff, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
+  const avatarRef = useRef<HTMLInputElement>(null);
+  const coverRef = useRef<HTMLInputElement>(null);
 
   const posts = useQuery({
     queryKey: ["posts", "mine", user?.id],
@@ -38,26 +52,53 @@ function Profil() {
     enabled: !!user,
   });
 
-  if (!user) {
-    return (
-      <AppShell title="Profil">
-        <div className="px-4 py-10 text-center">
-          <p className="text-sm text-muted-foreground">Connecte-toi pour accéder à ton profil PONZO.</p>
-          <Link to="/auth" className="mt-4 inline-block rounded-full bg-brand px-5 py-2.5 text-sm font-semibold text-primary-foreground">
-            Se connecter
-          </Link>
-        </div>
-      </AppShell>
-    );
-  }
+  const pick = async (file: File | undefined, field: "avatar_url" | "cover_url") => {
+    if (!file || !user) return;
+    try {
+      const res = await uploadMedia(user.id, file, "profil");
+      await updateProfile(user.id, { [field]: res.url } as Partial<Profile>);
+      await refreshProfile();
+      toast.success(field === "avatar_url" ? "Photo de profil mise à jour" : "Photo de couverture mise à jour");
+    } catch {
+      toast.error("Envoi de l'image impossible.");
+    }
+  };
+
+  const claim = async () => {
+    try {
+      const ok = await claimOwnership();
+      if (ok) {
+        await refreshProfile();
+        toast.success("Tu es maintenant Propriétaire de PONZO 👑");
+      } else {
+        toast.error("Le compte propriétaire est déjà attribué.");
+      }
+    } catch {
+      toast.error("Action impossible.");
+    }
+  };
 
   return (
     <AppShell title="Profil">
+      <input ref={avatarRef} type="file" accept="image/*" className="hidden" onChange={(e) => void pick(e.target.files?.[0], "avatar_url")} />
+      <input ref={coverRef} type="file" accept="image/*" className="hidden" onChange={(e) => void pick(e.target.files?.[0], "cover_url")} />
+
       <div className="relative">
-        <div className="h-36 w-full bg-brand" />
+        <button onClick={() => coverRef.current?.click()} className="relative block h-36 w-full bg-brand" aria-label="Changer la couverture">
+          {profile?.cover_url && <img src={profile.cover_url} alt="Couverture" className="h-full w-full object-cover" />}
+          <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/85">
+            <Camera className="h-4 w-4" />
+          </span>
+        </button>
+
         <div className="px-4">
           <div className="-mt-10 flex items-end justify-between gap-3">
-            <Avatar person={asPerson(profile)} size={88} className="border-4 border-background" />
+            <button onClick={() => avatarRef.current?.click()} className="relative" aria-label="Changer la photo de profil">
+              <Avatar person={asPerson(profile)} size={88} className="border-4 border-background" />
+              <span className="absolute bottom-0 right-0 grid h-7 w-7 place-items-center rounded-full bg-brand text-primary-foreground">
+                <Camera className="h-3.5 w-3.5" />
+              </span>
+            </button>
             <div className="flex gap-2 pb-1">
               <Link
                 to="/parametres"
@@ -77,13 +118,14 @@ function Profil() {
 
           <h2 className="mt-3 flex items-center gap-1.5 text-xl font-bold">
             {profile?.full_name ?? "Membre PONZO"}
+            <Badge3D kind={profile?.badge} size="md" />
             {profile?.verified && (
               <span className="grid h-5 w-5 place-items-center rounded-full bg-primary text-[11px] text-primary-foreground">✓</span>
             )}
           </h2>
           <p className="text-sm text-muted-foreground">
-            {profile?.handle ? `@${profile.handle}` : user.email}
-            {profile?.role ? ` · ${profile.role}` : ""}
+            {profile?.handle ? `@${profile.handle}` : user?.email}
+            {profile?.title ? ` · ${profile.title}` : profile?.role ? ` · ${profile.role}` : ""}
           </p>
           {profile?.bio && <p className="mt-2 text-sm leading-relaxed">{profile.bio}</p>}
 
@@ -99,20 +141,39 @@ function Profil() {
 
           <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface p-3 text-center shadow-soft">
             <Stat value={String(posts.data?.length ?? 0)} label="Publications" />
-            <Stat value={String(counts.data?.followers ?? 0)} label="Abonnés" />
+            <Stat value={displayFollowers(counts.data?.followers ?? 0, profile)} label="Abonnés" />
             <Stat value={String(counts.data?.following ?? 0)} label="Abonnements" />
           </div>
 
-          <Link
-            to="/parametres"
-            className="mt-3 flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft"
-          >
-            <ShieldCheck className="h-4 w-4 text-primary" /> Paramètres de confidentialité
-          </Link>
+          <div className="mt-3 grid grid-cols-2 gap-2">
+            <Link to="/favoris" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
+              <BookMarked className="h-4 w-4 text-primary" /> Favoris
+            </Link>
+            <Link to="/boutique" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
+              <Store className="h-4 w-4 text-primary" /> Ma boutique
+            </Link>
+            {isStaff && (
+              <Link to="/admin" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
+                <ShieldCheck className="h-4 w-4 text-primary" /> Administration
+              </Link>
+            )}
+            <Link to="/parametres" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
+              <ShieldCheck className="h-4 w-4 text-primary" /> Confidentialité
+            </Link>
+          </div>
+
+          {!isOwner && (
+            <button
+              onClick={claim}
+              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/50 py-3 text-xs font-semibold text-primary"
+            >
+              <Crown className="h-4 w-4" /> Revendiquer le compte officiel PONZO (propriétaire)
+            </button>
+          )}
         </div>
       </div>
 
-      <div className="mt-4 space-y-2 px-3 py-3">
+      <div className="mt-4 space-y-2 px-0 py-3 sm:px-3">
         {(posts.data ?? []).map((p) => (
           <PostCard key={p.id} post={p} />
         ))}
@@ -129,76 +190,94 @@ function Profil() {
   );
 }
 
-function EditForm({
-  profile,
-  onDone,
-}: {
-  profile: { id: string; full_name: string; handle: string | null; role: string | null; bio: string | null; city: string | null };
-  onDone: () => void | Promise<void>;
-}) {
-  const queryClient = useQueryClient();
-  const [fullName, setFullName] = useState(profile.full_name);
-  const [handle, setHandle] = useState(profile.handle ?? "");
-  const [role, setRole] = useState(profile.role ?? "");
-  const [city, setCity] = useState(profile.city ?? "");
-  const [bio, setBio] = useState(profile.bio ?? "");
-
-  const save = useMutation({
-    mutationFn: () =>
-      updateProfile(profile.id, {
-        full_name: fullName.trim() || "Membre PONZO",
-        handle: handle.trim() || null,
-        role: role.trim() || null,
-        city: city.trim() || null,
-        bio: bio.trim() || null,
-      }),
-    onSuccess: async () => {
-      toast.success("Profil mis à jour");
-      void queryClient.invalidateQueries();
-      await onDone();
-    },
-    onError: (e) => toast.error(e instanceof Error ? e.message : "Erreur"),
-  });
-
-  const field = "w-full rounded-xl bg-muted px-3 py-2.5 text-sm outline-none placeholder:text-muted-foreground";
-
+function Stat({ value, label }: { value: string; label: string }) {
   return (
-    <form
-      onSubmit={(e) => {
-        e.preventDefault();
-        save.mutate();
-      }}
-      className="mt-3 space-y-2 rounded-2xl bg-surface p-3 shadow-soft"
-    >
-      <input className={field} value={fullName} onChange={(e) => setFullName(e.target.value)} placeholder="Nom complet" maxLength={80} />
-      <div className="grid grid-cols-2 gap-2">
-        <input className={field} value={handle} onChange={(e) => setHandle(e.target.value)} placeholder="Pseudo" maxLength={30} />
-        <input className={field} value={city} onChange={(e) => setCity(e.target.value)} placeholder="Ville" maxLength={60} />
-      </div>
-      <input className={field} value={role} onChange={(e) => setRole(e.target.value)} placeholder="Métier / rôle" maxLength={60} />
-      <textarea
-        className={cn(field, "min-h-20 resize-none")}
-        value={bio}
-        onChange={(e) => setBio(e.target.value)}
-        placeholder="Bio"
-        maxLength={300}
-      />
-      <button
-        type="submit"
-        disabled={save.isPending}
-        className="w-full rounded-full bg-brand py-2.5 text-sm font-semibold text-primary-foreground disabled:opacity-50"
-      >
-        Enregistrer
-      </button>
-    </form>
+    <span className="block">
+      <span className="block text-base font-extrabold">{value}</span>
+      <span className="block text-[11px] text-muted-foreground">{label}</span>
+    </span>
   );
 }
 
-function Stat({ value, label }: { value: string; label: string }) {
+function EditForm({ profile, onDone }: { profile: Profile; onDone: () => Promise<void> }) {
+  const [form, setForm] = useState({
+    full_name: profile.full_name ?? "",
+    handle: profile.handle ?? "",
+    role: profile.role ?? "",
+    bio: profile.bio ?? "",
+    city: profile.city ?? "",
+    phone: profile.phone ?? "",
+  });
+  const [busy, setBusy] = useState(false);
+
+  useEffect(() => {
+    setForm({
+      full_name: profile.full_name ?? "",
+      handle: profile.handle ?? "",
+      role: profile.role ?? "",
+      bio: profile.bio ?? "",
+      city: profile.city ?? "",
+      phone: profile.phone ?? "",
+    });
+  }, [profile]);
+
+  const save = async () => {
+    setBusy(true);
+    try {
+      await updateProfile(profile.id, {
+        full_name: form.full_name.trim() || "Membre PONZO",
+        handle: form.handle.trim() || null,
+        role: form.role.trim() || null,
+        bio: form.bio.trim() || null,
+        city: form.city.trim() || null,
+        phone: form.phone.trim() || null,
+        updated_at: new Date().toISOString(),
+      });
+      toast.success("Profil mis à jour ✅");
+      await onDone();
+    } catch {
+      toast.error("Mise à jour impossible (pseudo déjà utilisé ?).");
+    } finally {
+      setBusy(false);
+    }
+  };
+
   return (
-    <div>
-      <p className="text-base font-bold">{value}</p>
-      <p className="text-[11px] text-muted-foreground">{label}</p>
+    <div className="mt-4 space-y-2 rounded-2xl bg-surface p-4 shadow-soft">
+      {(
+        [
+          ["full_name", "Nom complet"],
+          ["handle", "Pseudo"],
+          ["role", "Métier / rôle"],
+          ["city", "Ville"],
+          ["phone", "Téléphone"],
+        ] as const
+      ).map(([key, label]) => (
+        <label key={key} className="block">
+          <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">{label}</span>
+          <input
+            value={form[key]}
+            onChange={(e) => setForm({ ...form, [key]: e.target.value })}
+            className="w-full rounded-xl bg-muted px-3 py-2 text-sm outline-none"
+          />
+        </label>
+      ))}
+      <label className="block">
+        <span className="mb-1 block text-[11px] font-semibold text-muted-foreground">Bio</span>
+        <textarea
+          value={form.bio}
+          rows={3}
+          onChange={(e) => setForm({ ...form, bio: e.target.value })}
+          className="w-full resize-none rounded-xl bg-muted px-3 py-2 text-sm outline-none"
+        />
+      </label>
+      <button
+        onClick={save}
+        disabled={busy}
+        className="w-full rounded-full bg-brand py-3 text-sm font-bold text-primary-foreground disabled:opacity-50"
+      >
+        {busy ? "Enregistrement…" : "Enregistrer"}
+      </button>
     </div>
   );
 }

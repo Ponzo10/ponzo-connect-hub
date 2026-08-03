@@ -13,7 +13,9 @@ import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
+import { Route as BoutiqueRouteImport } from './routes/boutique'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
+import { Route as FavorisRouteImport } from './routes/favoris'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -44,9 +46,19 @@ const BienvenueRoute = BienvenueRouteImport.update({
   path: '/bienvenue',
   getParentRoute: () => rootRouteImport,
 } as any)
+const BoutiqueRoute = BoutiqueRouteImport.update({
+  id: '/boutique',
+  path: '/boutique',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const DecouvrirRoute = DecouvrirRouteImport.update({
   id: '/decouvrir',
   path: '/decouvrir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const FavorisRoute = FavorisRouteImport.update({
+  id: '/favoris',
+  path: '/favoris',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketplaceRoute = MarketplaceRouteImport.update({
@@ -100,7 +112,9 @@ export interface FileRoutesByFullPath {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
+  '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/favoris': typeof FavorisRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -116,7 +130,9 @@ export interface FileRoutesByTo {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
+  '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/favoris': typeof FavorisRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -133,7 +149,9 @@ export interface FileRoutesById {
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
+  '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/favoris': typeof FavorisRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -151,7 +169,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/bienvenue'
+    | '/boutique'
     | '/decouvrir'
+    | '/favoris'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -167,7 +187,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/bienvenue'
+    | '/boutique'
     | '/decouvrir'
+    | '/favoris'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -183,7 +205,9 @@ export interface FileRouteTypes {
     | '/admin'
     | '/auth'
     | '/bienvenue'
+    | '/boutique'
     | '/decouvrir'
+    | '/favoris'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -200,7 +224,9 @@ export interface RootRouteChildren {
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BienvenueRoute: typeof BienvenueRoute
+  BoutiqueRoute: typeof BoutiqueRoute
   DecouvrirRoute: typeof DecouvrirRoute
+  FavorisRoute: typeof FavorisRoute
   MarketplaceRoute: typeof MarketplaceRoute
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -242,11 +268,25 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof BienvenueRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/boutique': {
+      id: '/boutique'
+      path: '/boutique'
+      fullPath: '/boutique'
+      preLoaderRoute: typeof BoutiqueRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/decouvrir': {
       id: '/decouvrir'
       path: '/decouvrir'
       fullPath: '/decouvrir'
       preLoaderRoute: typeof DecouvrirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/favoris': {
+      id: '/favoris'
+      path: '/favoris'
+      fullPath: '/favoris'
+      preLoaderRoute: typeof FavorisRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marketplace': {
@@ -320,7 +360,9 @@ const rootRouteChildren: RootRouteChildren = {
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BienvenueRoute: BienvenueRoute,
+  BoutiqueRoute: BoutiqueRoute,
   DecouvrirRoute: DecouvrirRoute,
+  FavorisRoute: FavorisRoute,
   MarketplaceRoute: MarketplaceRoute,
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,

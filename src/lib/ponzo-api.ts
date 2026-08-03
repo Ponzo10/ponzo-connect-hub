@@ -9,6 +9,7 @@ export type FeedPost = Post & {
   author: Profile | null;
   post_likes: { user_id: string }[];
   post_comments: { id: string }[];
+  post_saves: { user_id: string }[];
 };
 
 const AUTHOR = "author:profiles!posts_author_profile_fkey(*)";
@@ -27,6 +28,7 @@ export function asPerson(profile: Profile | null | undefined, fallback = "Membre
   return {
     name: profile?.full_name ?? fallback,
     tone: toneFor(profile?.id),
+    src: profile?.avatar_url ?? null,
   };
 }
 
@@ -45,7 +47,7 @@ export function timeAgo(iso: string): string {
 export async function fetchFeed(): Promise<FeedPost[]> {
   const { data, error } = await supabase
     .from("posts")
-    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id)`)
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
     .order("created_at", { ascending: false })
     .limit(50);
   if (error) throw error;
@@ -55,7 +57,7 @@ export async function fetchFeed(): Promise<FeedPost[]> {
 export async function fetchPostsByAuthor(authorId: string): Promise<FeedPost[]> {
   const { data, error } = await supabase
     .from("posts")
-    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id)`)
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
     .eq("author_id", authorId)
     .order("created_at", { ascending: false });
   if (error) throw error;
@@ -256,7 +258,7 @@ export function buildConversations(messages: Message[], userId: string): Convers
 export async function searchPosts(term: string): Promise<FeedPost[]> {
   let q = supabase
     .from("posts")
-    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id)`)
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
     .order("created_at", { ascending: false })
     .limit(30);
   if (term) q = q.ilike("body", `%${term}%`);
@@ -284,4 +286,251 @@ export function formatPrice(price: number, currency: string) {
 export async function updateProfile(id: string, patch: Partial<Profile>) {
   const { error } = await supabase.from("profiles").update(patch).eq("id", id);
   if (error) throw error;
+}
+
+// ---------- Saves / partages / gestion des publications ----------
+
+export async function toggleSave(postId: string, userId: string, saved: boolean) {
+  if (saved) {
+    const { error } = await supabase.from("post_saves").delete().eq("post_id", postId).eq("user_id", userId);
+    if (error) throw error;
+  } else {
+    const { error } = await supabase.from("post_saves").insert({ post_id: postId, user_id: userId });
+    if (error) throw error;
+  }
+}
+
+export async function fetchSavedPosts(userId: string): Promise<FeedPost[]> {
+  const { data, error } = await supabase.from("post_saves").select("post_id").eq("user_id", userId);
+  if (error) throw error;
+  const ids = (data ?? []).map((r) => r.post_id);
+  if (ids.length === 0) return [];
+  const { data: posts, error: e2 } = await supabase
+    .from("posts")
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
+    .in("id", ids)
+    .order("created_at", { ascending: false });
+  if (e2) throw e2;
+  return (posts ?? []) as unknown as FeedPost[];
+}
+
+export async function sharePost(postId: string) {
+  const { data, error } = await supabase.rpc("increment_share", { _post_id: postId });
+  if (error) throw error;
+  return data as number;
+}
+
+export async function updatePost(id: string, patch: { body?: string; tag?: string | null }) {
+  const { error } = await supabase.from("posts").update(patch).eq("id", id);
+  if (error) throw error;
+}
+
+export async function deletePost(id: string) {
+  const { error } = await supabase.from("posts").delete().eq("id", id);
+  if (error) throw error;
+}
+
+export async function createPost(input: {
+  authorId: string;
+  body: string;
+  tag?: string | null;
+  mediaUrl?: string | null;
+  mediaType?: string | null;
+}) {
+  const { error } = await supabase.from("posts").insert({
+    author_id: input.authorId,
+    body: input.body,
+    tag: input.tag ?? null,
+    media_url: input.mediaUrl ?? null,
+    media_type: input.mediaType ?? null,
+  });
+  if (error) throw error;
+}
+
+// ---------- Commentaires imbriqués ----------
+
+export async function addReply(postId: string, authorId: string, body: string, parentId: string | null) {
+  const { error } = await supabase
+    .from("post_comments")
+    .insert({ post_id: postId, author_id: authorId, body, parent_id: parentId });
+  if (error) throw error;
+}
+
+export async function updateComment(id: string, body: string) {
+  const { error } = await supabase
+    .from("post_comments")
+    .update({ body, updated_at: new Date().toISOString() })
+    .eq("id", id);
+  if (error) throw error;
+}
+
+export async function deleteComment(id: string) {
+  const { error } = await supabase.from("post_comments").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Messagerie avec médias ----------
+
+export async function sendMedia(
+  senderId: string,
+  recipientId: string,
+  body: string,
+  mediaUrl: string,
+  mediaType: string,
+) {
+  const { error } = await supabase
+    .from("messages")
+    .insert({ sender_id: senderId, recipient_id: recipientId, body, media_url: mediaUrl, media_type: mediaType });
+  if (error) throw error;
+}
+
+export async function unreadCounts(userId: string) {
+  const [notifs, msgs] = await Promise.all([
+    supabase.from("notifications").select("*", { count: "exact", head: true }).eq("user_id", userId).is("read_at", null),
+    supabase.from("messages").select("*", { count: "exact", head: true }).eq("recipient_id", userId).is("read_at", null),
+  ]);
+  return { notifications: notifs.count ?? 0, messages: msgs.count ?? 0 };
+}
+
+// ---------- Boutiques ----------
+
+export type Shop = Tables<"shops">;
+
+export async function fetchShops(search?: string): Promise<Shop[]> {
+  let q = supabase.from("shops").select("*").order("created_at", { ascending: false }).limit(50);
+  if (search) q = q.ilike("name", `%${search}%`);
+  const { data, error } = await q;
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function fetchShop(id: string): Promise<Shop | null> {
+  const { data, error } = await supabase.from("shops").select("*").eq("id", id).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function fetchMyShop(ownerId: string): Promise<Shop | null> {
+  const { data, error } = await supabase.from("shops").select("*").eq("owner_id", ownerId).maybeSingle();
+  if (error) throw error;
+  return data;
+}
+
+export async function upsertShop(ownerId: string, patch: Partial<Shop> & { name: string }) {
+  const existing = await fetchMyShop(ownerId);
+  if (existing) {
+    const { error } = await supabase.from("shops").update(patch).eq("id", existing.id);
+    if (error) throw error;
+    return existing.id;
+  }
+  const { data, error } = await supabase
+    .from("shops")
+    .insert({ ...patch, owner_id: ownerId })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id;
+}
+
+export async function fetchShopProducts(shopId: string): Promise<ProductWithSeller[]> {
+  const { data, error } = await supabase
+    .from("products")
+    .select("*, seller:profiles!products_seller_profile_fkey(*)")
+    .eq("shop_id", shopId)
+    .order("created_at", { ascending: false });
+  if (error) throw error;
+  return (data ?? []) as unknown as ProductWithSeller[];
+}
+
+export async function deleteProduct(id: string) {
+  const { error } = await supabase.from("products").delete().eq("id", id);
+  if (error) throw error;
+}
+
+// ---------- Signalements & rôles ----------
+
+export async function reportContent(reporterId: string, entityType: string, entityId: string, reason: string) {
+  const { error } = await supabase
+    .from("reports")
+    .insert({ reporter_id: reporterId, entity_type: entityType, entity_id: entityId, reason });
+  if (error) throw error;
+}
+
+export type Report = Tables<"reports">;
+
+export async function fetchReports(): Promise<Report[]> {
+  const { data, error } = await supabase.from("reports").select("*").order("created_at", { ascending: false }).limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function updateReportStatus(id: string, status: string) {
+  const { error } = await supabase.from("reports").update({ status }).eq("id", id);
+  if (error) throw error;
+}
+
+export async function fetchMyRoles(userId: string): Promise<string[]> {
+  const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
+  if (error) return [];
+  return (data ?? []).map((r) => r.role as string);
+}
+
+export async function claimOwnership() {
+  const { data, error } = await supabase.rpc("claim_ownership");
+  if (error) throw error;
+  return data as boolean;
+}
+
+export async function setUserRole(userId: string, role: "owner" | "admin" | "moderator" | "user", grant: boolean) {
+  const { error } = await supabase.rpc("set_user_role", { _user_id: userId, _role: role, _grant: grant });
+  if (error) throw error;
+}
+
+export async function fetchAllRoles() {
+  const { data, error } = await supabase.from("user_roles").select("user_id, role");
+  if (error) throw error;
+  return data ?? [];
+}
+
+// ---------- Statistiques admin ----------
+
+export async function fetchAppStats() {
+  const tables = ["profiles", "posts", "post_comments", "products", "shops", "messages", "reports"] as const;
+  const results = await Promise.all(
+    tables.map((t) => supabase.from(t).select("*", { count: "exact", head: true })),
+  );
+  const out: Record<string, number> = {};
+  tables.forEach((t, i) => (out[t] = results[i]?.count ?? 0));
+  return out;
+}
+
+export type ActivityRow = Tables<"activity_log">;
+
+export async function fetchActivityLog(): Promise<ActivityRow[]> {
+  const { data, error } = await supabase
+    .from("activity_log")
+    .select("*")
+    .order("created_at", { ascending: false })
+    .limit(100);
+  if (error) throw error;
+  return data ?? [];
+}
+
+export async function broadcastNotification(actorId: string, body: string) {
+  const { data, error } = await supabase.from("profiles").select("id").limit(1000);
+  if (error) throw error;
+  const rows = (data ?? [])
+    .filter((p) => p.id !== actorId)
+    .map((p) => ({ user_id: p.id, actor_id: actorId, kind: "system", body }));
+  if (rows.length === 0) return 0;
+  const { error: e2 } = await supabase.from("notifications").insert(rows);
+  if (e2) throw e2;
+  return rows.length;
+}
+
+export function displayFollowers(count: number, profile?: Profile | null) {
+  const total = count + (profile?.follower_boost ?? 0);
+  if (total >= 1_000_000) return `${(total / 1_000_000).toFixed(total % 1_000_000 === 0 ? 0 : 1)} M+`;
+  if (total >= 1000) return `${(total / 1000).toFixed(total % 1000 === 0 ? 0 : 1)} k`;
+  return String(total);
 }

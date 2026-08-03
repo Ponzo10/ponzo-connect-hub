@@ -11,6 +11,10 @@ type AuthValue = {
   user: User | null;
   session: Session | null;
   profile: Profile | null;
+  roles: string[];
+  isOwner: boolean;
+  isAdmin: boolean;
+  isStaff: boolean;
   loading: boolean;
   refreshProfile: () => Promise<void>;
   signOut: () => Promise<void>;
@@ -21,6 +25,7 @@ const AuthContext = createContext<AuthValue | null>(null);
 export function AuthProvider({ children }: { children: ReactNode }) {
   const [session, setSession] = useState<Session | null>(null);
   const [profile, setProfile] = useState<Profile | null>(null);
+  const [roles, setRoles] = useState<string[]>([]);
   const [loading, setLoading] = useState(true);
   const queryClient = useQueryClient();
 
@@ -29,11 +34,19 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
     const loadProfile = async (userId: string | undefined) => {
       if (!userId) {
-        if (active) setProfile(null);
+        if (active) {
+          setProfile(null);
+          setRoles([]);
+        }
         return;
       }
-      const { data } = await supabase.from("profiles").select("*").eq("id", userId).maybeSingle();
-      if (active) setProfile(data ?? null);
+      const [{ data }, { data: roleRows }] = await Promise.all([
+        supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
+        supabase.from("user_roles").select("role").eq("user_id", userId),
+      ]);
+      if (!active) return;
+      setProfile(data ?? null);
+      setRoles((roleRows ?? []).map((r) => r.role as string));
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
@@ -64,12 +77,20 @@ export function AuthProvider({ children }: { children: ReactNode }) {
       user: session?.user ?? null,
       session,
       profile,
+      roles,
+      isOwner: roles.includes("owner"),
+      isAdmin: roles.includes("owner") || roles.includes("admin"),
+      isStaff: roles.some((r) => r === "owner" || r === "admin" || r === "moderator"),
       loading,
       refreshProfile: async () => {
         const id = session?.user.id;
         if (!id) return;
-        const { data } = await supabase.from("profiles").select("*").eq("id", id).maybeSingle();
+        const [{ data }, { data: roleRows }] = await Promise.all([
+          supabase.from("profiles").select("*").eq("id", id).maybeSingle(),
+          supabase.from("user_roles").select("role").eq("user_id", id),
+        ]);
         setProfile(data ?? null);
+        setRoles((roleRows ?? []).map((r) => r.role as string));
       },
       signOut: async () => {
         await queryClient.cancelQueries();
@@ -77,7 +98,7 @@ export function AuthProvider({ children }: { children: ReactNode }) {
         await supabase.auth.signOut();
       },
     }),
-    [session, profile, loading, queryClient],
+    [session, profile, roles, loading, queryClient],
   );
 
   return <AuthContext.Provider value={value}>{children}</AuthContext.Provider>;
