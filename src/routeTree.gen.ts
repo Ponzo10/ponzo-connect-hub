@@ -11,6 +11,7 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as AdminRouteImport } from './routes/admin'
+import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
@@ -30,6 +31,11 @@ const IndexRoute = IndexRouteImport.update({
 const AdminRoute = AdminRouteImport.update({
   id: '/admin',
   path: '/admin',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const AuthRoute = AuthRouteImport.update({
+  id: '/auth',
+  path: '/auth',
   getParentRoute: () => rootRouteImport,
 } as any)
 const BienvenueRoute = BienvenueRouteImport.update({
@@ -86,6 +92,7 @@ const VideosRoute = VideosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/marketplace': typeof MarketplaceRoute
@@ -100,6 +107,7 @@ export interface FileRoutesByFullPath {
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/marketplace': typeof MarketplaceRoute
@@ -115,6 +123,7 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/admin': typeof AdminRoute
+  '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/marketplace': typeof MarketplaceRoute
@@ -131,6 +140,7 @@ export interface FileRouteTypes {
   fullPaths:
     | '/'
     | '/admin'
+    | '/auth'
     | '/bienvenue'
     | '/decouvrir'
     | '/marketplace'
@@ -145,6 +155,7 @@ export interface FileRouteTypes {
   to:
     | '/'
     | '/admin'
+    | '/auth'
     | '/bienvenue'
     | '/decouvrir'
     | '/marketplace'
@@ -159,6 +170,7 @@ export interface FileRouteTypes {
     | '__root__'
     | '/'
     | '/admin'
+    | '/auth'
     | '/bienvenue'
     | '/decouvrir'
     | '/marketplace'
@@ -174,6 +186,7 @@ export interface FileRouteTypes {
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   AdminRoute: typeof AdminRoute
+  AuthRoute: typeof AuthRoute
   BienvenueRoute: typeof BienvenueRoute
   DecouvrirRoute: typeof DecouvrirRoute
   MarketplaceRoute: typeof MarketplaceRoute
@@ -200,6 +213,13 @@ declare module '@tanstack/react-router' {
       path: '/admin'
       fullPath: '/admin'
       preLoaderRoute: typeof AdminRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/auth': {
+      id: '/auth'
+      path: '/auth'
+      fullPath: '/auth'
+      preLoaderRoute: typeof AuthRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/bienvenue': {
@@ -278,6 +298,7 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   AdminRoute: AdminRoute,
+  AuthRoute: AuthRoute,
   BienvenueRoute: BienvenueRoute,
   DecouvrirRoute: DecouvrirRoute,
   MarketplaceRoute: MarketplaceRoute,
