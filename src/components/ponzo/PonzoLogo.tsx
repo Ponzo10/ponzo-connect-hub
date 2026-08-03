@@ -1,5 +1,7 @@
-import logoUrl from "@/assets/ponzo-logo.png";
+import logoAsset from "@/assets/ponzo-logo.png.asset.json";
 import { cn } from "@/lib/utils";
+
+const logoUrl = logoAsset.url;
 
 export const PONZO_LOGO_URL = logoUrl;
 
