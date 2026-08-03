@@ -88,9 +88,9 @@ function Publier() {
 
         <div className="rounded-2xl bg-surface p-4 shadow-soft">
           <div className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3">
-            <Avatar person={me} size={44} />
+            <Avatar person={asPerson(profile)} size={44} />
             <div className="min-w-0">
-              <p className="truncate text-sm font-semibold">{me.name}</p>
+              <p className="truncate text-sm font-semibold">{profile?.full_name ?? "Invité"}</p>
               <p className="truncate text-xs text-muted-foreground">Public · Tous les membres</p>
             </div>
           </div>
