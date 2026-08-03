@@ -14,7 +14,7 @@ export function Avatar({
   ring,
   className,
 }: {
-  person: Pick<Person, "name" | "tone">;
+  person: Pick<Person, "name" | "tone"> & { src?: string | null | undefined };
   size?: number | undefined;
   ring?: boolean | undefined;
   className?: string | undefined;
@@ -25,6 +25,23 @@ export function Avatar({
     .slice(0, 2)
     .join("")
     .toUpperCase();
+
+  if (person.src) {
+    return (
+      <img
+        src={person.src}
+        alt={person.name}
+        loading="lazy"
+        decoding="async"
+        className={cn(
+          "shrink-0 rounded-full object-cover",
+          ring && "ring-2 ring-primary ring-offset-2 ring-offset-background",
+          className,
+        )}
+        style={{ width: size, height: size }}
+      />
+    );
+  }
 
   return (
     <span

@@ -14,6 +14,36 @@ export type Database = {
   }
   public: {
     Tables: {
+      activity_log: {
+        Row: {
+          action: string
+          created_at: string
+          entity_id: string | null
+          entity_type: string | null
+          id: string
+          metadata: Json | null
+          user_id: string | null
+        }
+        Insert: {
+          action: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Update: {
+          action?: string
+          created_at?: string
+          entity_id?: string | null
+          entity_type?: string | null
+          id?: string
+          metadata?: Json | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
@@ -52,6 +82,8 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          media_type: string | null
+          media_url: string | null
           read_at: string | null
           recipient_id: string
           sender_id: string
@@ -60,6 +92,8 @@ export type Database = {
           body: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           read_at?: string | null
           recipient_id: string
           sender_id: string
@@ -68,6 +102,8 @@ export type Database = {
           body?: string
           created_at?: string
           id?: string
+          media_type?: string | null
+          media_url?: string | null
           read_at?: string | null
           recipient_id?: string
           sender_id?: string
@@ -136,21 +172,27 @@ export type Database = {
           body: string
           created_at: string
           id: string
+          parent_id: string | null
           post_id: string
+          updated_at: string
         }
         Insert: {
           author_id: string
           body: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           post_id: string
+          updated_at?: string
         }
         Update: {
           author_id?: string
           body?: string
           created_at?: string
           id?: string
+          parent_id?: string | null
           post_id?: string
+          updated_at?: string
         }
         Relationships: [
           {
@@ -158,6 +200,13 @@ export type Database = {
             columns: ["author_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "post_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "post_comments"
             referencedColumns: ["id"]
           },
           {
@@ -202,6 +251,32 @@ export type Database = {
           },
         ]
       }
+      post_saves: {
+        Row: {
+          created_at: string
+          post_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          post_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          post_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "post_saves_post_id_fkey"
+            columns: ["post_id"]
+            isOneToOne: false
+            referencedRelation: "posts"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       posts: {
         Row: {
           author_id: string
@@ -210,7 +285,9 @@ export type Database = {
           id: string
           media_type: string | null
           media_url: string | null
+          share_count: number
           tag: string | null
+          updated_at: string
         }
         Insert: {
           author_id: string
@@ -219,7 +296,9 @@ export type Database = {
           id?: string
           media_type?: string | null
           media_url?: string | null
+          share_count?: number
           tag?: string | null
+          updated_at?: string
         }
         Update: {
           author_id?: string
@@ -228,7 +307,9 @@ export type Database = {
           id?: string
           media_type?: string | null
           media_url?: string | null
+          share_count?: number
           tag?: string | null
+          updated_at?: string
         }
         Relationships: [
           {
@@ -251,6 +332,8 @@ export type Database = {
           image_url: string | null
           price: number
           seller_id: string
+          shop_id: string | null
+          stock: number | null
           title: string
         }
         Insert: {
@@ -263,6 +346,8 @@ export type Database = {
           image_url?: string | null
           price?: number
           seller_id: string
+          shop_id?: string | null
+          stock?: number | null
           title: string
         }
         Update: {
@@ -275,6 +360,8 @@ export type Database = {
           image_url?: string | null
           price?: number
           seller_id?: string
+          shop_id?: string | null
+          stock?: number | null
           title?: string
         }
         Relationships: [
@@ -285,47 +372,171 @@ export type Database = {
             referencedRelation: "profiles"
             referencedColumns: ["id"]
           },
+          {
+            foreignKeyName: "products_shop_id_fkey"
+            columns: ["shop_id"]
+            isOneToOne: false
+            referencedRelation: "shops"
+            referencedColumns: ["id"]
+          },
         ]
       }
       profiles: {
         Row: {
           avatar_url: string | null
+          badge: string
           bio: string | null
           city: string | null
           cover_url: string | null
           created_at: string
+          follower_boost: number
           full_name: string
           handle: string | null
           id: string
+          phone: string | null
           role: string | null
+          title: string | null
           updated_at: string
           verified: boolean
         }
         Insert: {
           avatar_url?: string | null
+          badge?: string
           bio?: string | null
           city?: string | null
           cover_url?: string | null
           created_at?: string
+          follower_boost?: number
           full_name?: string
           handle?: string | null
           id: string
+          phone?: string | null
           role?: string | null
+          title?: string | null
           updated_at?: string
           verified?: boolean
         }
         Update: {
           avatar_url?: string | null
+          badge?: string
           bio?: string | null
           city?: string | null
           cover_url?: string | null
           created_at?: string
+          follower_boost?: number
           full_name?: string
           handle?: string | null
           id?: string
+          phone?: string | null
           role?: string | null
+          title?: string | null
           updated_at?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      reports: {
+        Row: {
+          created_at: string
+          entity_id: string
+          entity_type: string
+          id: string
+          reason: string
+          reporter_id: string
+          status: string
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          id?: string
+          reason: string
+          reporter_id: string
+          status?: string
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          id?: string
+          reason?: string
+          reporter_id?: string
+          status?: string
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      shops: {
+        Row: {
+          address: string | null
+          city: string | null
+          cover_url: string | null
+          created_at: string
+          description: string | null
+          hours: string | null
+          id: string
+          latitude: number | null
+          logo_url: string | null
+          longitude: number | null
+          name: string
+          owner_id: string
+          phone: string | null
+          updated_at: string
+        }
+        Insert: {
+          address?: string | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          hours?: string | null
+          id?: string
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          name: string
+          owner_id: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Update: {
+          address?: string | null
+          city?: string | null
+          cover_url?: string | null
+          created_at?: string
+          description?: string | null
+          hours?: string | null
+          id?: string
+          latitude?: number | null
+          logo_url?: string | null
+          longitude?: number | null
+          name?: string
+          owner_id?: string
+          phone?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
+      user_roles: {
+        Row: {
+          created_at: string
+          id: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          role: Database["public"]["Enums"]["app_role"]
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          role?: Database["public"]["Enums"]["app_role"]
+          user_id?: string
         }
         Relationships: []
       }
@@ -334,10 +545,27 @@ export type Database = {
       [_ in never]: never
     }
     Functions: {
-      [_ in never]: never
+      claim_ownership: { Args: never; Returns: boolean }
+      has_role: {
+        Args: {
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
+      increment_share: { Args: { _post_id: string }; Returns: number }
+      is_staff: { Args: { _user_id: string }; Returns: boolean }
+      set_user_role: {
+        Args: {
+          _grant: boolean
+          _role: Database["public"]["Enums"]["app_role"]
+          _user_id: string
+        }
+        Returns: boolean
+      }
     }
     Enums: {
-      [_ in never]: never
+      app_role: "owner" | "admin" | "moderator" | "user"
     }
     CompositeTypes: {
       [_ in never]: never
@@ -464,6 +692,8 @@ export type CompositeTypes<
 
 export const Constants = {
   public: {
-    Enums: {},
+    Enums: {
+      app_role: ["owner", "admin", "moderator", "user"],
+    },
   },
 } as const

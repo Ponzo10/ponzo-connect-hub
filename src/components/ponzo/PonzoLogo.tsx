@@ -1,33 +1,42 @@
+import logoUrl from "@/assets/ponzo-logo.png";
 import { cn } from "@/lib/utils";
 
-export function PonzoLogo({ className, tagline = true }: { className?: string | undefined; tagline?: boolean | undefined }) {
+export const PONZO_LOGO_URL = logoUrl;
+
+export function PonzoMark({ size = 40, className }: { size?: number | undefined; className?: string | undefined }) {
   return (
-    <span className={cn("inline-flex flex-col leading-none", className)}>
-      <span className="font-display text-2xl font-extrabold tracking-tight text-primary">
-        PONZ
-        <span className="relative inline-block">
-          <span className="invisible">O</span>
-          <span className="absolute inset-0 grid place-items-center">
-            <span className="block h-[0.72em] w-[0.72em] rounded-full bg-gold" />
-          </span>
-        </span>
-      </span>
-      {tagline && (
-        <span className="mt-1 text-[9px] font-semibold tracking-tight text-primary/70">
-          Connecte-toi. Crée. Construis.
-        </span>
-      )}
-    </span>
+    <img
+      src={logoUrl}
+      alt="Logo officiel PONZO"
+      width={size}
+      height={size}
+      decoding="async"
+      className={cn("shrink-0 rounded-full object-cover shadow-soft", className)}
+      style={{ width: size, height: size }}
+    />
   );
 }
 
-export function PonzoMark({ size = 40 }: { size?: number | undefined }) {
+export function PonzoLogo({
+  className,
+  tagline = true,
+  size = 40,
+}: {
+  className?: string | undefined;
+  tagline?: boolean | undefined;
+  size?: number | undefined;
+}) {
   return (
-    <span
-      className="grid shrink-0 place-items-center rounded-full bg-brand font-display font-extrabold text-primary-foreground"
-      style={{ width: size, height: size, fontSize: size * 0.5 }}
-    >
-      P
+    <span className={cn("inline-flex items-center gap-2", className)}>
+      <PonzoMark size={size} />
+      <span className="inline-flex flex-col leading-none">
+        <span className="font-display text-2xl font-extrabold tracking-tight text-primary">PONZO</span>
+        {tagline && (
+          <span className="mt-1 text-[9px] font-semibold tracking-tight text-primary/70">
+            Connecte-toi. Crée. Construis.
+          </span>
+        )}
+      </span>
     </span>
   );
 }
