@@ -11,6 +11,10 @@
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
+import { Route as MessagesRouteImport } from './routes/messages'
+import { Route as NotificationsRouteImport } from './routes/notifications'
+import { Route as ProfilRouteImport } from './routes/profil'
+import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
 
@@ -22,6 +26,26 @@ const IndexRoute = IndexRouteImport.update({
 const DecouvrirRoute = DecouvrirRouteImport.update({
   id: '/decouvrir',
   path: '/decouvrir',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const MessagesRoute = MessagesRouteImport.update({
+  id: '/messages',
+  path: '/messages',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const NotificationsRoute = NotificationsRouteImport.update({
+  id: '/notifications',
+  path: '/notifications',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ProfilRoute = ProfilRouteImport.update({
+  id: '/profil',
+  path: '/profil',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const PublierRoute = PublierRouteImport.update({
+  id: '/publier',
+  path: '/publier',
   getParentRoute: () => rootRouteImport,
 } as any)
 const RechercheRoute = RechercheRouteImport.update({
@@ -38,12 +62,20 @@ const VideosRoute = VideosRouteImport.update({
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/profil': typeof ProfilRoute
+  '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/profil': typeof ProfilRoute
+  '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
 }
@@ -51,20 +83,53 @@ export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
   '/decouvrir': typeof DecouvrirRoute
+  '/messages': typeof MessagesRoute
+  '/notifications': typeof NotificationsRoute
+  '/profil': typeof ProfilRoute
+  '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
-  fullPaths: '/' | '/decouvrir' | '/recherche' | '/videos'
+  fullPaths:
+    | '/'
+    | '/decouvrir'
+    | '/messages'
+    | '/notifications'
+    | '/profil'
+    | '/publier'
+    | '/recherche'
+    | '/videos'
   fileRoutesByTo: FileRoutesByTo
-  to: '/' | '/decouvrir' | '/recherche' | '/videos'
-  id: '__root__' | '/' | '/decouvrir' | '/recherche' | '/videos'
+  to:
+    | '/'
+    | '/decouvrir'
+    | '/messages'
+    | '/notifications'
+    | '/profil'
+    | '/publier'
+    | '/recherche'
+    | '/videos'
+  id:
+    | '__root__'
+    | '/'
+    | '/decouvrir'
+    | '/messages'
+    | '/notifications'
+    | '/profil'
+    | '/publier'
+    | '/recherche'
+    | '/videos'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
   DecouvrirRoute: typeof DecouvrirRoute
+  MessagesRoute: typeof MessagesRoute
+  NotificationsRoute: typeof NotificationsRoute
+  ProfilRoute: typeof ProfilRoute
+  PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
   VideosRoute: typeof VideosRoute
 }
@@ -83,6 +148,34 @@ declare module '@tanstack/react-router' {
       path: '/decouvrir'
       fullPath: '/decouvrir'
       preLoaderRoute: typeof DecouvrirRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/messages': {
+      id: '/messages'
+      path: '/messages'
+      fullPath: '/messages'
+      preLoaderRoute: typeof MessagesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/notifications': {
+      id: '/notifications'
+      path: '/notifications'
+      fullPath: '/notifications'
+      preLoaderRoute: typeof NotificationsRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/profil': {
+      id: '/profil'
+      path: '/profil'
+      fullPath: '/profil'
+      preLoaderRoute: typeof ProfilRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/publier': {
+      id: '/publier'
+      path: '/publier'
+      fullPath: '/publier'
+      preLoaderRoute: typeof PublierRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/recherche': {
@@ -105,6 +198,10 @@ declare module '@tanstack/react-router' {
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
   DecouvrirRoute: DecouvrirRoute,
+  MessagesRoute: MessagesRoute,
+  NotificationsRoute: NotificationsRoute,
+  ProfilRoute: ProfilRoute,
+  PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
   VideosRoute: VideosRoute,
 }
