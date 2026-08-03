@@ -123,8 +123,8 @@ function ActionButton({
 }: {
   icon: React.ReactNode;
   label: string;
-  active?: boolean;
-  onClick?: () => void;
+  active?: boolean | undefined;
+  onClick?: (() => void) | undefined;
 }) {
   return (
     <button
@@ -135,7 +135,7 @@ function ActionButton({
       )}
     >
       {icon}
-      <span className="hidden xs:inline sm:inline">{label}</span>
+      <span className="hidden min-[380px]:inline">{label}</span>
     </button>
   );
 }

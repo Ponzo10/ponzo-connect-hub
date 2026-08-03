@@ -1,6 +1,6 @@
 import { cn } from "@/lib/utils";
 
-export function PonzoLogo({ className, tagline = true }: { className?: string; tagline?: boolean }) {
+export function PonzoLogo({ className, tagline = true }: { className?: string | undefined; tagline?: boolean | undefined }) {
   return (
     <span className={cn("inline-flex flex-col leading-none", className)}>
       <span className="font-display text-2xl font-extrabold tracking-tight text-primary">
@@ -21,7 +21,7 @@ export function PonzoLogo({ className, tagline = true }: { className?: string; t
   );
 }
 
-export function PonzoMark({ size = 40 }: { size?: number }) {
+export function PonzoMark({ size = 40 }: { size?: number | undefined }) {
   return (
     <span
       className="grid shrink-0 place-items-center rounded-full bg-brand font-display font-extrabold text-primary-foreground"

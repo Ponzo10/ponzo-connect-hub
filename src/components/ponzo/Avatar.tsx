@@ -15,9 +15,9 @@ export function Avatar({
   className,
 }: {
   person: Pick<Person, "name" | "tone">;
-  size?: number;
-  ring?: boolean;
-  className?: string;
+  size?: number | undefined;
+  ring?: boolean | undefined;
+  className?: string | undefined;
 }) {
   const initials = person.name
     .split(" ")

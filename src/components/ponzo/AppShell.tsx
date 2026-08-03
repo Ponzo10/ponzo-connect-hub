@@ -16,7 +16,7 @@ const navItems = [
   { to: "/profil", label: "Profil", icon: User },
 ] as const;
 
-export function TopBar({ title }: { title?: string }) {
+export function TopBar({ title }: { title?: string | undefined }) {
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-surface/85 backdrop-blur-xl">
       <div className="mx-auto grid max-w-2xl grid-cols-[minmax(0,1fr)_auto] items-center gap-3 px-4 py-3">
@@ -133,8 +133,8 @@ export function AppShell({
   bare,
 }: {
   children: ReactNode;
-  title?: string;
-  bare?: boolean;
+  title?: string | undefined;
+  bare?: boolean | undefined;
 }) {
   return (
     <div className="min-h-screen bg-background pb-24">
