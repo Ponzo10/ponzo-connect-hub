@@ -109,6 +109,12 @@ function Publier() {
             }
             className="mt-3 w-full resize-none bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
           />
+          <input
+            value={mediaUrl}
+            onChange={(e) => setMediaUrl(e.target.value)}
+            placeholder="Lien d'une image (optionnel)"
+            className="mt-2 w-full rounded-xl bg-muted px-3 py-2 text-xs outline-none"
+          />
           <div className="grid grid-cols-2 gap-2 border-t border-border/70 pt-3">
             <Attach icon={<ImageIcon className="h-4 w-4 text-primary" />} label="Photo" />
             <Attach icon={<Video className="h-4 w-4 text-destructive" />} label="Vidéo" />
@@ -118,10 +124,11 @@ function Publier() {
         </div>
 
         <button
-          disabled={!text.trim()}
+          onClick={publish}
+          disabled={!text.trim() || busy}
           className="w-full rounded-full bg-brand py-3.5 text-sm font-bold text-primary-foreground shadow-lift transition-opacity disabled:opacity-40"
         >
-          Publier
+          {busy ? "Publication…" : user ? "Publier" : "Se connecter pour publier"}
         </button>
       </div>
     </AppShell>
