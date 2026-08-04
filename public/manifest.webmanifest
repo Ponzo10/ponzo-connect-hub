@@ -1,0 +1,17 @@
+{
+  "name": "PONZO — Connecte-toi. Crée. Construis.",
+  "short_name": "PONZO",
+  "description": "Le réseau social professionnel africain : fil d'actualité, stories, vidéos courtes, marketplace et opportunités.",
+  "start_url": "/",
+  "scope": "/",
+  "display": "standalone",
+  "orientation": "portrait",
+  "background_color": "#ffffff",
+  "theme_color": "#0f6b52",
+  "lang": "fr",
+  "icons": [
+    { "src": "/favicon.png", "sizes": "192x192", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "any" },
+    { "src": "/apple-touch-icon.png", "sizes": "512x512", "type": "image/png", "purpose": "maskable" }
+  ]
+}

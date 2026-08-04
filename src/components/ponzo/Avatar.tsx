@@ -1,5 +1,6 @@
 import { cn } from "@/lib/utils";
 import type { Person } from "@/data/demo";
+import { usePhotoViewer } from "./PhotoViewer";
 
 const toneClass: Record<Person["tone"], string> = {
   green: "bg-brand text-primary-foreground",
@@ -13,12 +14,15 @@ export function Avatar({
   size = 44,
   ring,
   className,
+  zoomable,
 }: {
   person: Pick<Person, "name" | "tone"> & { src?: string | null | undefined };
   size?: number | undefined;
   ring?: boolean | undefined;
   className?: string | undefined;
+  zoomable?: boolean | undefined;
 }) {
+  const viewer = usePhotoViewer();
   const initials = person.name
     .split(" ")
     .map((w) => w[0])
@@ -26,22 +30,40 @@ export function Avatar({
     .join("")
     .toUpperCase();
 
+
   if (person.src) {
-    return (
+    const img = (
       <img
         src={person.src}
         alt={person.name}
         loading="lazy"
         decoding="async"
         className={cn(
-          "shrink-0 rounded-full object-cover",
+          "h-full w-full shrink-0 rounded-full object-cover",
           ring && "ring-2 ring-primary ring-offset-2 ring-offset-background",
           className,
         )}
         style={{ width: size, height: size }}
       />
     );
+    if (!zoomable) return img;
+    return (
+      <button
+        type="button"
+        aria-label={`Voir la photo de ${person.name}`}
+        onClick={(e) => {
+          e.preventDefault();
+          e.stopPropagation();
+          viewer.open(person.src!, person.name);
+        }}
+        className="shrink-0 rounded-full"
+        style={{ width: size, height: size }}
+      >
+        {img}
+      </button>
+    );
   }
+
 
   return (
     <span

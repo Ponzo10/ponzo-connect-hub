@@ -5,6 +5,7 @@ import { Briefcase, ImageIcon, Megaphone, Radio, Search, ShoppingBag, Video } fr
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { PostCard } from "@/components/ponzo/PostCard";
+import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
 import { asPerson, fetchFeed, fetchProfiles } from "@/lib/ponzo-api";
 
@@ -62,6 +63,8 @@ function Feed() {
           <ComposerChip to="/decouvrir" icon={<Radio className="h-4 w-4 text-accent-foreground" />} label="Live" />
         </div>
       </section>
+
+      <StoriesBar />
 
       <section className="mt-4">
         <h2 className="sr-only">Membres</h2>
