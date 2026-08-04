@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
-import { useEffect, type ReactNode } from "react";
+import { useEffect, useRef, type ReactNode } from "react";
 
 import { PonzoLogo, PonzoMark } from "./PonzoLogo";
 import { Avatar } from "./Avatar";
@@ -165,11 +165,17 @@ export function BottomNav() {
 export function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
   const navigate = useNavigate();
-  const pathname = useRouterState({ select: (s) => s.location.href });
+  const href = useRouterState({ select: (s) => s.location.href });
+  const redirected = useRef(false);
+  const initialHref = useRef(href);
 
   useEffect(() => {
-    if (!loading && !user) void navigate({ to: "/bienvenue", search: { redirect: pathname }, replace: true });
-  }, [loading, user, navigate, pathname]);
+    if (loading || user || redirected.current) return;
+    const target = initialHref.current;
+    if (target.startsWith("/bienvenue") || target.startsWith("/auth")) return;
+    redirected.current = true;
+    void navigate({ to: "/bienvenue", search: { redirect: target }, replace: true });
+  }, [loading, user, navigate]);
 
   if (loading || !user) {
     return (

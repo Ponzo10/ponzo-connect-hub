@@ -534,3 +534,28 @@ export function displayFollowers(count: number, profile?: Profile | null) {
   if (total >= 1000) return `${(total / 1000).toFixed(total % 1000 === 0 ? 0 : 1)} k`;
   return String(total);
 }
+
+// ---------- Vidéos ----------
+
+export async function fetchVideoPosts(): Promise<FeedPost[]> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
+    .eq("media_type", "video")
+    .not("media_url", "is", null)
+    .order("created_at", { ascending: false })
+    .limit(60);
+  if (error) throw error;
+  return (data ?? []) as unknown as FeedPost[];
+}
+
+export async function incrementView(postId: string) {
+  const { data } = await supabase.rpc("increment_view", { _post_id: postId });
+  return (data as number | null) ?? 0;
+}
+
+export function compactCount(n: number): string {
+  if (n >= 1_000_000) return `${(n / 1_000_000).toFixed(n % 1_000_000 === 0 ? 0 : 1)}M`;
+  if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
+  return String(n);
+}
