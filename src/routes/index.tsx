@@ -121,16 +121,16 @@ function Feed() {
             </Link>
           </div>
         )}
-        <div className="px-3 sm:px-0">
-          {timeline.map((item) =>
-            item.kind === "news" ? (
-              <NewsCard key={`n-${item.article.id}`} article={item.article} />
-            ) : null,
-          )}
-        </div>
         {timeline.map((item) =>
-          item.kind === "post" ? <PostCard key={`p-${item.post.id}`} post={item.post} /> : null,
+          item.kind === "news" ? (
+            <div key={`n-${item.article.id}`} className="px-3 sm:px-0">
+              <NewsCard article={item.article} />
+            </div>
+          ) : (
+            <PostCard key={`p-${item.post.id}`} post={item.post} />
+          ),
         )}
+
 
       </section>
     </AppShell>
