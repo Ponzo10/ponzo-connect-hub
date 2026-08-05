@@ -38,14 +38,28 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const tabs = ["Statistiques", "Membres", "Publications", "Signalements", "Boutiques", "Journal", "Diffusion"] as const;
+const tabs = [
+  "Vue d'ensemble",
+  "Contenu",
+  "Usage",
+  "Performance",
+  "Sécurité",
+  "Analyse",
+  "Rapport",
+  "Membres",
+  "Publications",
+  "Signalements",
+  "Boutiques",
+  "Journal",
+  "Diffusion",
+] as const;
 
 function Admin() {
   const { user, isStaff, isOwner } = useAuth();
-  const [tab, setTab] = useState<(typeof tabs)[number]>("Statistiques");
+  const [tab, setTab] = useState<(typeof tabs)[number]>("Vue d'ensemble");
   const queryClient = useQueryClient();
 
-  const stats = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAppStats, enabled: isStaff });
+  const dashboard = useOwnerDashboard(isStaff);
   const people = useQuery({ queryKey: ["admin-people"], queryFn: () => fetchProfiles(), enabled: isStaff });
   const roles = useQuery({ queryKey: ["admin-roles"], queryFn: fetchAllRoles, enabled: isStaff });
   const posts = useQuery({ queryKey: ["admin-posts"], queryFn: fetchFeed, enabled: isStaff });
