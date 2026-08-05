@@ -200,13 +200,17 @@ export function PostCard({ post }: { post: FeedPost }) {
             {post.author?.title ? ` · ${post.author.title}` : post.author?.role ? ` · ${post.author.role}` : ""}
           </p>
         </div>
-        <button
-          onClick={() => setMenu((v) => !v)}
-          className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
-          aria-label="Options de la publication"
-        >
-          <MoreHorizontal className="h-5 w-5" />
-        </button>
+        <div className="flex shrink-0 items-center gap-1">
+          <FollowButton targetId={post.author_id} size="sm" />
+          <button
+            onClick={() => setMenu((v) => !v)}
+            className="grid h-9 w-9 place-items-center rounded-full text-muted-foreground hover:bg-muted"
+            aria-label="Options de la publication"
+          >
+            <MoreHorizontal className="h-5 w-5" />
+          </button>
+        </div>
+
 
         {menu && (
           <div className="absolute right-4 top-14 z-20 w-52 overflow-hidden rounded-2xl bg-surface text-sm shadow-lift">
