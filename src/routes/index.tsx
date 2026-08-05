@@ -109,7 +109,7 @@ function Feed() {
       <section className="mt-4 sm:px-3">
         <h2 className="sr-only">Fil d'actualité</h2>
         {feed.isLoading && <p className="px-4 py-6 text-sm text-muted-foreground">Chargement du fil…</p>}
-        {feed.data?.length === 0 && (
+        {!feed.isLoading && timeline.length === 0 && (
           <div className="mx-3 rounded-2xl bg-surface p-6 text-center shadow-soft">
             <p className="text-sm font-semibold">Le fil est encore vide</p>
             <p className="mt-1 text-xs text-muted-foreground">Sois le premier à publier sur PONZO.</p>
@@ -121,9 +121,17 @@ function Feed() {
             </Link>
           </div>
         )}
-        {feed.data?.map((p) => (
-          <PostCard key={p.id} post={p} />
-        ))}
+        <div className="px-3 sm:px-0">
+          {timeline.map((item) =>
+            item.kind === "news" ? (
+              <NewsCard key={`n-${item.article.id}`} article={item.article} />
+            ) : null,
+          )}
+        </div>
+        {timeline.map((item) =>
+          item.kind === "post" ? <PostCard key={`p-${item.post.id}`} post={item.post} /> : null,
+        )}
+
       </section>
     </AppShell>
   );
