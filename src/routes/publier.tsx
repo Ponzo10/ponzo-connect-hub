@@ -59,18 +59,25 @@ function Publier() {
   const videoRef = useRef<HTMLInputElement>(null);
 
   const pick = async (file: File | undefined) => {
-    if (!file || !user) return;
+    if (!file) return;
+    if (!user) {
+      toast.error("Connecte-toi pour ajouter un fichier.");
+      return;
+    }
     setUploading(true);
     try {
       const result = await uploadMedia(user.id, file, "posts");
       setMedia({ url: result.url, type: result.kind === "video" ? "video" : "image" });
       toast.success("Fichier ajouté");
-    } catch {
-      toast.error("Envoi du fichier impossible.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Envoi du fichier impossible.");
     } finally {
       setUploading(false);
+      if (photoRef.current) photoRef.current.value = "";
+      if (videoRef.current) videoRef.current.value = "";
     }
   };
+
 
   const publish = async () => {
     if (!user) return;
