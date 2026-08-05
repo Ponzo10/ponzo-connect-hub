@@ -114,6 +114,18 @@ function Parametres() {
   const [password, setPassword] = useState("");
   const [savingBadge, setSavingBadge] = useState(false);
   const allowDownload = profile?.allow_photo_download ?? true;
+  const allowVideoDownload = profile?.allow_video_download ?? true;
+
+  const toggleVideoDownload = async (value: boolean) => {
+    if (!user) return;
+    try {
+      await updateProfile(user.id, { allow_video_download: value });
+      await refreshProfile();
+      toast.success(value ? "Téléchargement de tes vidéos autorisé" : "Téléchargement de tes vidéos désactivé");
+    } catch {
+      toast.error("Modification impossible pour le moment.");
+    }
+  };
 
   const toggleDownload = async (value: boolean) => {
     if (!user) return;

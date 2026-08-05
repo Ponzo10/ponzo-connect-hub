@@ -13,6 +13,7 @@ import {
   searchProducts,
   timeAgo,
 } from "@/lib/ponzo-api";
+import { searchHashtags } from "@/lib/trending-api";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/recherche")({
@@ -27,7 +28,7 @@ export const Route = createFileRoute("/recherche")({
   component: RecherchePage,
 });
 
-const tabs = ["Personnes", "Publications", "Produits", "Projets"] as const;
+const tabs = ["Personnes", "Hashtags", "Publications", "Produits", "Projets"] as const;
 
 function RecherchePage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Personnes");
@@ -36,6 +37,11 @@ function RecherchePage() {
   const people = useQuery({ queryKey: ["profiles", q], queryFn: () => fetchProfiles(q || undefined) });
   const posts = useQuery({ queryKey: ["search-posts", q], queryFn: () => searchPosts(q) });
   const products = useQuery({ queryKey: ["search-products", q], queryFn: () => searchProducts(q) });
+  const hashtags = useQuery({
+    queryKey: ["search-hashtags", q],
+    queryFn: () => searchHashtags(q, 40),
+    refetchInterval: 30000,
+  });
 
   return (
     <AppShell title="Recherche">
@@ -82,6 +88,27 @@ function RecherchePage() {
                   {p.handle ? `@${p.handle}` : "Membre"} {p.role ? `· ${p.role}` : ""}
                 </p>
               </div>
+            </Link>
+          ))}
+
+        {tab === "Hashtags" &&
+          (hashtags.data ?? []).map((h) => (
+            <Link
+              key={h.id}
+              to="/hashtag/$tag"
+              params={{ tag: h.tag }}
+              className="grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-surface p-3 shadow-soft"
+            >
+              <span className="grid h-11 w-11 shrink-0 place-items-center rounded-xl bg-primary-soft text-lg font-bold text-primary">
+                #
+              </span>
+              <div className="min-w-0">
+                <p className="truncate text-sm font-semibold">#{h.tag}</p>
+                <p className="truncate text-xs text-muted-foreground">
+                  {h.usage_count} publication{h.usage_count > 1 ? "s" : ""}
+                </p>
+              </div>
+              <span className="shrink-0 text-xs font-semibold text-primary">Voir</span>
             </Link>
           ))}
 
