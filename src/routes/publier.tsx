@@ -1,12 +1,13 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQueryClient } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Image as ImageIcon, Loader2, Search, Sparkles, Users, Video, X } from "lucide-react";
-import { useRef, useState } from "react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { useAuth } from "@/lib/auth";
+import { extractHashtags, searchHashtags } from "@/lib/trending-api";
 import { asPerson, createPost } from "@/lib/ponzo-api";
 import { removeUploadedMedia, uploadMedia } from "@/lib/upload";
 import { cn } from "@/lib/utils";
@@ -59,6 +60,24 @@ function Publier() {
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const photoRef = useRef<HTMLInputElement>(null);
+
+  const currentTags = useMemo(() => extractHashtags(text), [text]);
+  const typing = /#([A-Za-z0-9_À-ÿ]{1,50})$/.exec(text)?.[1] ?? "";
+  const suggestions = useQuery({
+    queryKey: ["hashtag-suggestions", typing],
+    queryFn: () => searchHashtags(typing, 8),
+    enabled: !!user,
+    staleTime: 20000,
+  });
+  const suggested = (suggestions.data ?? []).filter((h) => !currentTags.includes(h.tag)).slice(0, 8);
+
+  const addTag = (tag: string) => {
+    setText((prev) => {
+      const base = typing ? prev.replace(/#[A-Za-z0-9_À-ÿ]{1,50}$/, "") : prev;
+      const sep = base && !base.endsWith(" ") ? " " : "";
+      return `${base}${sep}#${tag} `;
+    });
+  };
   const videoRef = useRef<HTMLInputElement>(null);
 
   const pick = async (file: File | undefined, expected: "image" | "video") => {
@@ -171,6 +190,30 @@ function Publier() {
             }
             className="mt-3 w-full resize-none bg-transparent text-[15px] outline-none placeholder:text-muted-foreground"
           />
+
+          {suggested.length > 0 && (
+            <div className="mt-2">
+              <p className="text-[11px] font-semibold text-muted-foreground">Hashtags suggérés</p>
+              <div className="no-scrollbar mt-1.5 flex gap-2 overflow-x-auto pb-1">
+                {suggested.map((h) => (
+                  <button
+                    key={h.id}
+                    type="button"
+                    onClick={() => addTag(h.tag)}
+                    className="shrink-0 rounded-full bg-primary-soft px-3 py-1.5 text-[11px] font-semibold text-primary"
+                  >
+                    #{h.tag} <span className="opacity-60">{h.usage_count}</span>
+                  </button>
+                ))}
+              </div>
+            </div>
+          )}
+
+          {currentTags.length > 0 && (
+            <p className="mt-2 text-[11px] text-muted-foreground">
+              Hashtags détectés : {currentTags.map((t) => `#${t}`).join(" ")}
+            </p>
+          )}
 
           {media && (
             <div className="relative mt-2 overflow-hidden rounded-xl">
