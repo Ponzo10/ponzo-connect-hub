@@ -29,6 +29,7 @@ import { Route as VideosRouteImport } from './routes/videos'
 import { Route as ActualiteIdRouteImport } from './routes/actualite.$id'
 import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
+import { Route as PublicationIdRouteImport } from './routes/publication.$id'
 import { Route as ApiPublicHooksNewsSyncRouteImport } from './routes/api/public/hooks/news-sync'
 
 const IndexRoute = IndexRouteImport.update({
@@ -131,6 +132,11 @@ const MembreIdRoute = MembreIdRouteImport.update({
   path: '/membre/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const PublicationIdRoute = PublicationIdRouteImport.update({
+  id: '/publication/$id',
+  path: '/publication/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksNewsSyncRoute = ApiPublicHooksNewsSyncRouteImport.update({
   id: '/api/public/hooks/news-sync',
   path: '/api/public/hooks/news-sync',
@@ -158,6 +164,7 @@ export interface FileRoutesByFullPath {
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
+  '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRoutesByTo {
@@ -181,6 +188,7 @@ export interface FileRoutesByTo {
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
+  '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRoutesById {
@@ -205,6 +213,7 @@ export interface FileRoutesById {
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
+  '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRouteTypes {
@@ -230,6 +239,7 @@ export interface FileRouteTypes {
     | '/actualite/$id'
     | '/groupe/$id'
     | '/membre/$id'
+    | '/publication/$id'
     | '/api/public/hooks/news-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -253,6 +263,7 @@ export interface FileRouteTypes {
     | '/actualite/$id'
     | '/groupe/$id'
     | '/membre/$id'
+    | '/publication/$id'
     | '/api/public/hooks/news-sync'
   id:
     | '__root__'
@@ -276,6 +287,7 @@ export interface FileRouteTypes {
     | '/actualite/$id'
     | '/groupe/$id'
     | '/membre/$id'
+    | '/publication/$id'
     | '/api/public/hooks/news-sync'
   fileRoutesById: FileRoutesById
 }
@@ -300,6 +312,7 @@ export interface RootRouteChildren {
   ActualiteIdRoute: typeof ActualiteIdRoute
   GroupeIdRoute: typeof GroupeIdRoute
   MembreIdRoute: typeof MembreIdRoute
+  PublicationIdRoute: typeof PublicationIdRoute
   ApiPublicHooksNewsSyncRoute: typeof ApiPublicHooksNewsSyncRoute
 }
 
@@ -445,6 +458,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembreIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/publication/$id': {
+      id: '/publication/$id'
+      path: '/publication/$id'
+      fullPath: '/publication/$id'
+      preLoaderRoute: typeof PublicationIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/news-sync': {
       id: '/api/public/hooks/news-sync'
       path: '/api/public/hooks/news-sync'
@@ -476,18 +496,9 @@ const rootRouteChildren: RootRouteChildren = {
   ActualiteIdRoute: ActualiteIdRoute,
   GroupeIdRoute: GroupeIdRoute,
   MembreIdRoute: MembreIdRoute,
+  PublicationIdRoute: PublicationIdRoute,
   ApiPublicHooksNewsSyncRoute: ApiPublicHooksNewsSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}

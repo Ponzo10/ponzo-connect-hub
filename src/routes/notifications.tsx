@@ -62,31 +62,34 @@ function Notifications() {
       <ul className="space-y-1 px-3 pt-3">
         {(list.data ?? []).map((n) => {
           const Icon = icons[n.kind] ?? Bell;
+          const target = notificationTarget(n);
           return (
-            <li
-              key={n.id}
-              className={cn(
-                "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl p-3 shadow-soft",
-                n.read_at ? "bg-surface" : "bg-primary-soft/60",
-              )}
-            >
-              <span className="relative shrink-0">
-                {n.actor ? (
-                  <Avatar person={asPerson(n.actor)} size={46} />
-                ) : (
-                  <span className="grid h-[46px] w-[46px] place-items-center rounded-full bg-brand text-primary-foreground">
-                    <Bell className="h-5 w-5" />
-                  </span>
+            <li key={n.id}>
+              <Link
+                {...target}
+                className={cn(
+                  "grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl p-3 shadow-soft transition-colors hover:bg-muted",
+                  n.read_at ? "bg-surface" : "bg-primary-soft/60",
                 )}
-                <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full bg-surface text-primary shadow-soft">
-                  <Icon className="h-3 w-3" />
+              >
+                <span className="relative shrink-0">
+                  {n.actor ? (
+                    <Avatar person={asPerson(n.actor)} size={46} />
+                  ) : (
+                    <span className="grid h-[46px] w-[46px] place-items-center rounded-full bg-brand text-primary-foreground">
+                      <Bell className="h-5 w-5" />
+                    </span>
+                  )}
+                  <span className="absolute -bottom-0.5 -right-0.5 grid h-5 w-5 place-items-center rounded-full bg-surface text-primary shadow-soft">
+                    <Icon className="h-3 w-3" />
+                  </span>
                 </span>
-              </span>
-              <p className="min-w-0 text-sm">
-                {n.actor && <span className="font-semibold">{n.actor.full_name} </span>}
-                <span className="text-muted-foreground">{n.body}</span>
-              </p>
-              <span className="shrink-0 text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</span>
+                <p className="min-w-0 text-sm">
+                  {n.actor && <span className="font-semibold">{n.actor.full_name} </span>}
+                  <span className="text-muted-foreground">{n.body}</span>
+                </p>
+                <span className="shrink-0 text-[11px] text-muted-foreground">{timeAgo(n.created_at)}</span>
+              </Link>
             </li>
           );
         })}
