@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PonzoLogo } from "@/components/ponzo/PonzoLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { logSecurityEvent } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
