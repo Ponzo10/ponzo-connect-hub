@@ -1,13 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, ImageIcon, Megaphone, Radio, Search, ShoppingBag, Users, Video } from "lucide-react";
+import {
+  Briefcase,
+  ImageIcon,
+  Megaphone,
+  Newspaper,
+  Radio,
+  Search,
+  ShoppingBag,
+  Users,
+  Video,
+} from "lucide-react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
+import { NewsCard } from "@/components/ponzo/NewsCard";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
+import { fetchNews } from "@/lib/news-api";
 import { asPerson, fetchFeed } from "@/lib/ponzo-api";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
