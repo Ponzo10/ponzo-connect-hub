@@ -13,6 +13,7 @@ import appCss from "../styles.css?url";
 import { AuthProvider } from "../lib/auth";
 import { Toaster } from "../components/ui/sonner";
 import { PhotoViewerProvider } from "../components/ponzo/PhotoViewer";
+import { UsageTracker } from "../components/ponzo/UsageTracker";
 import { reportLovableError } from "../lib/lovable-error-reporting";
 
 function NotFoundComponent() {
