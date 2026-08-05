@@ -790,6 +790,7 @@ export type Database = {
       }
       profiles: {
         Row: {
+          allow_photo_download: boolean
           avatar_url: string | null
           badge: string
           bio: string | null
@@ -807,6 +808,7 @@ export type Database = {
           verified: boolean
         }
         Insert: {
+          allow_photo_download?: boolean
           avatar_url?: string | null
           badge?: string
           bio?: string | null
@@ -824,6 +826,7 @@ export type Database = {
           verified?: boolean
         }
         Update: {
+          allow_photo_download?: boolean
           avatar_url?: string | null
           badge?: string
           bio?: string | null
