@@ -17,6 +17,7 @@ import { toast } from "sonner";
 import { Avatar } from "./Avatar";
 import { Badge3D } from "./Badge3D";
 import { FollowButton } from "./FollowButton";
+import { usePhotoViewer } from "./PhotoViewer";
 
 import { useAuth } from "@/lib/auth";
 import {
@@ -46,6 +47,7 @@ const tagStyle: Record<string, string> = {
 
 export function PostCard({ post }: { post: FeedPost }) {
   const { user } = useAuth();
+  const viewer = usePhotoViewer();
   const queryClient = useQueryClient();
   const [openComments, setOpenComments] = useState(false);
   const [menu, setMenu] = useState(false);
