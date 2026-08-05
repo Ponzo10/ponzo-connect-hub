@@ -209,7 +209,7 @@ function GroupChat() {
             const mine = m.sender_id === user?.id;
             return (
               <div key={m.id} className={`flex gap-2 ${mine ? "flex-row-reverse" : ""}`}>
-                {!mine && <Avatar person={{ name: m.sender?.full_name ?? "Membre", tone: 0, src: m.sender?.avatar_url ?? null }} size={30} />}
+                {!mine && <Avatar person={{ name: m.sender?.full_name ?? "Membre", tone: "green" as const, src: m.sender?.avatar_url ?? null }} size={30} />}
                 <div className={`max-w-[75%] rounded-2xl px-3 py-2 ${mine ? "bg-brand text-primary-foreground" : "bg-surface shadow-soft"}`}>
                   {!mine && <p className="text-[11px] font-bold opacity-80">{m.sender?.full_name ?? "Membre"}</p>}
                   {m.media_url && m.media_type === "image" && (
