@@ -37,14 +37,22 @@ function safeExt(name: string, kind: MediaKind) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-export async function uploadMedia(userId: string, file: File, folder = "posts"): Promise<UploadResult> {
+export async function uploadMedia(
+  userId: string,
+  file: File,
+  folder = "posts",
+  expected?: MediaKind,
+): Promise<UploadResult> {
   if (!userId) throw new Error("Connecte-toi pour envoyer un fichier.");
   if (file.size === 0) throw new Error("Ce fichier est vide ou illisible.");
   if (file.size > MAX_BYTES) throw new Error("Fichier trop volumineux (200 Mo maximum).");
 
-  const kind = kindOf(file);
+  // Certains WebView Android renvoient un type MIME vide : on retombe sur le type attendu.
+  const detected = kindOf(file);
+  const kind: MediaKind = detected === "file" && expected ? expected : detected;
   const name = file.name || `${folder}-${Date.now()}`;
   const contentType = file.type || (kind === "video" ? "video/mp4" : kind === "image" ? "image/jpeg" : "application/octet-stream");
+
 
   let lastError: unknown = null;
 
