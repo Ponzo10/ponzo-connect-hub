@@ -1,13 +1,15 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Eye, Heart, MessageCircle, Music2, Send, Volume2, VolumeX } from "lucide-react";
+import { Bookmark, Download, Eye, Heart, MessageCircle, Music2, Send, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AuthGate, BottomNav } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { FollowButton } from "@/components/ponzo/FollowButton";
+import { HashtagText } from "@/components/ponzo/HashtagText";
 import { useAuth } from "@/lib/auth";
+import { downloadMedia } from "@/lib/trending-api";
 import {
   addReply,
   asPerson,
@@ -238,7 +240,9 @@ function VideoCard({
             <span className="truncate text-sm font-bold">{post.author?.full_name ?? "Membre PONZO"}</span>
             <FollowButton targetId={post.author_id} initialFollowing={isFollowing} size="sm" />
           </div>
-          <p className="mt-3 line-clamp-3 text-sm leading-relaxed">{post.body}</p>
+          <p className="mt-3 line-clamp-3 text-sm leading-relaxed">
+            <HashtagText text={post.body} />
+          </p>
           <p className="mt-2 flex items-center gap-3 text-xs opacity-80">
             <span className="flex items-center gap-1">
               <Music2 className="h-3.5 w-3.5" /> Son original
@@ -267,6 +271,16 @@ function VideoCard({
             icon={<Bookmark className={cn("h-7 w-7", saved && "fill-background")} />}
             value="Enreg."
           />
+          {(post.author?.allow_video_download ?? true) && post.media_url && (
+            <Action
+              onClick={() => {
+                toast.info("Téléchargement en cours…");
+                void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+              }}
+              icon={<Download className="h-7 w-7" />}
+              value="Télécharger"
+            />
+          )}
         </div>
       </div>
 

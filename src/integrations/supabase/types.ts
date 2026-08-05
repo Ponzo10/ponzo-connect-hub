@@ -80,6 +80,41 @@ export type Database = {
         }
         Relationships: []
       }
+      content_hashtags: {
+        Row: {
+          author_id: string | null
+          created_at: string
+          entity_id: string
+          entity_type: string
+          hashtag_id: string
+          id: string
+        }
+        Insert: {
+          author_id?: string | null
+          created_at?: string
+          entity_id: string
+          entity_type: string
+          hashtag_id: string
+          id?: string
+        }
+        Update: {
+          author_id?: string | null
+          created_at?: string
+          entity_id?: string
+          entity_type?: string
+          hashtag_id?: string
+          id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "content_hashtags_hashtag_id_fkey"
+            columns: ["hashtag_id"]
+            isOneToOne: false
+            referencedRelation: "hashtags"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       follows: {
         Row: {
           created_at: string
@@ -314,6 +349,30 @@ export type Database = {
           who_can_edit_info?: string
           who_can_invite?: string
           who_can_send?: string
+        }
+        Relationships: []
+      }
+      hashtags: {
+        Row: {
+          created_at: string
+          id: string
+          tag: string
+          updated_at: string
+          usage_count: number
+        }
+        Insert: {
+          created_at?: string
+          id?: string
+          tag: string
+          updated_at?: string
+          usage_count?: number
+        }
+        Update: {
+          created_at?: string
+          id?: string
+          tag?: string
+          updated_at?: string
+          usage_count?: number
         }
         Relationships: []
       }
@@ -791,6 +850,7 @@ export type Database = {
       profiles: {
         Row: {
           allow_photo_download: boolean
+          allow_video_download: boolean
           avatar_url: string | null
           badge: string
           bio: string | null
@@ -809,6 +869,7 @@ export type Database = {
         }
         Insert: {
           allow_photo_download?: boolean
+          allow_video_download?: boolean
           avatar_url?: string | null
           badge?: string
           bio?: string | null
@@ -827,6 +888,7 @@ export type Database = {
         }
         Update: {
           allow_photo_download?: boolean
+          allow_video_download?: boolean
           avatar_url?: string | null
           badge?: string
           bio?: string | null
@@ -1161,6 +1223,27 @@ export type Database = {
         }
         Returns: boolean
       }
+      hashtag_posts: {
+        Args: { _limit?: number; _tag: string }
+        Returns: {
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          share_count: number
+          tag: string | null
+          updated_at: string
+          view_count: number
+        }[]
+        SetofOptions: {
+          from: "*"
+          to: "posts"
+          isOneToOne: false
+          isSetofReturn: true
+        }
+      }
       increment_news_counter: {
         Args: { _article_id: string; _field: string }
         Returns: number
@@ -1193,6 +1276,14 @@ export type Database = {
         Args: { _id: string; _resolved: boolean }
         Returns: boolean
       }
+      search_hashtags: {
+        Args: { _limit?: number; _term?: string }
+        Returns: {
+          id: string
+          tag: string
+          usage_count: number
+        }[]
+      }
       set_user_role: {
         Args: {
           _grant: boolean
@@ -1201,6 +1292,16 @@ export type Database = {
         }
         Returns: boolean
       }
+      sync_hashtags: {
+        Args: {
+          _author_id: string
+          _entity_id: string
+          _entity_type: string
+          _text: string
+        }
+        Returns: undefined
+      }
+      trending_overview: { Args: { _limit?: number }; Returns: Json }
     }
     Enums: {
       app_role: "owner" | "admin" | "moderator" | "user"

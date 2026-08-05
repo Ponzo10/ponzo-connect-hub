@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  Download,
   Flag,
   Heart,
   MessageSquare,
@@ -19,7 +20,9 @@ import { Badge3D } from "./Badge3D";
 import { FollowButton } from "./FollowButton";
 import { usePhotoViewer } from "./PhotoViewer";
 
+import { HashtagText } from "@/components/ponzo/HashtagText";
 import { useAuth } from "@/lib/auth";
+import { downloadMedia } from "@/lib/trending-api";
 import {
   addReply,
   asPerson,
@@ -281,7 +284,9 @@ export function PostCard({ post }: { post: FeedPost }) {
           </div>
         </div>
       ) : (
-        <p className="whitespace-pre-wrap px-4 py-3 text-[15px] leading-relaxed">{post.body}</p>
+        <p className="whitespace-pre-wrap px-4 py-3 text-[15px] leading-relaxed">
+          <HashtagText text={post.body} />
+        </p>
       )}
 
       {post.media_url && post.media_type === "image" && (
@@ -308,7 +313,28 @@ export function PostCard({ post }: { post: FeedPost }) {
         </button>
       )}
       {post.media_url && post.media_type === "video" && (
-        <video src={post.media_url} controls playsInline className="max-h-[520px] w-full bg-black object-contain" />
+        <div className="relative">
+          <video
+            src={post.media_url}
+            controls
+            playsInline
+            preload="metadata"
+            className="max-h-[520px] w-full bg-black object-contain"
+          />
+          {(post.author?.allow_video_download ?? true) && (
+            <button
+              type="button"
+              aria-label="Télécharger la vidéo"
+              onClick={() => {
+                toast.info("Téléchargement en cours…");
+                void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+              }}
+              className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/80 backdrop-blur-sm"
+            >
+              <Download className="h-4 w-4" />
+            </button>
+          )}
+        </div>
       )}
 
       <div className="flex items-center justify-between px-4 py-2.5 text-xs text-muted-foreground">

@@ -25,9 +25,11 @@ import { Route as ParametresRouteImport } from './routes/parametres'
 import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
+import { Route as TendancesRouteImport } from './routes/tendances'
 import { Route as VideosRouteImport } from './routes/videos'
 import { Route as ActualiteIdRouteImport } from './routes/actualite.$id'
 import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
+import { Route as HashtagTagRouteImport } from './routes/hashtag.$tag'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
 import { Route as PublicationIdRouteImport } from './routes/publication.$id'
 import { Route as ApiPublicHooksNewsSyncRouteImport } from './routes/api/public/hooks/news-sync'
@@ -112,6 +114,11 @@ const RechercheRoute = RechercheRouteImport.update({
   path: '/recherche',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TendancesRoute = TendancesRouteImport.update({
+  id: '/tendances',
+  path: '/tendances',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VideosRoute = VideosRouteImport.update({
   id: '/videos',
   path: '/videos',
@@ -125,6 +132,11 @@ const ActualiteIdRoute = ActualiteIdRouteImport.update({
 const GroupeIdRoute = GroupeIdRouteImport.update({
   id: '/groupe/$id',
   path: '/groupe/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const HashtagTagRoute = HashtagTagRouteImport.update({
+  id: '/hashtag/$tag',
+  path: '/hashtag/$tag',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MembreIdRoute = MembreIdRouteImport.update({
@@ -160,9 +172,11 @@ export interface FileRoutesByFullPath {
   '/profil': typeof ProfilRoute
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
+  '/tendances': typeof TendancesRoute
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
+  '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
@@ -184,9 +198,11 @@ export interface FileRoutesByTo {
   '/profil': typeof ProfilRoute
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
+  '/tendances': typeof TendancesRoute
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
+  '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
@@ -209,9 +225,11 @@ export interface FileRoutesById {
   '/profil': typeof ProfilRoute
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
+  '/tendances': typeof TendancesRoute
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
+  '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
@@ -235,9 +253,11 @@ export interface FileRouteTypes {
     | '/profil'
     | '/publier'
     | '/recherche'
+    | '/tendances'
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
+    | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
     | '/api/public/hooks/news-sync'
@@ -259,9 +279,11 @@ export interface FileRouteTypes {
     | '/profil'
     | '/publier'
     | '/recherche'
+    | '/tendances'
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
+    | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
     | '/api/public/hooks/news-sync'
@@ -283,9 +305,11 @@ export interface FileRouteTypes {
     | '/profil'
     | '/publier'
     | '/recherche'
+    | '/tendances'
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
+    | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
     | '/api/public/hooks/news-sync'
@@ -308,9 +332,11 @@ export interface RootRouteChildren {
   ProfilRoute: typeof ProfilRoute
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
+  TendancesRoute: typeof TendancesRoute
   VideosRoute: typeof VideosRoute
   ActualiteIdRoute: typeof ActualiteIdRoute
   GroupeIdRoute: typeof GroupeIdRoute
+  HashtagTagRoute: typeof HashtagTagRoute
   MembreIdRoute: typeof MembreIdRoute
   PublicationIdRoute: typeof PublicationIdRoute
   ApiPublicHooksNewsSyncRoute: typeof ApiPublicHooksNewsSyncRoute
@@ -430,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RechercheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tendances': {
+      id: '/tendances'
+      path: '/tendances'
+      fullPath: '/tendances'
+      preLoaderRoute: typeof TendancesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/videos': {
       id: '/videos'
       path: '/videos'
@@ -449,6 +482,13 @@ declare module '@tanstack/react-router' {
       path: '/groupe/$id'
       fullPath: '/groupe/$id'
       preLoaderRoute: typeof GroupeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/hashtag/$tag': {
+      id: '/hashtag/$tag'
+      path: '/hashtag/$tag'
+      fullPath: '/hashtag/$tag'
+      preLoaderRoute: typeof HashtagTagRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/membre/$id': {
@@ -492,9 +532,11 @@ const rootRouteChildren: RootRouteChildren = {
   ProfilRoute: ProfilRoute,
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
+  TendancesRoute: TendancesRoute,
   VideosRoute: VideosRoute,
   ActualiteIdRoute: ActualiteIdRoute,
   GroupeIdRoute: GroupeIdRoute,
+  HashtagTagRoute: HashtagTagRoute,
   MembreIdRoute: MembreIdRoute,
   PublicationIdRoute: PublicationIdRoute,
   ApiPublicHooksNewsSyncRoute: ApiPublicHooksNewsSyncRoute,

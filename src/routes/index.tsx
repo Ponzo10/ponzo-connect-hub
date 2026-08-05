@@ -2,6 +2,7 @@ import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
 import {
   Briefcase,
+  Flame,
   ImageIcon,
   Megaphone,
   Newspaper,
@@ -42,6 +43,7 @@ export const Route = createFileRoute("/")({
 });
 
 const quickActions = [
+  { label: "Tendances", icon: Flame, to: "/tendances", tone: "text-destructive" },
   { label: "Actualités", icon: Newspaper, to: "/actualites", tone: "text-primary" },
   { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
   { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
