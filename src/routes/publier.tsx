@@ -28,13 +28,15 @@ export const Route = createFileRoute("/publier")({
   errorComponent: ({ reset }) => (
     <div className="grid min-h-screen place-items-center px-6 text-center">
       <div className="space-y-3">
-        <p className="text-sm font-semibold">Une erreur est survenue pendant la publication.</p>
+        <p className="text-sm font-semibold">Connexion interrompue</p>
+        <p className="text-xs text-muted-foreground">Ta publication n'a pas été perdue, réessaie simplement.</p>
         <button onClick={reset} className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-primary-foreground">
           Réessayer
         </button>
       </div>
     </div>
   ),
+
   component: Publier,
 });
 
