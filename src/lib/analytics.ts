@@ -112,8 +112,8 @@ export async function logSecurityEvent(input: {
       _kind: input.kind,
       _severity: input.severity,
       _title: input.title,
-      _detail: input.detail ?? null,
-      _subject: input.subject ?? null,
+      _detail: input.detail ?? undefined,
+      _subject: input.subject ?? undefined,
       _metadata: (input.metadata ?? {}) as never,
     });
   } catch {
