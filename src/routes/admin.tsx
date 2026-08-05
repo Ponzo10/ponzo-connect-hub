@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Bell, Flag, ShieldCheck, Store, Trash2, Users } from "lucide-react";
+import { Bell, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
@@ -23,7 +23,6 @@ import {
   deletePost,
   fetchActivityLog,
   fetchAllRoles,
-  fetchAppStats,
   fetchFeed,
   fetchProfiles,
   fetchReports,
@@ -278,13 +277,3 @@ function Admin() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="rounded-2xl bg-surface p-4 shadow-soft">
-      <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-        {icon} {label}
-      </span>
-      <p className="mt-1 text-2xl font-extrabold">{value}</p>
-    </div>
-  );
-}
