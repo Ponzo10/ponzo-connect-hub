@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ponzo/Avatar";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
-import { asPerson, fetchFeed, fetchProfiles } from "@/lib/ponzo-api";
+import { asPerson, fetchFeed } from "@/lib/ponzo-api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,18 +29,18 @@ export const Route = createFileRoute("/")({
 });
 
 const quickActions = [
-  { label: "Je cherche", hint: "Trouver ce dont vous avez besoin", icon: Search, to: "/publier", tone: "text-primary" },
-  { label: "Je propose", hint: "Proposer vos services", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
-  { label: "Mon projet", hint: "Partager vos projets", icon: Briefcase, to: "/publier", tone: "text-primary" },
-  { label: "Marketplace", hint: "Acheter et vendre", icon: ShoppingBag, to: "/marketplace", tone: "text-foreground" },
-  { label: "Vidéos", hint: "Regarder et partager", icon: Video, to: "/videos", tone: "text-destructive" },
-  { label: "Live", hint: "Diffusions en direct", icon: Radio, to: "/decouvrir", tone: "text-primary" },
+  { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
+  { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
+  { label: "Mon projet", icon: Briefcase, to: "/publier", tone: "text-primary" },
+  { label: "Marketplace", icon: ShoppingBag, to: "/marketplace", tone: "text-foreground" },
+  { label: "Vidéos", icon: Video, to: "/videos", tone: "text-destructive" },
+  { label: "Groupes", icon: Users, to: "/groupes", tone: "text-accent-foreground" },
+  { label: "Live", icon: Radio, to: "/decouvrir", tone: "text-primary" },
 ] as const;
 
 function Feed() {
   const { user, profile } = useAuth();
   const feed = useQuery({ queryKey: ["feed"], queryFn: fetchFeed });
-  const members = useQuery({ queryKey: ["profiles", "recent"], queryFn: () => fetchProfiles() });
 
   return (
     <AppShell>
@@ -66,39 +66,19 @@ function Feed() {
 
       <StoriesBar />
 
-      <section className="mt-4">
-        <h2 className="sr-only">Membres</h2>
-        <div className="no-scrollbar flex gap-3 overflow-x-auto px-3 pb-1">
-          {members.data?.slice(0, 12).map((m) => (
-            <Link
-              key={m.id}
-              to="/membre/$id"
-              params={{ id: m.id }}
-              className="relative flex h-44 w-28 shrink-0 flex-col items-center justify-end gap-1 overflow-hidden rounded-2xl bg-secondary p-2 shadow-soft"
-            >
-              <span className="absolute inset-x-0 top-0 flex justify-center pt-3">
-                <Avatar person={asPerson(m)} size={56} ring />
-              </span>
-              <span className="w-full truncate text-center text-xs font-semibold">{m.full_name}</span>
-              <span className="w-full truncate text-center text-[10px] text-muted-foreground">{m.role ?? "Membre"}</span>
-            </Link>
-          ))}
-        </div>
-      </section>
-
       <section className="mt-4 px-3">
-        <div className="no-scrollbar flex gap-2 overflow-x-auto rounded-2xl bg-surface p-3 shadow-soft">
+        <h2 className="sr-only">Actions rapides</h2>
+        <div className="grid grid-cols-4 gap-2">
           {quickActions.map((a) => {
             const Icon = a.icon;
             return (
               <Link
                 key={a.label}
                 to={a.to}
-                className="flex w-24 shrink-0 flex-col items-center gap-1.5 rounded-xl px-1 py-2 text-center transition-colors hover:bg-muted"
+                className="flex flex-col items-center gap-1.5 rounded-2xl bg-surface px-1 py-2.5 text-center shadow-soft transition-colors hover:bg-muted"
               >
-                <Icon className={`h-6 w-6 ${a.tone}`} />
-                <span className="text-xs font-semibold">{a.label}</span>
-                <span className="text-[10px] leading-tight text-muted-foreground">{a.hint}</span>
+                <Icon className={`h-5 w-5 ${a.tone}`} />
+                <span className="text-[11px] font-semibold leading-tight">{a.label}</span>
               </Link>
             );
           })}
