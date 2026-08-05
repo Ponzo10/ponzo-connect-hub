@@ -7,7 +7,7 @@ import { Avatar } from "@/components/ponzo/Avatar";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
-import { asPerson, fetchFeed, fetchProfiles } from "@/lib/ponzo-api";
+import { asPerson, fetchFeed } from "@/lib/ponzo-api";
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -41,7 +41,6 @@ const quickActions = [
 function Feed() {
   const { user, profile } = useAuth();
   const feed = useQuery({ queryKey: ["feed"], queryFn: fetchFeed });
-  const members = useQuery({ queryKey: ["profiles", "recent"], queryFn: () => fetchProfiles() });
 
   return (
     <AppShell>
