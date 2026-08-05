@@ -1,0 +1,1 @@
+ALTER TABLE public.profiles ADD COLUMN IF NOT EXISTS allow_photo_download boolean NOT NULL DEFAULT true;
