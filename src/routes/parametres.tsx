@@ -226,6 +226,12 @@ function Parametres() {
             icon={<Shield className="h-5 w-5 text-primary" />}
           />
           <Toggle
+            checked={allowVideoDownload}
+            onChange={(v) => void toggleVideoDownload(v)}
+            label="Autoriser le téléchargement de mes vidéos"
+            icon={<Shield className="h-5 w-5 text-primary" />}
+          />
+          <Toggle
             checked={privateAccount}
             onChange={setPrivateAccount}
             label="Compte privé"
