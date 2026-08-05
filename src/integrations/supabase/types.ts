@@ -329,6 +329,170 @@ export type Database = {
           },
         ]
       }
+      news_articles: {
+        Row: {
+          category: string
+          content: string | null
+          country: string | null
+          created_at: string
+          id: string
+          image_url: string | null
+          is_important: boolean
+          published_at: string
+          relevance: number
+          repost_count: number
+          share_count: number
+          source: string
+          source_url: string | null
+          summary: string | null
+          title: string
+          updated_at: string
+          view_count: number
+        }
+        Insert: {
+          category?: string
+          content?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_important?: boolean
+          published_at?: string
+          relevance?: number
+          repost_count?: number
+          share_count?: number
+          source?: string
+          source_url?: string | null
+          summary?: string | null
+          title: string
+          updated_at?: string
+          view_count?: number
+        }
+        Update: {
+          category?: string
+          content?: string | null
+          country?: string | null
+          created_at?: string
+          id?: string
+          image_url?: string | null
+          is_important?: boolean
+          published_at?: string
+          relevance?: number
+          repost_count?: number
+          share_count?: number
+          source?: string
+          source_url?: string | null
+          summary?: string | null
+          title?: string
+          updated_at?: string
+          view_count?: number
+        }
+        Relationships: []
+      }
+      news_comments: {
+        Row: {
+          article_id: string
+          author_id: string
+          body: string
+          created_at: string
+          id: string
+          parent_id: string | null
+          updated_at: string
+        }
+        Insert: {
+          article_id: string
+          author_id: string
+          body: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Update: {
+          article_id?: string
+          author_id?: string
+          body?: string
+          created_at?: string
+          id?: string
+          parent_id?: string | null
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_comments_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_articles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_comments_author_id_fkey"
+            columns: ["author_id"]
+            isOneToOne: false
+            referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "news_comments_parent_id_fkey"
+            columns: ["parent_id"]
+            isOneToOne: false
+            referencedRelation: "news_comments"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_likes: {
+        Row: {
+          article_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_likes_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      news_saves: {
+        Row: {
+          article_id: string
+          created_at: string
+          user_id: string
+        }
+        Insert: {
+          article_id: string
+          created_at?: string
+          user_id: string
+        }
+        Update: {
+          article_id?: string
+          created_at?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "news_saves_article_id_fkey"
+            columns: ["article_id"]
+            isOneToOne: false
+            referencedRelation: "news_articles"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       notifications: {
         Row: {
           actor_id: string | null
@@ -915,6 +1079,10 @@ export type Database = {
           _user_id: string
         }
         Returns: boolean
+      }
+      increment_news_counter: {
+        Args: { _article_id: string; _field: string }
+        Returns: number
       }
       increment_share: { Args: { _post_id: string }; Returns: number }
       increment_view: { Args: { _post_id: string }; Returns: number }
