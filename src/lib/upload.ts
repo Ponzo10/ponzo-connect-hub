@@ -5,6 +5,7 @@ const TEN_YEARS = 60 * 60 * 24 * 3650;
 const MAX_BYTES = 200 * 1024 * 1024; // 200 Mo
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
 const RESUMABLE_CHUNK_SIZE = 6 * 1024 * 1024;
+const SIGN_ATTEMPTS = 5;
 
 export type MediaKind = "image" | "video" | "audio" | "file";
 
@@ -40,14 +41,32 @@ function safeExt(name: string, kind: MediaKind) {
 
 const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 
-async function resumableUpload(path: string, file: File, contentType: string) {
+async function activeAccessToken() {
   const { data, error } = await supabase.auth.getSession();
-  const accessToken = data.session?.access_token;
+  if (error || !data.session) throw error ?? new Error("Session d'envoi indisponible");
+
+  const expiresSoon = (data.session.expires_at ?? 0) * 1000 - Date.now() < 5 * 60 * 1000;
+  if (!expiresSoon) return data.session.access_token;
+
+  const refreshed = await supabase.auth.refreshSession();
+  if (refreshed.error || !refreshed.data.session) {
+    throw refreshed.error ?? new Error("Session expirée. Reconnecte-toi puis réessaie.");
+  }
+  return refreshed.data.session.access_token;
+}
+
+async function resumableUpload(
+  path: string,
+  file: File,
+  contentType: string,
+  onProgress?: (progress: number) => void,
+) {
+  const accessToken = await activeAccessToken();
   const projectUrl = import.meta.env["VITE_SUPABASE_URL"];
   const publishableKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
 
-  if (error || !accessToken || !projectUrl || !publishableKey) {
-    throw error ?? new Error("Session d'envoi indisponible");
+  if (!projectUrl || !publishableKey) {
+    throw new Error("Service d'envoi indisponible");
   }
 
   await new Promise<void>((resolve, reject) => {
@@ -68,8 +87,15 @@ async function resumableUpload(path: string, file: File, contentType: string) {
       chunkSize: RESUMABLE_CHUNK_SIZE,
       retryDelays: [0, 1000, 3000, 5000, 10000],
       removeFingerprintOnSuccess: true,
+      // Le chemin fait partie de l'empreinte. Sans cela, TUS peut reprendre un
+      // ancien envoi du même fichier vers un autre objet après une interruption.
+      fingerprint: async () => `ponzo-${path}-${file.size}-${file.lastModified}`,
+      onProgress: (uploaded, total) => onProgress?.(total > 0 ? uploaded / total : 0),
       onError: reject,
-      onSuccess: () => resolve(),
+      onSuccess: () => {
+        onProgress?.(1);
+        resolve();
+      },
     });
 
     void upload.findPreviousUploads().then((previousUploads) => {
@@ -85,6 +111,7 @@ export async function uploadMedia(
   file: File,
   folder = "posts",
   expected?: MediaKind,
+  onProgress?: (progress: number) => void,
 ): Promise<UploadResult> {
   if (!userId) throw new Error("Connecte-toi pour envoyer un fichier.");
   if (file.size === 0) throw new Error("Ce fichier est vide ou illisible.");
@@ -97,30 +124,56 @@ export async function uploadMedia(
   const contentType = file.type || (kind === "video" ? "video/mp4" : kind === "image" ? "image/jpeg" : "application/octet-stream");
   const path = `${userId}/${folder}/${safeId()}.${safeExt(name, kind)}`;
   let lastError: unknown = null;
+  let uploaded = false;
 
   for (let attempt = 0; attempt < 3; attempt += 1) {
     try {
       if (file.size >= RESUMABLE_THRESHOLD) {
-        await resumableUpload(path, file, contentType);
+        await resumableUpload(path, file, contentType, onProgress);
       } else {
+        await activeAccessToken();
         const { error } = await supabase.storage
           .from("media")
           .upload(path, file, { contentType, upsert: true, cacheControl: "31536000" });
         if (error) throw error;
+        onProgress?.(1);
       }
-
-      const { data, error: signError } = await supabase.storage.from("media").createSignedUrl(path, TEN_YEARS);
-      if (signError || !data?.signedUrl) throw signError ?? new Error("URL indisponible");
-
-      return { url: data.signedUrl, path, kind, name };
+      uploaded = true;
+      break;
     } catch (error) {
       lastError = error;
-      if (attempt < 2) await sleep(600 * (attempt + 1));
+      if (attempt < 2) {
+        if (typeof navigator !== "undefined" && !navigator.onLine) {
+          await new Promise<void>((resolve) => {
+            const timeout = window.setTimeout(resolve, 15_000);
+            window.addEventListener("online", () => {
+              window.clearTimeout(timeout);
+              resolve();
+            }, { once: true });
+          });
+        } else {
+          await sleep(800 * (attempt + 1));
+        }
+      }
     }
   }
 
-  const message = lastError instanceof Error ? lastError.message : "Envoi impossible";
-  throw new Error(`Envoi du fichier impossible : ${message}`);
+  if (!uploaded) {
+    const message = lastError instanceof Error ? lastError.message : "Envoi impossible";
+    throw new Error(`Envoi du fichier impossible : ${message}`);
+  }
+
+  // La signature est une requête séparée : si elle échoue brièvement, ne pas
+  // renvoyer tout le fichier (particulièrement coûteux pour une vidéo).
+  for (let attempt = 0; attempt < SIGN_ATTEMPTS; attempt += 1) {
+    const { data, error } = await supabase.storage.from("media").createSignedUrl(path, TEN_YEARS);
+    if (!error && data?.signedUrl) return { url: data.signedUrl, path, kind, name };
+    lastError = error;
+    if (attempt < SIGN_ATTEMPTS - 1) await sleep(500 * (attempt + 1));
+  }
+
+  const message = lastError instanceof Error ? lastError.message : "URL indisponible";
+  throw new Error(`Fichier envoyé, mais confirmation impossible : ${message}`);
 }
 
 export async function removeUploadedMedia(path: string) {
