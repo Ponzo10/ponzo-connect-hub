@@ -131,7 +131,15 @@ function AuthPage() {
       if (channel === "email") await submitEmail();
       else await submitPhone();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Une erreur est survenue");
+      const message = error instanceof Error ? error.message : "Une erreur est survenue";
+      void logSecurityEvent({
+        kind: "auth_failure",
+        severity: "warning",
+        title: "Échec de connexion",
+        detail: message,
+        subject: channel === "email" ? email.trim().toLowerCase() : phone.trim(),
+      });
+      toast.error(message);
     } finally {
       setBusy(false);
     }
