@@ -11,6 +11,7 @@ import { useEffect, type ReactNode } from "react";
 
 import appCss from "../styles.css?url";
 import { AuthProvider } from "../lib/auth";
+import { I18nProvider } from "../lib/i18n";
 import { Toaster } from "../components/ui/sonner";
 import { PhotoViewerProvider } from "../components/ponzo/PhotoViewer";
 import { UsageTracker } from "../components/ponzo/UsageTracker";
