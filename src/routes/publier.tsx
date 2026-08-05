@@ -21,10 +21,23 @@ export const Route = createFileRoute("/publier")({
       },
       { property: "og:title", content: "Créer une publication — PONZO" },
       { property: "og:description", content: "Partage tes idées, tes services et tes projets avec la communauté." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
+  errorComponent: ({ reset }) => (
+    <div className="grid min-h-screen place-items-center px-6 text-center">
+      <div className="space-y-3">
+        <p className="text-sm font-semibold">Une erreur est survenue pendant la publication.</p>
+        <button onClick={reset} className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-primary-foreground">
+          Réessayer
+        </button>
+      </div>
+    </div>
+  ),
   component: Publier,
 });
+
 
 const kinds = [
   { label: "Publication", icon: Sparkles },
@@ -46,18 +59,25 @@ function Publier() {
   const videoRef = useRef<HTMLInputElement>(null);
 
   const pick = async (file: File | undefined) => {
-    if (!file || !user) return;
+    if (!file) return;
+    if (!user) {
+      toast.error("Connecte-toi pour ajouter un fichier.");
+      return;
+    }
     setUploading(true);
     try {
       const result = await uploadMedia(user.id, file, "posts");
       setMedia({ url: result.url, type: result.kind === "video" ? "video" : "image" });
       toast.success("Fichier ajouté");
-    } catch {
-      toast.error("Envoi du fichier impossible.");
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Envoi du fichier impossible.");
     } finally {
       setUploading(false);
+      if (photoRef.current) photoRef.current.value = "";
+      if (videoRef.current) videoRef.current.value = "";
     }
   };
+
 
   const publish = async () => {
     if (!user) return;

@@ -17,9 +17,11 @@ export const Route = createFileRoute("/auth")({
   head: () => ({
     meta: [
       { title: "Connexion — PONZO" },
-      { name: "description", content: "Connecte-toi ou crée ton compte PONZO pour publier, échanger et développer ton réseau professionnel." },
+      { name: "description", content: "Connecte-toi ou crée ton compte PONZO par e-mail, téléphone, Google ou Apple pour publier et développer ton réseau." },
       { property: "og:title", content: "Connexion — PONZO" },
       { property: "og:description", content: "Rejoins la communauté PONZO : opportunités, services et projets." },
+      { property: "og:type", content: "website" },
+      { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
   component: AuthPage,
@@ -30,9 +32,18 @@ function safePath(value: string | undefined) {
   return value;
 }
 
+function isAppleDevice() {
+  if (typeof navigator === "undefined") return false;
+  return /iPhone|iPad|iPod|Macintosh/i.test(navigator.userAgent);
+}
+
 function AuthPage() {
   const [mode, setMode] = useState<"signin" | "signup">("signin");
+  const [channel, setChannel] = useState<"email" | "phone">("email");
   const [email, setEmail] = useState("");
+  const [phone, setPhone] = useState("");
+  const [otp, setOtp] = useState("");
+  const [otpSent, setOtpSent] = useState(false);
   const [password, setPassword] = useState("");
   const [fullName, setFullName] = useState("");
   const [role, setRole] = useState("");
@@ -42,34 +53,83 @@ function AuthPage() {
   const navigate = useNavigate();
   const search = useSearch({ from: "/auth" });
   const target = safePath(search.redirect);
+  const [appleAvailable, setAppleAvailable] = useState(false);
+
+  useEffect(() => setAppleAvailable(isAppleDevice()), []);
 
   useEffect(() => {
     if (user) void navigate({ to: target, replace: true });
   }, [user, navigate, target]);
 
+  const resetPassword = async () => {
+    if (!email) {
+      toast.error("Saisis d'abord ton adresse e-mail.");
+      return;
+    }
+    const { error } = await supabase.auth.resetPasswordForEmail(email, {
+      redirectTo: `${window.location.origin}/parametres`,
+    });
+    if (error) toast.error(error.message);
+    else toast.success("E-mail de récupération envoyé.");
+  };
+
+  const submitEmail = async () => {
+    if (password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères.");
+      return;
+    }
+    if (mode === "signup") {
+      const { data, error } = await supabase.auth.signUp({
+        email,
+        password,
+        options: {
+          emailRedirectTo: window.location.origin,
+          data: { full_name: fullName || email.split("@")[0], role },
+        },
+      });
+      if (error) throw error;
+      if (!data.session) {
+        setSent(true);
+        toast.success("Compte créé — confirme ton adresse e-mail pour continuer.");
+      }
+    } else {
+      const { error } = await supabase.auth.signInWithPassword({ email, password });
+      if (error) throw error;
+      toast.success("Bienvenue sur PONZO 👋");
+    }
+  };
+
+  const submitPhone = async () => {
+    const cleaned = phone.replace(/[^\d+]/g, "");
+    if (!cleaned.startsWith("+") || cleaned.length < 8) {
+      toast.error("Utilise le format international, ex : +243900000000");
+      return;
+    }
+    if (!otpSent) {
+      const { error } = await supabase.auth.signInWithOtp({
+        phone: cleaned,
+        options: {
+          ...(mode === "signup"
+            ? { data: { full_name: fullName || `Membre ${cleaned.slice(-4)}`, role } }
+            : { shouldCreateUser: false }),
+        },
+      });
+      if (error) throw error;
+      setOtpSent(true);
+      toast.success("Code envoyé par SMS.");
+      return;
+    }
+    const { error } = await supabase.auth.verifyOtp({ phone: cleaned, token: otp.trim(), type: "sms" });
+    if (error) throw error;
+    toast.success("Bienvenue sur PONZO 👋");
+  };
+
   const submit = async (e: React.FormEvent) => {
     e.preventDefault();
     setBusy(true);
     try {
-      if (mode === "signup") {
-        const { data, error } = await supabase.auth.signUp({
-          email,
-          password,
-          options: {
-            emailRedirectTo: window.location.origin,
-            data: { full_name: fullName || email.split("@")[0], role },
-          },
-        });
-        if (error) throw error;
-        if (!data.session) {
-          setSent(true);
-          toast.success("Compte créé — confirme ton adresse e-mail pour continuer.");
-        }
-      } else {
-        const { error } = await supabase.auth.signInWithPassword({ email, password });
-        if (error) throw error;
-        toast.success("Bienvenue sur PONZO 👋");
-      }
+      if (channel === "email") await submitEmail();
+      else await submitPhone();
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Une erreur est survenue");
     } finally {
@@ -77,9 +137,9 @@ function AuthPage() {
     }
   };
 
-  const google = async () => {
-    const result = await lovable.auth.signInWithOAuth("google", { redirect_uri: window.location.origin });
-    if (result.error) toast.error("Connexion Google impossible pour le moment.");
+  const oauth = async (provider: "google" | "apple") => {
+    const result = await lovable.auth.signInWithOAuth(provider, { redirect_uri: window.location.origin });
+    if (result.error) toast.error(`Connexion ${provider === "google" ? "Google" : "Apple"} impossible pour le moment.`);
   };
 
   return (
@@ -94,13 +154,37 @@ function AuthPage() {
               <button
                 key={m}
                 type="button"
-                onClick={() => setMode(m)}
+                onClick={() => {
+                  setMode(m);
+                  setOtpSent(false);
+                  setSent(false);
+                }}
                 className={cn(
                   "rounded-full py-2 transition-colors",
                   mode === m ? "bg-brand text-primary-foreground" : "text-muted-foreground",
                 )}
               >
                 {m === "signin" ? "Connexion" : "Inscription"}
+              </button>
+            ))}
+          </div>
+
+          <div className="mb-4 grid grid-cols-2 gap-1 rounded-full border border-border p-1 text-xs font-semibold">
+            {(["email", "phone"] as const).map((c) => (
+              <button
+                key={c}
+                type="button"
+                onClick={() => {
+                  setChannel(c);
+                  setOtpSent(false);
+                  setSent(false);
+                }}
+                className={cn(
+                  "rounded-full py-2 transition-colors",
+                  channel === c ? "bg-primary-soft text-primary" : "text-muted-foreground",
+                )}
+              >
+                {c === "email" ? "E-mail" : "Téléphone"}
               </button>
             ))}
           </div>
@@ -117,22 +201,63 @@ function AuthPage() {
                   <Field label="Métier" value={role} onChange={setRole} placeholder="Designer produit • Dakar" />
                 </>
               )}
-              <Field label="E-mail" type="email" value={email} onChange={setEmail} placeholder="toi@exemple.com" required />
-              <Field
-                label="Mot de passe"
-                type="password"
-                value={password}
-                onChange={setPassword}
-                placeholder="••••••••"
-                required
-              />
+
+              {channel === "email" ? (
+                <>
+                  <Field label="E-mail" type="email" value={email} onChange={setEmail} placeholder="toi@exemple.com" required />
+                  <Field
+                    label="Mot de passe (6 caractères min.)"
+                    type="password"
+                    value={password}
+                    onChange={setPassword}
+                    placeholder="••••••"
+                    required
+                  />
+                </>
+              ) : (
+                <>
+                  <Field
+                    label="Numéro de téléphone"
+                    type="tel"
+                    value={phone}
+                    onChange={(v) => {
+                      setPhone(v);
+                      setOtpSent(false);
+                    }}
+                    placeholder="+243900000000"
+                    required
+                  />
+                  {otpSent && (
+                    <Field label="Code reçu par SMS" value={otp} onChange={setOtp} placeholder="123456" required />
+                  )}
+                </>
+              )}
+
               <button
                 type="submit"
                 disabled={busy}
                 className="w-full rounded-full bg-brand py-3 text-sm font-bold text-primary-foreground shadow-lift disabled:opacity-50"
               >
-                {busy ? "Un instant…" : mode === "signin" ? "Se connecter" : "Créer mon compte"}
+                {busy
+                  ? "Un instant…"
+                  : channel === "phone"
+                    ? otpSent
+                      ? "Vérifier le code"
+                      : "Recevoir un code SMS"
+                    : mode === "signin"
+                      ? "Se connecter"
+                      : "Créer mon compte"}
               </button>
+
+              {channel === "email" && mode === "signin" && (
+                <button
+                  type="button"
+                  onClick={resetPassword}
+                  className="w-full text-center text-xs font-semibold text-muted-foreground underline"
+                >
+                  Mot de passe oublié ?
+                </button>
+              )}
             </form>
           )}
 
@@ -140,13 +265,24 @@ function AuthPage() {
             <span className="h-px flex-1 bg-border" /> ou <span className="h-px flex-1 bg-border" />
           </div>
 
-          <button
-            type="button"
-            onClick={google}
-            className="w-full rounded-full border border-border bg-background py-3 text-sm font-semibold transition-colors hover:bg-muted"
-          >
-            Continuer avec Google
-          </button>
+          <div className="space-y-2">
+            <button
+              type="button"
+              onClick={() => void oauth("google")}
+              className="w-full rounded-full border border-border bg-background py-3 text-sm font-semibold transition-colors hover:bg-muted"
+            >
+              Continuer avec Google
+            </button>
+            {appleAvailable && (
+              <button
+                type="button"
+                onClick={() => void oauth("apple")}
+                className="w-full rounded-full border border-border bg-foreground py-3 text-sm font-semibold text-background transition-opacity hover:opacity-90"
+              >
+                 Continuer avec Apple
+              </button>
+            )}
+          </div>
         </div>
       </div>
     </div>
