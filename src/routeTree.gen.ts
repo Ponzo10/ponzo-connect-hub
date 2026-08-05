@@ -25,6 +25,7 @@ import { Route as ParametresRouteImport } from './routes/parametres'
 import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
+import { Route as TendancesRouteImport } from './routes/tendances'
 import { Route as VideosRouteImport } from './routes/videos'
 import { Route as ActualiteIdRouteImport } from './routes/actualite.$id'
 import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
@@ -113,6 +114,11 @@ const RechercheRoute = RechercheRouteImport.update({
   path: '/recherche',
   getParentRoute: () => rootRouteImport,
 } as any)
+const TendancesRoute = TendancesRouteImport.update({
+  id: '/tendances',
+  path: '/tendances',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const VideosRoute = VideosRouteImport.update({
   id: '/videos',
   path: '/videos',
@@ -166,6 +172,7 @@ export interface FileRoutesByFullPath {
   '/profil': typeof ProfilRoute
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
+  '/tendances': typeof TendancesRoute
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
@@ -191,6 +198,7 @@ export interface FileRoutesByTo {
   '/profil': typeof ProfilRoute
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
+  '/tendances': typeof TendancesRoute
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
@@ -217,6 +225,7 @@ export interface FileRoutesById {
   '/profil': typeof ProfilRoute
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
+  '/tendances': typeof TendancesRoute
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
@@ -244,6 +253,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/publier'
     | '/recherche'
+    | '/tendances'
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
@@ -269,6 +279,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/publier'
     | '/recherche'
+    | '/tendances'
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
@@ -294,6 +305,7 @@ export interface FileRouteTypes {
     | '/profil'
     | '/publier'
     | '/recherche'
+    | '/tendances'
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
@@ -320,6 +332,7 @@ export interface RootRouteChildren {
   ProfilRoute: typeof ProfilRoute
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
+  TendancesRoute: typeof TendancesRoute
   VideosRoute: typeof VideosRoute
   ActualiteIdRoute: typeof ActualiteIdRoute
   GroupeIdRoute: typeof GroupeIdRoute
@@ -443,6 +456,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof RechercheRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/tendances': {
+      id: '/tendances'
+      path: '/tendances'
+      fullPath: '/tendances'
+      preLoaderRoute: typeof TendancesRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/videos': {
       id: '/videos'
       path: '/videos'
@@ -512,6 +532,7 @@ const rootRouteChildren: RootRouteChildren = {
   ProfilRoute: ProfilRoute,
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
+  TendancesRoute: TendancesRoute,
   VideosRoute: VideosRoute,
   ActualiteIdRoute: ActualiteIdRoute,
   GroupeIdRoute: GroupeIdRoute,
