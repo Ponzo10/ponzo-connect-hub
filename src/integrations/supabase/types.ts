@@ -44,6 +44,42 @@ export type Database = {
         }
         Relationships: []
       }
+      app_events: {
+        Row: {
+          created_at: string
+          duration_ms: number | null
+          id: string
+          kind: string
+          metadata: Json
+          name: string
+          path: string | null
+          session_id: string | null
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          kind?: string
+          metadata?: Json
+          name: string
+          path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          duration_ms?: number | null
+          id?: string
+          kind?: string
+          metadata?: Json
+          name?: string
+          path?: string | null
+          session_id?: string | null
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       follows: {
         Row: {
           created_at: string
@@ -839,6 +875,48 @@ export type Database = {
         }
         Relationships: []
       }
+      security_events: {
+        Row: {
+          created_at: string
+          detail: string | null
+          id: string
+          kind: string
+          metadata: Json
+          resolved: boolean
+          resolved_at: string | null
+          severity: string
+          subject: string | null
+          title: string
+          user_id: string | null
+        }
+        Insert: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind: string
+          metadata?: Json
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
+          subject?: string | null
+          title: string
+          user_id?: string | null
+        }
+        Update: {
+          created_at?: string
+          detail?: string | null
+          id?: string
+          kind?: string
+          metadata?: Json
+          resolved?: boolean
+          resolved_at?: string | null
+          severity?: string
+          subject?: string | null
+          title?: string
+          user_id?: string | null
+        }
+        Relationships: []
+      }
       shops: {
         Row: {
           address: string | null
@@ -1096,6 +1174,22 @@ export type Database = {
       }
       is_group_public: { Args: { _group_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
+      log_security_event: {
+        Args: {
+          _detail?: string
+          _kind: string
+          _metadata?: Json
+          _severity: string
+          _subject?: string
+          _title: string
+        }
+        Returns: string
+      }
+      owner_dashboard: { Args: never; Returns: Json }
+      resolve_security_event: {
+        Args: { _id: string; _resolved: boolean }
+        Returns: boolean
+      }
       set_user_role: {
         Args: {
           _grant: boolean

@@ -1,10 +1,20 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Activity, Bell, Flag, ShieldCheck, Store, Trash2, Users } from "lucide-react";
+import { Bell, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
+import {
+  ContentTab,
+  InsightsTab,
+  OverviewTab,
+  PerformanceTab,
+  ReportTab,
+  SecurityTab,
+  UsageTab,
+  useOwnerDashboard,
+} from "@/components/ponzo/OwnerDashboard";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { useAuth } from "@/lib/auth";
 import {
@@ -13,7 +23,6 @@ import {
   deletePost,
   fetchActivityLog,
   fetchAllRoles,
-  fetchAppStats,
   fetchFeed,
   fetchProfiles,
   fetchReports,
@@ -38,14 +47,28 @@ export const Route = createFileRoute("/admin")({
   component: Admin,
 });
 
-const tabs = ["Statistiques", "Membres", "Publications", "Signalements", "Boutiques", "Journal", "Diffusion"] as const;
+const tabs = [
+  "Vue d'ensemble",
+  "Contenu",
+  "Usage",
+  "Performance",
+  "Sécurité",
+  "Analyse",
+  "Rapport",
+  "Membres",
+  "Publications",
+  "Signalements",
+  "Boutiques",
+  "Journal",
+  "Diffusion",
+] as const;
 
 function Admin() {
   const { user, isStaff, isOwner } = useAuth();
-  const [tab, setTab] = useState<(typeof tabs)[number]>("Statistiques");
+  const [tab, setTab] = useState<(typeof tabs)[number]>("Vue d'ensemble");
   const queryClient = useQueryClient();
 
-  const stats = useQuery({ queryKey: ["admin-stats"], queryFn: fetchAppStats, enabled: isStaff });
+  const dashboard = useOwnerDashboard(isStaff);
   const people = useQuery({ queryKey: ["admin-people"], queryFn: () => fetchProfiles(), enabled: isStaff });
   const roles = useQuery({ queryKey: ["admin-roles"], queryFn: fetchAllRoles, enabled: isStaff });
   const posts = useQuery({ queryKey: ["admin-posts"], queryFn: fetchFeed, enabled: isStaff });
@@ -93,14 +116,13 @@ function Admin() {
       </div>
 
       <div className="space-y-2 px-3 py-4">
-        {tab === "Statistiques" && (
-          <div className="grid grid-cols-2 gap-2">
-            <StatCard icon={<Users className="h-4 w-4" />} label="Membres" value={stats.data?.['profiles'] ?? 0} />
-            <StatCard icon={<Activity className="h-4 w-4" />} label="Publications" value={stats.data?.['posts'] ?? 0} />
-            <StatCard icon={<Store className="h-4 w-4" />} label="Produits" value={stats.data?.['products'] ?? 0} />
-            <StatCard icon={<Flag className="h-4 w-4" />} label="Signalements" value={stats.data?.['reports'] ?? 0} />
-          </div>
-        )}
+        {tab === "Vue d'ensemble" && <OverviewTab d={dashboard.data} />}
+        {tab === "Contenu" && <ContentTab d={dashboard.data} />}
+        {tab === "Usage" && <UsageTab d={dashboard.data} />}
+        {tab === "Performance" && <PerformanceTab d={dashboard.data} />}
+        {tab === "Sécurité" && <SecurityTab />}
+        {tab === "Analyse" && <InsightsTab d={dashboard.data} />}
+        {tab === "Rapport" && <ReportTab d={dashboard.data} />}
 
         {tab === "Membres" &&
           (people.data ?? []).map((p) => {
@@ -255,13 +277,3 @@ function Admin() {
   );
 }
 
-function StatCard({ icon, label, value }: { icon: React.ReactNode; label: string; value: number }) {
-  return (
-    <div className="rounded-2xl bg-surface p-4 shadow-soft">
-      <span className="flex items-center gap-2 text-xs font-semibold text-muted-foreground">
-        {icon} {label}
-      </span>
-      <p className="mt-1 text-2xl font-extrabold">{value}</p>
-    </div>
-  );
-}

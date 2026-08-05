@@ -5,6 +5,7 @@ import { toast } from "sonner";
 import { PonzoLogo } from "@/components/ponzo/PonzoLogo";
 import { supabase } from "@/integrations/supabase/client";
 import { lovable } from "@/integrations/lovable/index";
+import { logSecurityEvent } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
 import { cn } from "@/lib/utils";
 
@@ -131,7 +132,15 @@ function AuthPage() {
       if (channel === "email") await submitEmail();
       else await submitPhone();
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Une erreur est survenue");
+      const message = error instanceof Error ? error.message : "Une erreur est survenue";
+      void logSecurityEvent({
+        kind: "auth_failure",
+        severity: "warning",
+        title: "Échec de connexion",
+        detail: message,
+        subject: channel === "email" ? email.trim().toLowerCase() : phone.trim(),
+      });
+      toast.error(message);
     } finally {
       setBusy(false);
     }
