@@ -16,6 +16,8 @@ import { toast } from "sonner";
 
 import { Avatar } from "./Avatar";
 import { Badge3D } from "./Badge3D";
+import { FollowButton } from "./FollowButton";
+
 import { useAuth } from "@/lib/auth";
 import {
   addReply,
