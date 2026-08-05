@@ -112,10 +112,12 @@ function GroupsPage() {
                 </div>
                 <button
                   onClick={() => void join(g)}
-                  className="shrink-0 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground"
+                  disabled={groups.data?.pending.has(g.id)}
+                  className="shrink-0 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
                 >
-                  Rejoindre
+                  {groups.data?.pending.has(g.id) ? "En attente" : g.is_public ? "Rejoindre" : "Demander"}
                 </button>
+
               </li>
             ))}
           </ul>
