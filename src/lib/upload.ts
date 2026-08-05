@@ -43,8 +43,8 @@ const sleep = (ms: number) => new Promise((r) => setTimeout(r, ms));
 async function resumableUpload(path: string, file: File, contentType: string) {
   const { data, error } = await supabase.auth.getSession();
   const accessToken = data.session?.access_token;
-  const projectUrl = import.meta.env.VITE_SUPABASE_URL;
-  const publishableKey = import.meta.env.VITE_SUPABASE_PUBLISHABLE_KEY;
+  const projectUrl = import.meta.env["VITE_SUPABASE_URL"];
+  const publishableKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
 
   if (error || !accessToken || !projectUrl || !publishableKey) {
     throw error ?? new Error("Session d'envoi indisponible");
@@ -69,7 +69,7 @@ async function resumableUpload(path: string, file: File, contentType: string) {
       retryDelays: [0, 1000, 3000, 5000, 10000],
       removeFingerprintOnSuccess: true,
       onError: reject,
-      onSuccess: resolve,
+      onSuccess: () => resolve(),
     });
 
     void upload.findPreviousUploads().then((previousUploads) => {
