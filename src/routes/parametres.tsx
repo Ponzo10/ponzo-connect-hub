@@ -155,8 +155,8 @@ function Parametres() {
   };
 
   const savePassword = async () => {
-    if (password.length < 8) {
-      toast.error("Le mot de passe doit contenir au moins 8 caractères.");
+    if (password.length < 6) {
+      toast.error("Le mot de passe doit contenir au moins 6 caractères.");
       return;
     }
     const { error } = await supabase.auth.updateUser({ password });
@@ -297,7 +297,7 @@ function Parametres() {
                 type="password"
                 value={password}
                 onChange={(e) => setPassword(e.target.value)}
-                placeholder="8 caractères minimum"
+                placeholder="6 caractères minimum"
                 className="min-w-0 flex-1 rounded-xl bg-muted px-3 py-2 text-sm outline-none"
               />
               <button onClick={savePassword} className="rounded-xl bg-brand px-3 text-xs font-bold text-primary-foreground">
