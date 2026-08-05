@@ -1,13 +1,26 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, ImageIcon, Megaphone, Radio, Search, ShoppingBag, Users, Video } from "lucide-react";
+import {
+  Briefcase,
+  ImageIcon,
+  Megaphone,
+  Newspaper,
+  Radio,
+  Search,
+  ShoppingBag,
+  Users,
+  Video,
+} from "lucide-react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
+import { NewsCard } from "@/components/ponzo/NewsCard";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
+import { fetchNews } from "@/lib/news-api";
 import { asPerson, fetchFeed } from "@/lib/ponzo-api";
+
 
 export const Route = createFileRoute("/")({
   head: () => ({
@@ -29,6 +42,7 @@ export const Route = createFileRoute("/")({
 });
 
 const quickActions = [
+  { label: "Actualités", icon: Newspaper, to: "/actualites", tone: "text-primary" },
   { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
   { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
   { label: "Mon projet", icon: Briefcase, to: "/publier", tone: "text-primary" },
@@ -41,6 +55,13 @@ const quickActions = [
 function Feed() {
   const { user, profile } = useAuth();
   const feed = useQuery({ queryKey: ["feed"], queryFn: fetchFeed });
+  const news = useQuery({ queryKey: ["news", "feed"], queryFn: () => fetchNews({ limit: 12 }) });
+
+  const timeline = [
+    ...(feed.data ?? []).map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
+    ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
 
   return (
     <AppShell>
@@ -88,7 +109,7 @@ function Feed() {
       <section className="mt-4 sm:px-3">
         <h2 className="sr-only">Fil d'actualité</h2>
         {feed.isLoading && <p className="px-4 py-6 text-sm text-muted-foreground">Chargement du fil…</p>}
-        {feed.data?.length === 0 && (
+        {!feed.isLoading && timeline.length === 0 && (
           <div className="mx-3 rounded-2xl bg-surface p-6 text-center shadow-soft">
             <p className="text-sm font-semibold">Le fil est encore vide</p>
             <p className="mt-1 text-xs text-muted-foreground">Sois le premier à publier sur PONZO.</p>
@@ -100,9 +121,17 @@ function Feed() {
             </Link>
           </div>
         )}
-        {feed.data?.map((p) => (
-          <PostCard key={p.id} post={p} />
-        ))}
+        {timeline.map((item) =>
+          item.kind === "news" ? (
+            <div key={`n-${item.article.id}`} className="px-3 sm:px-0">
+              <NewsCard article={item.article} />
+            </div>
+          ) : (
+            <PostCard key={`p-${item.post.id}`} post={item.post} />
+          ),
+        )}
+
+
       </section>
     </AppShell>
   );

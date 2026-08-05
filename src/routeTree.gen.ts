@@ -10,6 +10,7 @@
 
 import { Route as rootRouteImport } from './routes/__root'
 import { Route as IndexRouteImport } from './routes/index'
+import { Route as ActualitesRouteImport } from './routes/actualites'
 import { Route as AdminRouteImport } from './routes/admin'
 import { Route as AuthRouteImport } from './routes/auth'
 import { Route as BienvenueRouteImport } from './routes/bienvenue'
@@ -25,12 +26,19 @@ import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
+import { Route as ActualiteIdRouteImport } from './routes/actualite.$id'
 import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
+import { Route as ApiPublicHooksNewsSyncRouteImport } from './routes/api/public/hooks/news-sync'
 
 const IndexRoute = IndexRouteImport.update({
   id: '/',
   path: '/',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const ActualitesRoute = ActualitesRouteImport.update({
+  id: '/actualites',
+  path: '/actualites',
   getParentRoute: () => rootRouteImport,
 } as any)
 const AdminRoute = AdminRouteImport.update({
@@ -108,6 +116,11 @@ const VideosRoute = VideosRouteImport.update({
   path: '/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ActualiteIdRoute = ActualiteIdRouteImport.update({
+  id: '/actualite/$id',
+  path: '/actualite/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const GroupeIdRoute = GroupeIdRouteImport.update({
   id: '/groupe/$id',
   path: '/groupe/$id',
@@ -118,9 +131,15 @@ const MembreIdRoute = MembreIdRouteImport.update({
   path: '/membre/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const ApiPublicHooksNewsSyncRoute = ApiPublicHooksNewsSyncRouteImport.update({
+  id: '/api/public/hooks/news-sync',
+  path: '/api/public/hooks/news-sync',
+  getParentRoute: () => rootRouteImport,
+} as any)
 
 export interface FileRoutesByFullPath {
   '/': typeof IndexRoute
+  '/actualites': typeof ActualitesRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
@@ -136,11 +155,14 @@ export interface FileRoutesByFullPath {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
+  '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRoutesByTo {
   '/': typeof IndexRoute
+  '/actualites': typeof ActualitesRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
@@ -156,12 +178,15 @@ export interface FileRoutesByTo {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
+  '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRoutesById {
   __root__: typeof rootRouteImport
   '/': typeof IndexRoute
+  '/actualites': typeof ActualitesRoute
   '/admin': typeof AdminRoute
   '/auth': typeof AuthRoute
   '/bienvenue': typeof BienvenueRoute
@@ -177,13 +202,16 @@ export interface FileRoutesById {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
+  '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRouteTypes {
   fileRoutesByFullPath: FileRoutesByFullPath
   fullPaths:
     | '/'
+    | '/actualites'
     | '/admin'
     | '/auth'
     | '/bienvenue'
@@ -199,11 +227,14 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/actualite/$id'
     | '/groupe/$id'
     | '/membre/$id'
+    | '/api/public/hooks/news-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
     | '/'
+    | '/actualites'
     | '/admin'
     | '/auth'
     | '/bienvenue'
@@ -219,11 +250,14 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/actualite/$id'
     | '/groupe/$id'
     | '/membre/$id'
+    | '/api/public/hooks/news-sync'
   id:
     | '__root__'
     | '/'
+    | '/actualites'
     | '/admin'
     | '/auth'
     | '/bienvenue'
@@ -239,12 +273,15 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/actualite/$id'
     | '/groupe/$id'
     | '/membre/$id'
+    | '/api/public/hooks/news-sync'
   fileRoutesById: FileRoutesById
 }
 export interface RootRouteChildren {
   IndexRoute: typeof IndexRoute
+  ActualitesRoute: typeof ActualitesRoute
   AdminRoute: typeof AdminRoute
   AuthRoute: typeof AuthRoute
   BienvenueRoute: typeof BienvenueRoute
@@ -260,8 +297,10 @@ export interface RootRouteChildren {
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
   VideosRoute: typeof VideosRoute
+  ActualiteIdRoute: typeof ActualiteIdRoute
   GroupeIdRoute: typeof GroupeIdRoute
   MembreIdRoute: typeof MembreIdRoute
+  ApiPublicHooksNewsSyncRoute: typeof ApiPublicHooksNewsSyncRoute
 }
 
 declare module '@tanstack/react-router' {
@@ -271,6 +310,13 @@ declare module '@tanstack/react-router' {
       path: '/'
       fullPath: '/'
       preLoaderRoute: typeof IndexRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/actualites': {
+      id: '/actualites'
+      path: '/actualites'
+      fullPath: '/actualites'
+      preLoaderRoute: typeof ActualitesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/admin': {
@@ -378,6 +424,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/actualite/$id': {
+      id: '/actualite/$id'
+      path: '/actualite/$id'
+      fullPath: '/actualite/$id'
+      preLoaderRoute: typeof ActualiteIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/groupe/$id': {
       id: '/groupe/$id'
       path: '/groupe/$id'
@@ -392,11 +445,19 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof MembreIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/api/public/hooks/news-sync': {
+      id: '/api/public/hooks/news-sync'
+      path: '/api/public/hooks/news-sync'
+      fullPath: '/api/public/hooks/news-sync'
+      preLoaderRoute: typeof ApiPublicHooksNewsSyncRouteImport
+      parentRoute: typeof rootRouteImport
+    }
   }
 }
 
 const rootRouteChildren: RootRouteChildren = {
   IndexRoute: IndexRoute,
+  ActualitesRoute: ActualitesRoute,
   AdminRoute: AdminRoute,
   AuthRoute: AuthRoute,
   BienvenueRoute: BienvenueRoute,
@@ -412,8 +473,10 @@ const rootRouteChildren: RootRouteChildren = {
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
   VideosRoute: VideosRoute,
+  ActualiteIdRoute: ActualiteIdRoute,
   GroupeIdRoute: GroupeIdRoute,
   MembreIdRoute: MembreIdRoute,
+  ApiPublicHooksNewsSyncRoute: ApiPublicHooksNewsSyncRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
