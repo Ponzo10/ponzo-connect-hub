@@ -337,7 +337,13 @@ export async function createPost(input: {
   mediaUrl?: string | null;
   mediaType?: string | null;
 }) {
-  const id = crypto.randomUUID();
+  // randomUUID n'est pas disponible dans certains WebView Android. L'ID reste
+  // un UUID valide afin que l'upsert idempotent puisse être repris sans doublon.
+  const bytes = crypto.getRandomValues(new Uint8Array(16));
+  bytes[6] = ((bytes[6] ?? 0) & 0x0f) | 0x40;
+  bytes[8] = ((bytes[8] ?? 0) & 0x3f) | 0x80;
+  const hex = Array.from(bytes, (byte) => byte.toString(16).padStart(2, "0")).join("");
+  const id = `${hex.slice(0, 8)}-${hex.slice(8, 12)}-${hex.slice(12, 16)}-${hex.slice(16, 20)}-${hex.slice(20)}`;
   const row = {
     id,
     author_id: input.authorId,

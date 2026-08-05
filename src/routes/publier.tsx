@@ -53,6 +53,7 @@ function Publier() {
   const [text, setText] = useState("");
   const [media, setMedia] = useState<{ url: string; path: string; type: "image" | "video" } | null>(null);
   const [uploading, setUploading] = useState(false);
+  const [uploadProgress, setUploadProgress] = useState(0);
   const [busy, setBusy] = useState(false);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
@@ -67,8 +68,9 @@ function Publier() {
       return;
     }
     setUploading(true);
+    setUploadProgress(0);
     try {
-      const result = await uploadMedia(user.id, file, "posts", expected);
+      const result = await uploadMedia(user.id, file, "posts", expected, setUploadProgress);
       const type = result.kind === "video" || expected === "video" ? "video" : "image";
       setMedia({ url: result.url, path: result.path, type });
       toast.success("Fichier ajouté");
@@ -225,6 +227,18 @@ function Publier() {
               Ajouter une vidéo
             </button>
           </div>
+          {uploading && (
+            <div className="mt-3" role="status" aria-live="polite">
+              <progress
+                className="h-1.5 w-full overflow-hidden rounded-full accent-primary"
+                max={100}
+                value={Math.max(4, Math.round(uploadProgress * 100))}
+              />
+              <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
+                Envoi sécurisé… {Math.round(uploadProgress * 100)} %
+              </p>
+            </div>
+          )}
         </div>
 
         <button
