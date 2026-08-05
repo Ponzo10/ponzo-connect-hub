@@ -28,6 +28,7 @@ import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
 import { Route as ActualiteIdRouteImport } from './routes/actualite.$id'
 import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
+import { Route as HashtagTagRouteImport } from './routes/hashtag.$tag'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
 import { Route as PublicationIdRouteImport } from './routes/publication.$id'
 import { Route as ApiPublicHooksNewsSyncRouteImport } from './routes/api/public/hooks/news-sync'
@@ -127,6 +128,11 @@ const GroupeIdRoute = GroupeIdRouteImport.update({
   path: '/groupe/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const HashtagTagRoute = HashtagTagRouteImport.update({
+  id: '/hashtag/$tag',
+  path: '/hashtag/$tag',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MembreIdRoute = MembreIdRouteImport.update({
   id: '/membre/$id',
   path: '/membre/$id',
@@ -163,6 +169,7 @@ export interface FileRoutesByFullPath {
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
+  '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
@@ -187,6 +194,7 @@ export interface FileRoutesByTo {
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
+  '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
@@ -212,6 +220,7 @@ export interface FileRoutesById {
   '/videos': typeof VideosRoute
   '/actualite/$id': typeof ActualiteIdRoute
   '/groupe/$id': typeof GroupeIdRoute
+  '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
@@ -238,6 +247,7 @@ export interface FileRouteTypes {
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
+    | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
     | '/api/public/hooks/news-sync'
@@ -262,6 +272,7 @@ export interface FileRouteTypes {
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
+    | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
     | '/api/public/hooks/news-sync'
@@ -286,6 +297,7 @@ export interface FileRouteTypes {
     | '/videos'
     | '/actualite/$id'
     | '/groupe/$id'
+    | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
     | '/api/public/hooks/news-sync'
@@ -311,6 +323,7 @@ export interface RootRouteChildren {
   VideosRoute: typeof VideosRoute
   ActualiteIdRoute: typeof ActualiteIdRoute
   GroupeIdRoute: typeof GroupeIdRoute
+  HashtagTagRoute: typeof HashtagTagRoute
   MembreIdRoute: typeof MembreIdRoute
   PublicationIdRoute: typeof PublicationIdRoute
   ApiPublicHooksNewsSyncRoute: typeof ApiPublicHooksNewsSyncRoute
@@ -451,6 +464,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof GroupeIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/hashtag/$tag': {
+      id: '/hashtag/$tag'
+      path: '/hashtag/$tag'
+      fullPath: '/hashtag/$tag'
+      preLoaderRoute: typeof HashtagTagRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/membre/$id': {
       id: '/membre/$id'
       path: '/membre/$id'
@@ -495,6 +515,7 @@ const rootRouteChildren: RootRouteChildren = {
   VideosRoute: VideosRoute,
   ActualiteIdRoute: ActualiteIdRoute,
   GroupeIdRoute: GroupeIdRoute,
+  HashtagTagRoute: HashtagTagRoute,
   MembreIdRoute: MembreIdRoute,
   PublicationIdRoute: PublicationIdRoute,
   ApiPublicHooksNewsSyncRoute: ApiPublicHooksNewsSyncRoute,
@@ -502,13 +523,3 @@ const rootRouteChildren: RootRouteChildren = {
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
