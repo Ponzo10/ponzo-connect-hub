@@ -41,13 +41,19 @@ function GroupsPage() {
   const join = async (group: Group) => {
     if (!user) return;
     try {
-      await joinGroup(group.id, user.id);
+      if (group.is_public) {
+        await joinGroup(group.id, user.id);
+        toast.success(`Tu as rejoint ${group.name}`);
+      } else {
+        await requestJoin(group.id, user.id);
+        toast.success("Demande envoyée aux administrateurs.");
+      }
       await queryClient.invalidateQueries({ queryKey: ["groups"] });
-      toast.success(`Tu as rejoint ${group.name}`);
     } catch {
-      toast.error("Impossible de rejoindre ce groupe.");
+      toast.error("Action impossible.");
     }
   };
+
 
   return (
     <AppShell title="Groupes">
