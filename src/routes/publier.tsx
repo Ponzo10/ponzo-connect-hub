@@ -188,15 +188,16 @@ function Publier() {
             type="file"
             accept="image/*"
             className="hidden"
-            onChange={(e) => void pick(e.target.files?.[0])}
+            onChange={(e) => void pick(e.target.files?.[0], "image")}
           />
           <input
             ref={videoRef}
             type="file"
             accept="video/*"
             className="hidden"
-            onChange={(e) => void pick(e.target.files?.[0])}
+            onChange={(e) => void pick(e.target.files?.[0], "video")}
           />
+
 
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border/70 pt-3">
             <button
