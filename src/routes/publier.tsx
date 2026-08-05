@@ -60,7 +60,7 @@ function Publier() {
   const photoRef = useRef<HTMLInputElement>(null);
   const videoRef = useRef<HTMLInputElement>(null);
 
-  const pick = async (file: File | undefined) => {
+  const pick = async (file: File | undefined, expected: "image" | "video") => {
     if (!file) return;
     if (!user) {
       toast.error("Connecte-toi pour ajouter un fichier.");
@@ -68,8 +68,9 @@ function Publier() {
     }
     setUploading(true);
     try {
-      const result = await uploadMedia(user.id, file, "posts");
-      setMedia({ url: result.url, type: result.kind === "video" ? "video" : "image" });
+      const result = await uploadMedia(user.id, file, "posts", expected);
+      const type = result.kind === "video" || expected === "video" ? "video" : "image";
+      setMedia({ url: result.url, type });
       toast.success("Fichier ajouté");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Envoi du fichier impossible.");
@@ -82,7 +83,18 @@ function Publier() {
 
 
   const publish = async () => {
-    if (!user) return;
+    if (!user) {
+      toast.error("Connecte-toi pour publier.");
+      return;
+    }
+    if (uploading) {
+      toast.info("Envoi du fichier en cours…");
+      return;
+    }
+    if (!text.trim() && !media) {
+      toast.error("Ajoute un texte, une photo ou une vidéo.");
+      return;
+    }
     setBusy(true);
     try {
       await createPost({
@@ -95,14 +107,17 @@ function Publier() {
       setText("");
       setMedia(null);
       void queryClient.invalidateQueries({ queryKey: ["feed"] });
+      void queryClient.invalidateQueries({ queryKey: ["videos"] });
       toast.success("Publication en ligne 🎉");
-      void navigate({ to: "/" });
+      void navigate({ to: media?.type === "video" ? "/videos" : "/" });
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Publication impossible");
+      const message = error instanceof Error ? error.message : "Publication impossible";
+      toast.error(`Publication impossible : ${message}`);
     } finally {
       setBusy(false);
     }
   };
+
 
   return (
     <AppShell title="Créer">
