@@ -229,12 +229,11 @@ function Publier() {
           </div>
           {uploading && (
             <div className="mt-3" role="status" aria-live="polite">
-              <div className="h-1.5 overflow-hidden rounded-full bg-muted">
-                <div
-                  className="h-full rounded-full bg-brand transition-[width] duration-300"
-                  style={{ width: `${Math.max(4, Math.round(uploadProgress * 100))}%` }}
-                />
-              </div>
+              <progress
+                className="h-1.5 w-full overflow-hidden rounded-full accent-primary"
+                max={100}
+                value={Math.max(4, Math.round(uploadProgress * 100))}
+              />
               <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
                 Envoi sécurisé… {Math.round(uploadProgress * 100)} %
               </p>
