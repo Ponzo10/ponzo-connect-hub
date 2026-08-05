@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
+import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User, Users } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 
 import { PonzoLogo, PonzoMark } from "./PonzoLogo";
@@ -80,6 +80,13 @@ export function TopBar({ title }: { title?: string | undefined }) {
             <Search className="h-5 w-5" />
           </Link>
           <Link
+            to="/groupes"
+            aria-label="Groupes"
+            className="grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
+          >
+            <Users className="h-5 w-5" />
+          </Link>
+          <Link
             to="/messages"
             aria-label="Messages"
             className="relative grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
@@ -87,6 +94,7 @@ export function TopBar({ title }: { title?: string | undefined }) {
             <MessageCircle className="h-5 w-5" />
             <Count n={unread.messages} />
           </Link>
+
           <Link
             to="/notifications"
             aria-label="Notifications"

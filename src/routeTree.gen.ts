@@ -16,6 +16,7 @@ import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as BoutiqueRouteImport } from './routes/boutique'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
 import { Route as FavorisRouteImport } from './routes/favoris'
+import { Route as GroupesRouteImport } from './routes/groupes'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -24,6 +25,7 @@ import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
+import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -59,6 +61,11 @@ const DecouvrirRoute = DecouvrirRouteImport.update({
 const FavorisRoute = FavorisRouteImport.update({
   id: '/favoris',
   path: '/favoris',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupesRoute = GroupesRouteImport.update({
+  id: '/groupes',
+  path: '/groupes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketplaceRoute = MarketplaceRouteImport.update({
@@ -101,6 +108,11 @@ const VideosRoute = VideosRouteImport.update({
   path: '/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupeIdRoute = GroupeIdRouteImport.update({
+  id: '/groupe/$id',
+  path: '/groupe/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MembreIdRoute = MembreIdRouteImport.update({
   id: '/membre/$id',
   path: '/membre/$id',
@@ -115,6 +127,7 @@ export interface FileRoutesByFullPath {
   '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/favoris': typeof FavorisRoute
+  '/groupes': typeof GroupesRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -123,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesByTo {
@@ -133,6 +147,7 @@ export interface FileRoutesByTo {
   '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/favoris': typeof FavorisRoute
+  '/groupes': typeof GroupesRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -141,6 +156,7 @@ export interface FileRoutesByTo {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesById {
@@ -152,6 +168,7 @@ export interface FileRoutesById {
   '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/favoris': typeof FavorisRoute
+  '/groupes': typeof GroupesRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -160,6 +177,7 @@ export interface FileRoutesById {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRouteTypes {
@@ -172,6 +190,7 @@ export interface FileRouteTypes {
     | '/boutique'
     | '/decouvrir'
     | '/favoris'
+    | '/groupes'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -180,6 +199,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/groupe/$id'
     | '/membre/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -190,6 +210,7 @@ export interface FileRouteTypes {
     | '/boutique'
     | '/decouvrir'
     | '/favoris'
+    | '/groupes'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -198,6 +219,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/groupe/$id'
     | '/membre/$id'
   id:
     | '__root__'
@@ -208,6 +230,7 @@ export interface FileRouteTypes {
     | '/boutique'
     | '/decouvrir'
     | '/favoris'
+    | '/groupes'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -216,6 +239,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/groupe/$id'
     | '/membre/$id'
   fileRoutesById: FileRoutesById
 }
@@ -227,6 +251,7 @@ export interface RootRouteChildren {
   BoutiqueRoute: typeof BoutiqueRoute
   DecouvrirRoute: typeof DecouvrirRoute
   FavorisRoute: typeof FavorisRoute
+  GroupesRoute: typeof GroupesRoute
   MarketplaceRoute: typeof MarketplaceRoute
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -235,6 +260,7 @@ export interface RootRouteChildren {
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
   VideosRoute: typeof VideosRoute
+  GroupeIdRoute: typeof GroupeIdRoute
   MembreIdRoute: typeof MembreIdRoute
 }
 
@@ -287,6 +313,13 @@ declare module '@tanstack/react-router' {
       path: '/favoris'
       fullPath: '/favoris'
       preLoaderRoute: typeof FavorisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groupes': {
+      id: '/groupes'
+      path: '/groupes'
+      fullPath: '/groupes'
+      preLoaderRoute: typeof GroupesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marketplace': {
@@ -345,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groupe/$id': {
+      id: '/groupe/$id'
+      path: '/groupe/$id'
+      fullPath: '/groupe/$id'
+      preLoaderRoute: typeof GroupeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/membre/$id': {
       id: '/membre/$id'
       path: '/membre/$id'
@@ -363,6 +403,7 @@ const rootRouteChildren: RootRouteChildren = {
   BoutiqueRoute: BoutiqueRoute,
   DecouvrirRoute: DecouvrirRoute,
   FavorisRoute: FavorisRoute,
+  GroupesRoute: GroupesRoute,
   MarketplaceRoute: MarketplaceRoute,
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,
@@ -371,18 +412,9 @@ const rootRouteChildren: RootRouteChildren = {
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
   VideosRoute: VideosRoute,
+  GroupeIdRoute: GroupeIdRoute,
   MembreIdRoute: MembreIdRoute,
 }
 export const routeTree = rootRouteImport
   ._addFileChildren(rootRouteChildren)
   ._addFileTypes<FileRouteTypes>()
-
-import type { getRouter } from './router.tsx'
-import type { startInstance } from './start.ts'
-declare module '@tanstack/react-start' {
-  interface Register {
-    ssr: true
-    router: Awaited<ReturnType<typeof getRouter>>
-    config: Awaited<ReturnType<typeof startInstance.getOptions>>
-  }
-}
