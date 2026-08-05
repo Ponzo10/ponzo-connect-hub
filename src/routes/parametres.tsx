@@ -113,6 +113,18 @@ function Parametres() {
   const [phone, setPhone] = useState("");
   const [password, setPassword] = useState("");
   const [savingBadge, setSavingBadge] = useState(false);
+  const allowDownload = profile?.allow_photo_download ?? true;
+
+  const toggleDownload = async (value: boolean) => {
+    if (!user) return;
+    try {
+      await updateProfile(user.id, { allow_photo_download: value });
+      await refreshProfile();
+      toast.success(value ? "Téléchargement de tes photos autorisé" : "Téléchargement de tes photos désactivé");
+    } catch {
+      toast.error("Modification impossible pour le moment.");
+    }
+  };
 
   useEffect(() => {
     document.documentElement.classList.toggle("dark", dark);
@@ -194,6 +206,12 @@ function Parametres() {
             onChange={setNotifEmail}
             label="Résumé par e-mail"
             icon={<Bell className="h-5 w-5 text-primary" />}
+          />
+          <Toggle
+            checked={allowDownload}
+            onChange={(v) => void toggleDownload(v)}
+            label="Autoriser le téléchargement de mes photos"
+            icon={<Shield className="h-5 w-5 text-primary" />}
           />
           <Toggle
             checked={privateAccount}
