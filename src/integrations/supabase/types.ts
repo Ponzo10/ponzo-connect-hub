@@ -77,6 +77,106 @@ export type Database = {
           },
         ]
       }
+      group_members: {
+        Row: {
+          created_at: string
+          group_id: string
+          role: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          group_id: string
+          role?: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          group_id?: string
+          role?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_members_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      group_messages: {
+        Row: {
+          body: string | null
+          created_at: string
+          group_id: string
+          id: string
+          media_type: string | null
+          media_url: string | null
+          sender_id: string
+        }
+        Insert: {
+          body?: string | null
+          created_at?: string
+          group_id: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          sender_id: string
+        }
+        Update: {
+          body?: string | null
+          created_at?: string
+          group_id?: string
+          id?: string
+          media_type?: string | null
+          media_url?: string | null
+          sender_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "group_messages_group_id_fkey"
+            columns: ["group_id"]
+            isOneToOne: false
+            referencedRelation: "groups"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      groups: {
+        Row: {
+          created_at: string
+          description: string | null
+          id: string
+          is_public: boolean
+          name: string
+          owner_id: string
+          photo_url: string | null
+          updated_at: string
+        }
+        Insert: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name: string
+          owner_id: string
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Update: {
+          created_at?: string
+          description?: string | null
+          id?: string
+          is_public?: boolean
+          name?: string
+          owner_id?: string
+          photo_url?: string | null
+          updated_at?: string
+        }
+        Relationships: []
+      }
       messages: {
         Row: {
           body: string
@@ -710,6 +810,15 @@ export type Database = {
       }
       increment_share: { Args: { _post_id: string }; Returns: number }
       increment_view: { Args: { _post_id: string }; Returns: number }
+      is_group_admin: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_member: {
+        Args: { _group_id: string; _user_id: string }
+        Returns: boolean
+      }
+      is_group_public: { Args: { _group_id: string }; Returns: boolean }
       is_staff: { Args: { _user_id: string }; Returns: boolean }
       set_user_role: {
         Args: {
