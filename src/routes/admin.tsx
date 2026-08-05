@@ -107,14 +107,13 @@ function Admin() {
       </div>
 
       <div className="space-y-2 px-3 py-4">
-        {tab === "Statistiques" && (
-          <div className="grid grid-cols-2 gap-2">
-            <StatCard icon={<Users className="h-4 w-4" />} label="Membres" value={stats.data?.['profiles'] ?? 0} />
-            <StatCard icon={<Activity className="h-4 w-4" />} label="Publications" value={stats.data?.['posts'] ?? 0} />
-            <StatCard icon={<Store className="h-4 w-4" />} label="Produits" value={stats.data?.['products'] ?? 0} />
-            <StatCard icon={<Flag className="h-4 w-4" />} label="Signalements" value={stats.data?.['reports'] ?? 0} />
-          </div>
-        )}
+        {tab === "Vue d'ensemble" && <OverviewTab d={dashboard.data} />}
+        {tab === "Contenu" && <ContentTab d={dashboard.data} />}
+        {tab === "Usage" && <UsageTab d={dashboard.data} />}
+        {tab === "Performance" && <PerformanceTab d={dashboard.data} />}
+        {tab === "Sécurité" && <SecurityTab />}
+        {tab === "Analyse" && <InsightsTab d={dashboard.data} />}
+        {tab === "Rapport" && <ReportTab d={dashboard.data} />}
 
         {tab === "Membres" &&
           (people.data ?? []).map((p) => {
