@@ -572,3 +572,13 @@ export function compactCount(n: number): string {
   if (n >= 1000) return `${(n / 1000).toFixed(n % 1000 === 0 ? 0 : 1)}k`;
   return String(n);
 }
+
+export async function fetchPost(id: string): Promise<FeedPost | null> {
+  const { data, error } = await supabase
+    .from("posts")
+    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
+    .eq("id", id)
+    .maybeSingle();
+  if (error) throw error;
+  return (data ?? null) as unknown as FeedPost | null;
+}
