@@ -283,12 +283,27 @@ export function PostCard({ post }: { post: FeedPost }) {
       )}
 
       {post.media_url && post.media_type === "image" && (
-        <img
-          src={post.media_url}
-          alt="Visuel de la publication PONZO"
-          loading="lazy"
-          className="max-h-[520px] w-full object-cover"
-        />
+        <button
+          type="button"
+          aria-label="Ouvrir la photo en plein écran"
+          className="block w-full"
+          onClick={() =>
+            viewer.open({
+              images: [post.media_url!],
+              postId: post.id,
+              alt: post.body.slice(0, 80) || "Photo PONZO",
+              allowDownload: post.author?.allow_photo_download ?? true,
+            })
+          }
+        >
+          <img
+            src={post.media_url}
+            alt="Visuel de la publication PONZO"
+            loading="lazy"
+            decoding="async"
+            className="max-h-[520px] w-full object-cover"
+          />
+        </button>
       )}
       {post.media_url && post.media_type === "video" && (
         <video src={post.media_url} controls playsInline className="max-h-[520px] w-full bg-black object-contain" />
