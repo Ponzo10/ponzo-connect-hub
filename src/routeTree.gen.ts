@@ -16,6 +16,7 @@ import { Route as BienvenueRouteImport } from './routes/bienvenue'
 import { Route as BoutiqueRouteImport } from './routes/boutique'
 import { Route as DecouvrirRouteImport } from './routes/decouvrir'
 import { Route as FavorisRouteImport } from './routes/favoris'
+import { Route as GroupesRouteImport } from './routes/groupes'
 import { Route as MarketplaceRouteImport } from './routes/marketplace'
 import { Route as MessagesRouteImport } from './routes/messages'
 import { Route as NotificationsRouteImport } from './routes/notifications'
@@ -59,6 +60,11 @@ const DecouvrirRoute = DecouvrirRouteImport.update({
 const FavorisRoute = FavorisRouteImport.update({
   id: '/favoris',
   path: '/favoris',
+  getParentRoute: () => rootRouteImport,
+} as any)
+const GroupesRoute = GroupesRouteImport.update({
+  id: '/groupes',
+  path: '/groupes',
   getParentRoute: () => rootRouteImport,
 } as any)
 const MarketplaceRoute = MarketplaceRouteImport.update({
@@ -115,6 +121,7 @@ export interface FileRoutesByFullPath {
   '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/favoris': typeof FavorisRoute
+  '/groupes': typeof GroupesRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -133,6 +140,7 @@ export interface FileRoutesByTo {
   '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/favoris': typeof FavorisRoute
+  '/groupes': typeof GroupesRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -152,6 +160,7 @@ export interface FileRoutesById {
   '/boutique': typeof BoutiqueRoute
   '/decouvrir': typeof DecouvrirRoute
   '/favoris': typeof FavorisRoute
+  '/groupes': typeof GroupesRoute
   '/marketplace': typeof MarketplaceRoute
   '/messages': typeof MessagesRoute
   '/notifications': typeof NotificationsRoute
@@ -172,6 +181,7 @@ export interface FileRouteTypes {
     | '/boutique'
     | '/decouvrir'
     | '/favoris'
+    | '/groupes'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -190,6 +200,7 @@ export interface FileRouteTypes {
     | '/boutique'
     | '/decouvrir'
     | '/favoris'
+    | '/groupes'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -208,6 +219,7 @@ export interface FileRouteTypes {
     | '/boutique'
     | '/decouvrir'
     | '/favoris'
+    | '/groupes'
     | '/marketplace'
     | '/messages'
     | '/notifications'
@@ -227,6 +239,7 @@ export interface RootRouteChildren {
   BoutiqueRoute: typeof BoutiqueRoute
   DecouvrirRoute: typeof DecouvrirRoute
   FavorisRoute: typeof FavorisRoute
+  GroupesRoute: typeof GroupesRoute
   MarketplaceRoute: typeof MarketplaceRoute
   MessagesRoute: typeof MessagesRoute
   NotificationsRoute: typeof NotificationsRoute
@@ -287,6 +300,13 @@ declare module '@tanstack/react-router' {
       path: '/favoris'
       fullPath: '/favoris'
       preLoaderRoute: typeof FavorisRouteImport
+      parentRoute: typeof rootRouteImport
+    }
+    '/groupes': {
+      id: '/groupes'
+      path: '/groupes'
+      fullPath: '/groupes'
+      preLoaderRoute: typeof GroupesRouteImport
       parentRoute: typeof rootRouteImport
     }
     '/marketplace': {
@@ -363,6 +383,7 @@ const rootRouteChildren: RootRouteChildren = {
   BoutiqueRoute: BoutiqueRoute,
   DecouvrirRoute: DecouvrirRoute,
   FavorisRoute: FavorisRoute,
+  GroupesRoute: GroupesRoute,
   MarketplaceRoute: MarketplaceRoute,
   MessagesRoute: MessagesRoute,
   NotificationsRoute: NotificationsRoute,
