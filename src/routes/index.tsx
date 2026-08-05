@@ -42,6 +42,7 @@ export const Route = createFileRoute("/")({
 });
 
 const quickActions = [
+  { label: "Actualités", icon: Newspaper, to: "/actualites", tone: "text-primary" },
   { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
   { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
   { label: "Mon projet", icon: Briefcase, to: "/publier", tone: "text-primary" },
@@ -54,6 +55,13 @@ const quickActions = [
 function Feed() {
   const { user, profile } = useAuth();
   const feed = useQuery({ queryKey: ["feed"], queryFn: fetchFeed });
+  const news = useQuery({ queryKey: ["news", "feed"], queryFn: () => fetchNews({ limit: 12 }) });
+
+  const timeline = [
+    ...(feed.data ?? []).map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
+    ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
+  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+
 
   return (
     <AppShell>
