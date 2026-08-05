@@ -210,14 +210,16 @@ function VideoCard({
     <section ref={sectionRef} className="relative flex h-[calc(100vh-5rem)] snap-start items-end bg-foreground">
       <video
         ref={ref}
-        src={post.media_url ?? undefined}
+        src={warm ? (post.media_url ?? undefined) : undefined}
         className="absolute inset-0 h-full w-full object-contain"
         playsInline
         loop
         muted={muted}
-        preload={eager ? "auto" : "metadata"}
+        disablePictureInPicture
+        preload={warm ? "auto" : "none"}
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
+
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
       <button
