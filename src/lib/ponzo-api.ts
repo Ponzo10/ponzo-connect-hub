@@ -588,3 +588,27 @@ export async function fetchPost(id: string): Promise<FeedPost | null> {
   if (error) throw error;
   return (data ?? null) as unknown as FeedPost | null;
 }
+
+/** Marque comme distribués tous les messages reçus par l'utilisateur connecté. */
+export async function markMessagesDelivered() {
+  await supabase.rpc("mark_messages_delivered");
+}
+
+/** Met à jour la présence (dernière activité) de l'utilisateur connecté. */
+export async function touchPresence() {
+  await supabase.rpc("touch_presence");
+}
+
+export type Presence = { online: boolean; last_seen: string | null };
+
+/** Présence d'un membre, filtrée par ses réglages de confidentialité. */
+export async function fetchPresence(userId: string): Promise<Presence> {
+  const { data, error } = await supabase.rpc("presence_of", { _user_id: userId });
+  if (error) throw error;
+  return (data as unknown as Presence) ?? { online: false, last_seen: null };
+}
+
+/** Nom de canal temps réel stable pour une conversation entre deux membres. */
+export function conversationChannel(a: string, b: string) {
+  return `dm:${[a, b].sort().join(":")}`;
+}
