@@ -1,8 +1,8 @@
-import { useMutation, useQueryClient } from "@tanstack/react-query";
+import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Check, UserPlus } from "lucide-react";
-import { useState } from "react";
 import { toast } from "sonner";
 
+import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { notify, toggleFollow } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
@@ -19,8 +19,26 @@ export function FollowButton({
   className?: string | undefined;
 }) {
   const { user, profile } = useAuth();
-  const [following, setFollowing] = useState(!!initialFollowing);
   const queryClient = useQueryClient();
+
+  const status = useQuery({
+    queryKey: ["following", user?.id ?? "anon", targetId],
+    enabled: !!user && user.id !== targetId,
+    initialData: initialFollowing,
+    staleTime: 30_000,
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("follows")
+        .select("follower_id")
+        .eq("follower_id", user!.id)
+        .eq("following_id", targetId)
+        .maybeSingle();
+      if (error) throw error;
+      return !!data;
+    },
+  });
+
+  const following = !!status.data;
 
   const mutation = useMutation({
     mutationFn: async () => {
@@ -37,9 +55,8 @@ export function FollowButton({
       }
     },
     onSuccess: () => {
-      setFollowing((v) => !v);
+      queryClient.setQueryData(["following", user?.id ?? "anon", targetId], !following);
       void queryClient.invalidateQueries({ queryKey: ["follow-counts"] });
-      void queryClient.invalidateQueries({ queryKey: ["following"] });
     },
     onError: () => toast.error("Action impossible pour le moment."),
   });
