@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Briefcase, ImageIcon, Megaphone, Radio, Search, ShoppingBag, Video } from "lucide-react";
+import { Briefcase, ImageIcon, Megaphone, Radio, Search, ShoppingBag, Users, Video } from "lucide-react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
@@ -59,8 +59,8 @@ function Feed() {
         </div>
         <div className="mt-2 grid grid-cols-3 gap-2">
           <ComposerChip to="/publier" icon={<ImageIcon className="h-4 w-4 text-primary" />} label="Photo" />
+          <ComposerChip to="/groupes" icon={<Users className="h-4 w-4 text-accent-foreground" />} label="Groupe" />
           <ComposerChip to="/videos" icon={<Video className="h-4 w-4 text-destructive" />} label="Vidéo" />
-          <ComposerChip to="/decouvrir" icon={<Radio className="h-4 w-4 text-accent-foreground" />} label="Live" />
         </div>
       </section>
 
