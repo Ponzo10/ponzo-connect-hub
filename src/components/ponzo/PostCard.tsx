@@ -1,5 +1,6 @@
 import {
   Bookmark,
+  Download,
   Flag,
   Heart,
   MessageSquare,
