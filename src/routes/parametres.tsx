@@ -23,6 +23,7 @@ import { AppShell } from "@/components/ponzo/AppShell";
 import { BADGES, BadgePreview } from "@/components/ponzo/Badge3D";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
+import { LOCALES, useI18n } from "@/lib/i18n";
 import { reportContent, updateProfile } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
@@ -103,6 +104,27 @@ function Expandable({ icon, label, children }: { icon: React.ReactNode; label: s
 function Parametres() {
   const { user, profile, isStaff, refreshProfile, signOut } = useAuth();
   const navigate = useNavigate();
+  const { t, locale, setLocale } = useI18n();
+
+  const showOnline = (profile as { show_online?: boolean } | null)?.show_online ?? true;
+  const showLastSeen = (profile as { show_last_seen?: boolean } | null)?.show_last_seen ?? true;
+
+  const savePrivacy = async (patch: Record<string, boolean>) => {
+    if (!user) return;
+    try {
+      await updateProfile(user.id, patch);
+      await refreshProfile();
+      toast.success(t("settings.saved"));
+    } catch {
+      toast.error(t("settings.saveFailed"));
+    }
+  };
+
+  const chooseLanguage = async (code: (typeof LOCALES)[number]["code"]) => {
+    await setLocale(code);
+    await refreshProfile();
+    toast.success(t("settings.languageSaved"));
+  };
 
   const [dark, setDark] = usePref("ponzo:dark", false);
   const [notifPush, setNotifPush] = usePref("ponzo:notif-push", true);
@@ -203,46 +225,80 @@ function Parametres() {
   };
 
   return (
-    <AppShell title="Paramètres">
+    <AppShell title={t("settings.title")}>
       <div className="space-y-5 px-3 pt-4">
-        <Section title="Apparence et préférences">
-          <Toggle checked={dark} onChange={setDark} label="Mode sombre" icon={<Moon className="h-5 w-5 text-primary" />} />
+        <Section title={t("settings.appearance")}>
+          <Toggle checked={dark} onChange={setDark} label={t("settings.dark")} icon={<Moon className="h-5 w-5 text-primary" />} />
           <Toggle
             checked={notifPush}
             onChange={setNotifPush}
-            label="Notifications dans l'application"
+            label={t("settings.notifInApp")}
             icon={<Bell className="h-5 w-5 text-primary" />}
           />
           <Toggle
             checked={notifEmail}
             onChange={setNotifEmail}
-            label="Résumé par e-mail"
+            label={t("settings.notifEmail")}
             icon={<Bell className="h-5 w-5 text-primary" />}
           />
           <Toggle
             checked={allowDownload}
             onChange={(v) => void toggleDownload(v)}
-            label="Autoriser le téléchargement de mes photos"
+            label={t("settings.allowPhoto")}
             icon={<Shield className="h-5 w-5 text-primary" />}
           />
           <Toggle
             checked={allowVideoDownload}
             onChange={(v) => void toggleVideoDownload(v)}
-            label="Autoriser le téléchargement de mes vidéos"
+            label={t("settings.allowVideo")}
             icon={<Shield className="h-5 w-5 text-primary" />}
           />
           <Toggle
             checked={privateAccount}
             onChange={setPrivateAccount}
-            label="Compte privé"
+            label={t("settings.private")}
             icon={<Shield className="h-5 w-5 text-primary" />}
           />
-          <div className="flex items-center justify-between p-4">
-            <span className="flex items-center gap-3 text-sm font-medium">
-              <Globe className="h-5 w-5 text-primary" /> Langue
+        </Section>
+
+        <Section title={t("settings.languageSection")}>
+          <div className="flex items-center gap-3 border-b border-border/60 p-4">
+            <Globe className="h-5 w-5 shrink-0 text-primary" />
+            <span className="min-w-0">
+              <span className="block text-sm font-medium">{t("settings.language")}</span>
+              <span className="block text-[11px] text-muted-foreground">{t("settings.languageHint")}</span>
             </span>
-            <span className="text-xs text-muted-foreground">Français</span>
           </div>
+          <div className="grid grid-cols-2 gap-2 p-3">
+            {LOCALES.map((l) => (
+              <button
+                key={l.code}
+                onClick={() => void chooseLanguage(l.code)}
+                className={cn(
+                  "flex items-center gap-2 rounded-2xl border-2 p-3 text-left text-sm font-semibold transition-colors",
+                  locale === l.code ? "border-primary bg-primary-soft/50" : "border-transparent bg-muted",
+                )}
+              >
+                <span className="text-lg">{l.flag}</span>
+                <span className="truncate">{l.label}</span>
+              </button>
+            ))}
+          </div>
+        </Section>
+
+        <Section title={t("settings.privacy")}>
+          <Toggle
+            checked={showOnline}
+            onChange={(v) => void savePrivacy({ show_online: v })}
+            label={t("settings.showOnline")}
+            icon={<ShieldCheck className="h-5 w-5 text-primary" />}
+          />
+          <Toggle
+            checked={showLastSeen}
+            onChange={(v) => void savePrivacy({ show_last_seen: v })}
+            label={t("settings.showLastSeen")}
+            icon={<ShieldCheck className="h-5 w-5 text-primary" />}
+          />
         </Section>
 
         <Section title="Mon badge">

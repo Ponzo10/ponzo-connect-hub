@@ -189,6 +189,7 @@ export function BottomNav() {
 /** Empêche l'accès au contenu PONZO sans compte connecté. */
 export function AuthGate({ children }: { children: ReactNode }) {
   const { user, loading } = useAuth();
+  const { t } = useI18n();
   const navigate = useNavigate();
   const href = useRouterState({ select: (s) => s.location.href });
   const redirected = useRef(false);
@@ -207,7 +208,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
       <div className="grid min-h-screen place-items-center bg-background">
         <div className="flex flex-col items-center gap-3">
           <PonzoMark size={72} className="animate-pulse" />
-          <p className="text-xs text-muted-foreground">Chargement de PONZO…</p>
+          <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
