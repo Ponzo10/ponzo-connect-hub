@@ -380,6 +380,7 @@ export type Database = {
         Row: {
           body: string
           created_at: string
+          delivered_at: string | null
           id: string
           media_type: string | null
           media_url: string | null
@@ -390,6 +391,7 @@ export type Database = {
         Insert: {
           body: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -400,6 +402,7 @@ export type Database = {
         Update: {
           body?: string
           created_at?: string
+          delivered_at?: string | null
           id?: string
           media_type?: string | null
           media_url?: string | null
@@ -861,8 +864,12 @@ export type Database = {
           full_name: string
           handle: string | null
           id: string
+          language: string
+          last_seen_at: string | null
           phone: string | null
           role: string | null
+          show_last_seen: boolean
+          show_online: boolean
           title: string | null
           updated_at: string
           verified: boolean
@@ -880,8 +887,12 @@ export type Database = {
           full_name?: string
           handle?: string | null
           id: string
+          language?: string
+          last_seen_at?: string | null
           phone?: string | null
           role?: string | null
+          show_last_seen?: boolean
+          show_online?: boolean
           title?: string | null
           updated_at?: string
           verified?: boolean
@@ -899,8 +910,12 @@ export type Database = {
           full_name?: string
           handle?: string | null
           id?: string
+          language?: string
+          last_seen_at?: string | null
           phone?: string | null
           role?: string | null
+          show_last_seen?: boolean
+          show_online?: boolean
           title?: string | null
           updated_at?: string
           verified?: boolean
@@ -1271,7 +1286,9 @@ export type Database = {
         }
         Returns: string
       }
+      mark_messages_delivered: { Args: never; Returns: number }
       owner_dashboard: { Args: never; Returns: Json }
+      presence_of: { Args: { _user_id: string }; Returns: Json }
       resolve_security_event: {
         Args: { _id: string; _resolved: boolean }
         Returns: boolean
@@ -1301,6 +1318,7 @@ export type Database = {
         }
         Returns: undefined
       }
+      touch_presence: { Args: never; Returns: undefined }
       trending_overview: { Args: { _limit?: number }; Returns: Json }
     }
     Enums: {
