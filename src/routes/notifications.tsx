@@ -31,6 +31,34 @@ const icons: Record<string, typeof Bell> = {
   system: Bell,
 };
 
+/** Cible de navigation d'une notification (publication, profil, story, actualité…). */
+function notificationTarget(n: { kind: string; entity_id: string | null; actor_id: string | null }) {
+  const entity = n.entity_id;
+  switch (n.kind) {
+    case "like":
+    case "comment":
+    case "share":
+    case "mention":
+      return entity ? ({ to: "/publication/$id", params: { id: entity } } as const) : ({ to: "/" } as const);
+    case "follow":
+      return n.actor_id
+        ? ({ to: "/membre/$id", params: { id: n.actor_id } } as const)
+        : ({ to: "/" } as const);
+    case "message":
+      return { to: "/messages" } as const;
+    case "story_like":
+    case "story_comment":
+    case "story_share":
+    case "story_view":
+      return { to: "/" } as const;
+    case "news":
+      return entity ? ({ to: "/actualite/$id", params: { id: entity } } as const) : ({ to: "/actualites" } as const);
+    default:
+      return { to: "/" } as const;
+  }
+}
+
+
 function Notifications() {
   const { user } = useAuth();
   const list = useQuery({
