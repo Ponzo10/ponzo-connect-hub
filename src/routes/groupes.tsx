@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { useAuth } from "@/lib/auth";
-import { createGroup, fetchGroups, joinGroup, type Group } from "@/lib/groups-api";
+import { createGroup, fetchGroups, joinGroup, requestJoin, type Group } from "@/lib/groups-api";
 import { uploadMedia } from "@/lib/upload";
 import { cn } from "@/lib/utils";
 
