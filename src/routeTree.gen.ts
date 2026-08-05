@@ -25,6 +25,7 @@ import { Route as ProfilRouteImport } from './routes/profil'
 import { Route as PublierRouteImport } from './routes/publier'
 import { Route as RechercheRouteImport } from './routes/recherche'
 import { Route as VideosRouteImport } from './routes/videos'
+import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
 
 const IndexRoute = IndexRouteImport.update({
@@ -107,6 +108,11 @@ const VideosRoute = VideosRouteImport.update({
   path: '/videos',
   getParentRoute: () => rootRouteImport,
 } as any)
+const GroupeIdRoute = GroupeIdRouteImport.update({
+  id: '/groupe/$id',
+  path: '/groupe/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const MembreIdRoute = MembreIdRouteImport.update({
   id: '/membre/$id',
   path: '/membre/$id',
@@ -130,6 +136,7 @@ export interface FileRoutesByFullPath {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesByTo {
@@ -149,6 +156,7 @@ export interface FileRoutesByTo {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRoutesById {
@@ -169,6 +177,7 @@ export interface FileRoutesById {
   '/publier': typeof PublierRoute
   '/recherche': typeof RechercheRoute
   '/videos': typeof VideosRoute
+  '/groupe/$id': typeof GroupeIdRoute
   '/membre/$id': typeof MembreIdRoute
 }
 export interface FileRouteTypes {
@@ -190,6 +199,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/groupe/$id'
     | '/membre/$id'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -209,6 +219,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/groupe/$id'
     | '/membre/$id'
   id:
     | '__root__'
@@ -228,6 +239,7 @@ export interface FileRouteTypes {
     | '/publier'
     | '/recherche'
     | '/videos'
+    | '/groupe/$id'
     | '/membre/$id'
   fileRoutesById: FileRoutesById
 }
@@ -248,6 +260,7 @@ export interface RootRouteChildren {
   PublierRoute: typeof PublierRoute
   RechercheRoute: typeof RechercheRoute
   VideosRoute: typeof VideosRoute
+  GroupeIdRoute: typeof GroupeIdRoute
   MembreIdRoute: typeof MembreIdRoute
 }
 
@@ -365,6 +378,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof VideosRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/groupe/$id': {
+      id: '/groupe/$id'
+      path: '/groupe/$id'
+      fullPath: '/groupe/$id'
+      preLoaderRoute: typeof GroupeIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/membre/$id': {
       id: '/membre/$id'
       path: '/membre/$id'
@@ -392,6 +412,7 @@ const rootRouteChildren: RootRouteChildren = {
   PublierRoute: PublierRoute,
   RechercheRoute: RechercheRoute,
   VideosRoute: VideosRoute,
+  GroupeIdRoute: GroupeIdRoute,
   MembreIdRoute: MembreIdRoute,
 }
 export const routeTree = rootRouteImport
