@@ -187,7 +187,9 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
         ownerId: user.id,
         name: name.trim(),
         description: description.trim() || null,
+        rules: rules.trim() || null,
         photoUrl: photo,
+
         isPublic,
       });
       await queryClient.invalidateQueries({ queryKey: ["groups"] });
