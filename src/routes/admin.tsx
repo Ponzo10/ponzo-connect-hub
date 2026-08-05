@@ -5,6 +5,16 @@ import { useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
+import {
+  ContentTab,
+  InsightsTab,
+  OverviewTab,
+  PerformanceTab,
+  ReportTab,
+  SecurityTab,
+  UsageTab,
+  useOwnerDashboard,
+} from "@/components/ponzo/OwnerDashboard";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { useAuth } from "@/lib/auth";
 import {
