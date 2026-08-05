@@ -240,6 +240,14 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
         placeholder="Description du groupe…"
         className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
       />
+      <textarea
+        value={rules}
+        onChange={(e) => setRules(e.target.value)}
+        rows={3}
+        placeholder="Règles du groupe…"
+        className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+      />
+
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: "Public", value: true, hint: "Tout le monde peut rejoindre" },
