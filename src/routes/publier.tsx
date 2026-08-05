@@ -8,7 +8,7 @@ import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { useAuth } from "@/lib/auth";
 import { asPerson, createPost } from "@/lib/ponzo-api";
-import { uploadMedia } from "@/lib/upload";
+import { removeUploadedMedia, uploadMedia } from "@/lib/upload";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/publier")({
@@ -28,8 +28,8 @@ export const Route = createFileRoute("/publier")({
   errorComponent: ({ reset }) => (
     <div className="grid min-h-screen place-items-center px-6 text-center">
       <div className="space-y-3">
-        <p className="text-sm font-semibold">Connexion interrompue</p>
-        <p className="text-xs text-muted-foreground">Ta publication n'a pas été perdue, réessaie simplement.</p>
+        <p className="text-sm font-semibold">Création de publication</p>
+        <p className="text-xs text-muted-foreground">Recharge cet écran pour continuer.</p>
         <button onClick={reset} className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-primary-foreground">
           Réessayer
         </button>
@@ -51,7 +51,7 @@ const kinds = [
 function Publier() {
   const [kind, setKind] = useState<(typeof kinds)[number]["label"]>("Publication");
   const [text, setText] = useState("");
-  const [media, setMedia] = useState<{ url: string; type: "image" | "video" } | null>(null);
+  const [media, setMedia] = useState<{ url: string; path: string; type: "image" | "video" } | null>(null);
   const [uploading, setUploading] = useState(false);
   const [busy, setBusy] = useState(false);
   const { user, profile } = useAuth();
@@ -70,7 +70,7 @@ function Publier() {
     try {
       const result = await uploadMedia(user.id, file, "posts", expected);
       const type = result.kind === "video" || expected === "video" ? "video" : "image";
-      setMedia({ url: result.url, type });
+      setMedia({ url: result.url, path: result.path, type });
       toast.success("Fichier ajouté");
     } catch (error) {
       toast.error(error instanceof Error ? error.message : "Envoi du fichier impossible.");
@@ -97,6 +97,7 @@ function Publier() {
     }
     setBusy(true);
     try {
+      const destination = media?.type === "video" ? "/videos" : "/";
       await createPost({
         authorId: user.id,
         body: text.trim(),
@@ -106,10 +107,13 @@ function Publier() {
       });
       setText("");
       setMedia(null);
-      void queryClient.invalidateQueries({ queryKey: ["feed"] });
-      void queryClient.invalidateQueries({ queryKey: ["videos"] });
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["feed"] }),
+        queryClient.invalidateQueries({ queryKey: ["videos"] }),
+        queryClient.invalidateQueries({ queryKey: ["posts", user.id] }),
+      ]);
       toast.success("Publication en ligne 🎉");
-      void navigate({ to: media?.type === "video" ? "/videos" : "/" });
+      void navigate({ to: destination });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Publication impossible";
       toast.error(`Publication impossible : ${message}`);
@@ -174,7 +178,11 @@ function Publier() {
                 <video src={media.url} controls playsInline className="max-h-72 w-full bg-black object-contain" />
               )}
               <button
-                onClick={() => setMedia(null)}
+                 onClick={() => {
+                   const uploaded = media;
+                   setMedia(null);
+                   void removeUploadedMedia(uploaded.path).catch(() => undefined);
+                 }}
                 aria-label="Retirer le fichier"
                 className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-background/80"
               >

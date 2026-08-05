@@ -337,14 +337,27 @@ export async function createPost(input: {
   mediaUrl?: string | null;
   mediaType?: string | null;
 }) {
-  const { error } = await supabase.from("posts").insert({
+  const id = crypto.randomUUID();
+  const row = {
+    id,
     author_id: input.authorId,
     body: input.body,
     tag: input.tag ?? null,
     media_url: input.mediaUrl ?? null,
     media_type: input.mediaType ?? null,
-  });
-  if (error) throw error;
+  };
+
+  let lastError: Error | null = null;
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { error } = await supabase.from("posts").upsert(row, { onConflict: "id" });
+    if (!error) return id;
+
+    const { data: existing } = await supabase.from("posts").select("id").eq("id", id).maybeSingle();
+    if (existing) return id;
+    lastError = error;
+    if (attempt < 2) await new Promise((resolve) => setTimeout(resolve, 700 * (attempt + 1)));
+  }
+  throw lastError ?? new Error("Publication non enregistrée");
 }
 
 // ---------- Commentaires imbriqués ----------
