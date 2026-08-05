@@ -110,39 +110,56 @@ function VideoCard({
   const ref = useRef<HTMLVideoElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
   const [active, setActive] = useState(eager);
+  const [warm, setWarm] = useState(eager);
   const [counted, setCounted] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
   const liked = useMemo(() => !!user && post.post_likes.some((l) => l.user_id === user.id), [post.post_likes, user]);
   const saved = useMemo(() => !!user && post.post_saves.some((s) => s.user_id === user.id), [post.post_saves, user]);
 
+  // Préchauffage : dès que la vidéo approche de l'écran on charge le début du flux,
+  // la lecture démarre alors quasi instantanément au scroll.
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
+    const warmObserver = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) setWarm(true);
+      },
+      { rootMargin: "150% 0px" },
+    );
     const observer = new IntersectionObserver(
       ([entry]) => setActive(!!entry && entry.intersectionRatio > 0.6),
       { threshold: [0, 0.6, 1] },
     );
+    warmObserver.observe(el);
     observer.observe(el);
-    return () => observer.disconnect();
+    return () => {
+      warmObserver.disconnect();
+      observer.disconnect();
+    };
   }, []);
 
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
     if (active) {
-      const saved = progressStore.get(post.id);
-      if (saved && Math.abs(v.currentTime - saved) > 1) v.currentTime = saved;
-      void v.play().catch(() => {});
+      const savedTime = progressStore.get(post.id);
+      if (savedTime && Math.abs(v.currentTime - savedTime) > 1) v.currentTime = savedTime;
+      const start = () => void v.play().catch(() => {});
+      if (v.readyState >= 2) start();
+      else v.addEventListener("loadeddata", start, { once: true });
       if (!counted && user) {
         setCounted(true);
         void incrementView(post.id);
       }
-    } else {
-      progressStore.set(post.id, v.currentTime);
-      v.pause();
+      return () => v.removeEventListener("loadeddata", start);
     }
+    progressStore.set(post.id, v.currentTime);
+    v.pause();
+    return;
   }, [active, post.id, counted, user]);
+
 
   const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: ["videos"] }), [queryClient]);
 
