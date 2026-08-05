@@ -6,7 +6,7 @@ import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { useAuth } from "@/lib/auth";
-import { createGroup, fetchGroups, joinGroup, type Group } from "@/lib/groups-api";
+import { createGroup, fetchGroups, joinGroup, requestJoin, type Group } from "@/lib/groups-api";
 import { uploadMedia } from "@/lib/upload";
 import { cn } from "@/lib/utils";
 
@@ -41,13 +41,19 @@ function GroupsPage() {
   const join = async (group: Group) => {
     if (!user) return;
     try {
-      await joinGroup(group.id, user.id);
+      if (group.is_public) {
+        await joinGroup(group.id, user.id);
+        toast.success(`Tu as rejoint ${group.name}`);
+      } else {
+        await requestJoin(group.id, user.id);
+        toast.success("Demande envoyée aux administrateurs.");
+      }
       await queryClient.invalidateQueries({ queryKey: ["groups"] });
-      toast.success(`Tu as rejoint ${group.name}`);
     } catch {
-      toast.error("Impossible de rejoindre ce groupe.");
+      toast.error("Action impossible.");
     }
   };
+
 
   return (
     <AppShell title="Groupes">
@@ -106,10 +112,12 @@ function GroupsPage() {
                 </div>
                 <button
                   onClick={() => void join(g)}
-                  className="shrink-0 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground"
+                  disabled={groups.data?.pending.has(g.id)}
+                  className="shrink-0 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground disabled:opacity-50"
                 >
-                  Rejoindre
+                  {groups.data?.pending.has(g.id) ? "En attente" : g.is_public ? "Rejoindre" : "Demander"}
                 </button>
+
               </li>
             ))}
           </ul>
@@ -146,6 +154,8 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
   const queryClient = useQueryClient();
   const [name, setName] = useState("");
   const [description, setDescription] = useState("");
+  const [rules, setRules] = useState("");
+
   const [isPublic, setIsPublic] = useState(true);
   const [photo, setPhoto] = useState<string | null>(null);
   const [uploading, setUploading] = useState(false);
@@ -177,7 +187,9 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
         ownerId: user.id,
         name: name.trim(),
         description: description.trim() || null,
+        rules: rules.trim() || null,
         photoUrl: photo,
+
         isPublic,
       });
       await queryClient.invalidateQueries({ queryKey: ["groups"] });
@@ -228,6 +240,14 @@ function CreateGroupForm({ onDone }: { onDone: () => void }) {
         placeholder="Description du groupe…"
         className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
       />
+      <textarea
+        value={rules}
+        onChange={(e) => setRules(e.target.value)}
+        rows={3}
+        placeholder="Règles du groupe…"
+        className="w-full resize-none rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+      />
+
       <div className="grid grid-cols-2 gap-2">
         {[
           { label: "Public", value: true, hint: "Tout le monde peut rejoindre" },
