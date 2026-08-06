@@ -80,6 +80,24 @@ export type Database = {
         }
         Relationships: []
       }
+      blocked_users: {
+        Row: {
+          blocked_id: string
+          blocker_id: string
+          created_at: string
+        }
+        Insert: {
+          blocked_id: string
+          blocker_id: string
+          created_at?: string
+        }
+        Update: {
+          blocked_id?: string
+          blocker_id?: string
+          created_at?: string
+        }
+        Relationships: []
+      }
       content_hashtags: {
         Row: {
           author_id: string | null
@@ -114,6 +132,33 @@ export type Database = {
             referencedColumns: ["id"]
           },
         ]
+      }
+      conversation_settings: {
+        Row: {
+          archived: boolean
+          created_at: string
+          peer_id: string
+          pinned: boolean
+          updated_at: string
+          user_id: string
+        }
+        Insert: {
+          archived?: boolean
+          created_at?: string
+          peer_id: string
+          pinned?: boolean
+          updated_at?: string
+          user_id: string
+        }
+        Update: {
+          archived?: boolean
+          created_at?: string
+          peer_id?: string
+          pinned?: boolean
+          updated_at?: string
+          user_id?: string
+        }
+        Relationships: []
       }
       follows: {
         Row: {
@@ -376,38 +421,82 @@ export type Database = {
         }
         Relationships: []
       }
+      message_reactions: {
+        Row: {
+          created_at: string
+          emoji: string
+          message_id: string
+          user_id: string
+        }
+        Insert: {
+          created_at?: string
+          emoji: string
+          message_id: string
+          user_id: string
+        }
+        Update: {
+          created_at?: string
+          emoji?: string
+          message_id?: string
+          user_id?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "message_reactions_message_id_fkey"
+            columns: ["message_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
       messages: {
         Row: {
           body: string
           created_at: string
+          deleted_at: string | null
+          deleted_for: string[]
           delivered_at: string | null
+          edited_at: string | null
+          forwarded: boolean
           id: string
           media_type: string | null
           media_url: string | null
           read_at: string | null
           recipient_id: string
+          reply_to_id: string | null
           sender_id: string
         }
         Insert: {
           body: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_for?: string[]
           delivered_at?: string | null
+          edited_at?: string | null
+          forwarded?: boolean
           id?: string
           media_type?: string | null
           media_url?: string | null
           read_at?: string | null
           recipient_id: string
+          reply_to_id?: string | null
           sender_id: string
         }
         Update: {
           body?: string
           created_at?: string
+          deleted_at?: string | null
+          deleted_for?: string[]
           delivered_at?: string | null
+          edited_at?: string | null
+          forwarded?: boolean
           id?: string
           media_type?: string | null
           media_url?: string | null
           read_at?: string | null
           recipient_id?: string
+          reply_to_id?: string | null
           sender_id?: string
         }
         Relationships: [
@@ -416,6 +505,13 @@ export type Database = {
             columns: ["recipient_id"]
             isOneToOne: false
             referencedRelation: "profiles"
+            referencedColumns: ["id"]
+          },
+          {
+            foreignKeyName: "messages_reply_to_id_fkey"
+            columns: ["reply_to_id"]
+            isOneToOne: false
+            referencedRelation: "messages"
             referencedColumns: ["id"]
           },
           {

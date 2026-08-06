@@ -119,13 +119,20 @@ export async function fetchProducts(category?: string): Promise<ProductWithSelle
   return (data ?? []) as unknown as ProductWithSeller[];
 }
 
-export type Message = Tables<"messages"> & { sender: Profile | null; recipient: Profile | null };
+export type MessageQuote = { id: string; body: string; sender_id: string; media_type: string | null } | null;
+
+export type Message = Tables<"messages"> & {
+  sender: Profile | null;
+  recipient: Profile | null;
+  reply_to: MessageQuote;
+  message_reactions: { user_id: string; emoji: string }[];
+};
 
 export async function fetchMessages(userId: string): Promise<Message[]> {
   const { data, error } = await supabase
     .from("messages")
     .select(
-      "*, sender:profiles!messages_sender_profile_fkey(*), recipient:profiles!messages_recipient_profile_fkey(*)",
+      "*, sender:profiles!messages_sender_profile_fkey(*), recipient:profiles!messages_recipient_profile_fkey(*), reply_to:messages!messages_reply_to_id_fkey(id, body, sender_id, media_type), message_reactions(user_id, emoji)",
     )
     .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
     .order("created_at", { ascending: true });
@@ -133,8 +140,15 @@ export async function fetchMessages(userId: string): Promise<Message[]> {
   return (data ?? []) as unknown as Message[];
 }
 
-export async function sendMessage(senderId: string, recipientId: string, body: string) {
-  const { error } = await supabase.from("messages").insert({ sender_id: senderId, recipient_id: recipientId, body });
+export async function sendMessage(
+  senderId: string,
+  recipientId: string,
+  body: string,
+  replyToId?: string | null,
+) {
+  const { error } = await supabase
+    .from("messages")
+    .insert({ sender_id: senderId, recipient_id: recipientId, body, reply_to_id: replyToId ?? null });
   if (error) throw error;
 }
 
@@ -394,12 +408,18 @@ export async function sendMedia(
   senderId: string,
   recipientId: string,
   body: string,
-  mediaUrl: string,
+  mediaUrl: string | null,
   mediaType: string,
+  replyToId?: string | null,
 ) {
-  const { error } = await supabase
-    .from("messages")
-    .insert({ sender_id: senderId, recipient_id: recipientId, body, media_url: mediaUrl, media_type: mediaType });
+  const { error } = await supabase.from("messages").insert({
+    sender_id: senderId,
+    recipient_id: recipientId,
+    body,
+    media_url: mediaUrl,
+    media_type: mediaType,
+    reply_to_id: replyToId ?? null,
+  });
   if (error) throw error;
 }
 
