@@ -408,12 +408,18 @@ export async function sendMedia(
   senderId: string,
   recipientId: string,
   body: string,
-  mediaUrl: string,
+  mediaUrl: string | null,
   mediaType: string,
+  replyToId?: string | null,
 ) {
-  const { error } = await supabase
-    .from("messages")
-    .insert({ sender_id: senderId, recipient_id: recipientId, body, media_url: mediaUrl, media_type: mediaType });
+  const { error } = await supabase.from("messages").insert({
+    sender_id: senderId,
+    recipient_id: recipientId,
+    body,
+    media_url: mediaUrl,
+    media_type: mediaType,
+    reply_to_id: replyToId ?? null,
+  });
   if (error) throw error;
 }
 
