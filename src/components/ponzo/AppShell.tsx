@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 
@@ -138,6 +138,16 @@ export function TopBar({ title }: { title?: string | undefined }) {
 export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { t } = useI18n();
+  const queryClient = useQueryClient();
+
+  /** Appui sur Accueil : remonte en haut et recharge le fil, comme sur les grands réseaux. */
+  const refreshHome = () => {
+    window.scrollTo({ top: 0, behavior: "smooth" });
+    void queryClient.invalidateQueries({ queryKey: ["feed"] });
+    void queryClient.invalidateQueries({ queryKey: ["news"] });
+    void queryClient.invalidateQueries({ queryKey: ["stories"] });
+  };
+
 
   return (
     <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
@@ -167,6 +177,7 @@ export function BottomNav() {
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
+                onClick={item.to === "/" ? refreshHome : undefined}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",

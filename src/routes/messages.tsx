@@ -153,6 +153,18 @@ function Messages() {
     void queryClient.invalidateQueries({ queryKey: ["messages"] });
   }, [queryClient]);
 
+  /** Ajoute immédiatement un message envoyé au cache : affichage instantané, sans attendre le réseau. */
+  const pushMessage = useCallback(
+    (message: Message) => {
+      queryClient.setQueryData<Message[]>(["messages", user?.id], (prev) => {
+        const list = prev ?? [];
+        if (list.some((m) => m.id === message.id)) return list;
+        return [...list, message];
+      });
+    },
+    [queryClient, user?.id],
+  );
+
   useEffect(() => {
     if (!user) return;
     void markMessagesDelivered().then(refreshMessages);
@@ -270,31 +282,37 @@ function Messages() {
   const send = useMutation({
     mutationFn: async () => {
       if (!user || !to || !draft.trim()) return;
-      if (editing) {
-        await editMessage(editing.id, draft.trim());
-        return;
-      }
-      await sendMessage(user.id, to, draft.trim(), replyTo?.id ?? null);
-      await notify({ userId: to, actorId: user.id, kind: "message", body: "t'a envoyé un message" });
-    },
-    onSuccess: () => {
+      const text = draft.trim();
+      const quoted = replyTo?.id ?? null;
+      const edited = editing;
+      // Le champ est vidé tout de suite : l'envoi paraît instantané.
       setDraft("");
       setReplyTo(null);
       setEditing(null);
       broadcast({ typing: false });
+      if (edited) {
+        await editMessage(edited.id, text);
+        refreshMessages();
+        return;
+      }
+      const created = await sendMessage(user.id, to, text, quoted);
+      pushMessage(created);
+      void notify({ userId: to, actorId: user.id, kind: "message", body: "t'a envoyé un message" });
+    },
+    onError: () => {
+      toast.error(t("msg.sendFailed"));
       refreshMessages();
     },
-    onError: () => toast.error(t("msg.sendFailed")),
   });
 
   const sendFile = async (file: File | undefined, kindOverride?: string) => {
     if (!file || !user || !to) return;
     try {
       const res = await uploadMedia(user.id, file, "messages");
-      await sendMedia(user.id, to, file.name, res.url, kindOverride ?? res.kind, replyTo?.id ?? null);
-      await notify({ userId: to, actorId: user.id, kind: "message", body: "t'a envoyé un fichier" });
+      const created = await sendMedia(user.id, to, file.name, res.url, kindOverride ?? res.kind, replyTo?.id ?? null);
+      pushMessage(created);
       setReplyTo(null);
-      refreshMessages();
+      void notify({ userId: to, actorId: user.id, kind: "message", body: "t'a envoyé un fichier" });
     } catch {
       toast.error(t("msg.fileFailed"));
     }
@@ -303,10 +321,10 @@ function Messages() {
   const sendSticker = async (emoji: string) => {
     if (!user || !to) return;
     try {
-      await sendMedia(user.id, to, emoji, null, "sticker", replyTo?.id ?? null);
+      const created = await sendMedia(user.id, to, emoji, null, "sticker", replyTo?.id ?? null);
+      pushMessage(created);
       setStickers(false);
       setReplyTo(null);
-      refreshMessages();
     } catch {
       toast.error(t("msg.sendFailed"));
     }
