@@ -169,7 +169,15 @@ export async function uploadMedia(
     const { data, error } = await supabase.storage.from("media").createSignedUrl(path, TEN_YEARS);
     if (!error && data?.signedUrl) return { url: data.signedUrl, path, kind, name };
     lastError = error;
-    if (attempt < SIGN_ATTEMPTS - 1) await sleep(500 * (attempt + 1));
+    if (attempt < SIGN_ATTEMPTS - 1) {
+      // Une session expirée est la cause la plus fréquente : on la rafraîchit avant de réessayer.
+      try {
+        await activeAccessToken();
+      } catch {
+        /* on réessaie quand même */
+      }
+      await sleep(500 * (attempt + 1));
+    }
   }
 
   const message = lastError instanceof Error ? lastError.message : "URL indisponible";
