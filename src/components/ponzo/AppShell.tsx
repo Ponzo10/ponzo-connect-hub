@@ -1,5 +1,5 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
 import { useEffect, useRef, type ReactNode } from "react";
 
