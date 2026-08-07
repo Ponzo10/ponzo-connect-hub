@@ -56,8 +56,20 @@ const quickActions = [
 
 function Feed() {
   const { user, profile } = useAuth();
-  const feed = useQuery({ queryKey: ["feed"], queryFn: fetchFeed });
-  const news = useQuery({ queryKey: ["news", "feed"], queryFn: () => fetchNews({ limit: 12 }) });
+  const feed = useQuery({
+    queryKey: ["feed"],
+    queryFn: fetchFeed,
+    staleTime: 60_000,
+    gcTime: 10 * 60_000,
+    refetchOnWindowFocus: false,
+  });
+  const news = useQuery({
+    queryKey: ["news", "feed"],
+    queryFn: () => fetchNews({ limit: 12 }),
+    staleTime: 5 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
+  });
 
   const timeline = [
     ...(feed.data ?? []).map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
