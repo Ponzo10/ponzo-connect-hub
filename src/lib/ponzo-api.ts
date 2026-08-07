@@ -128,28 +128,34 @@ export type Message = Tables<"messages"> & {
   message_reactions: { user_id: string; emoji: string }[];
 };
 
+const MESSAGE_SELECT =
+  "*, sender:profiles!messages_sender_profile_fkey(*), recipient:profiles!messages_recipient_profile_fkey(*), reply_to:messages!messages_reply_to_id_fkey(id, body, sender_id, media_type), message_reactions(user_id, emoji)";
+
 export async function fetchMessages(userId: string): Promise<Message[]> {
   const { data, error } = await supabase
     .from("messages")
-    .select(
-      "*, sender:profiles!messages_sender_profile_fkey(*), recipient:profiles!messages_recipient_profile_fkey(*), reply_to:messages!messages_reply_to_id_fkey(id, body, sender_id, media_type), message_reactions(user_id, emoji)",
-    )
+    .select(MESSAGE_SELECT)
     .or(`sender_id.eq.${userId},recipient_id.eq.${userId}`)
-    .order("created_at", { ascending: true });
+    .order("created_at", { ascending: true })
+    .limit(500);
   if (error) throw error;
   return (data ?? []) as unknown as Message[];
 }
 
+/** Insère un message et renvoie la ligne complète pour un affichage immédiat. */
 export async function sendMessage(
   senderId: string,
   recipientId: string,
   body: string,
   replyToId?: string | null,
-) {
-  const { error } = await supabase
+): Promise<Message> {
+  const { data, error } = await supabase
     .from("messages")
-    .insert({ sender_id: senderId, recipient_id: recipientId, body, reply_to_id: replyToId ?? null });
+    .insert({ sender_id: senderId, recipient_id: recipientId, body, reply_to_id: replyToId ?? null })
+    .select(MESSAGE_SELECT)
+    .single();
   if (error) throw error;
+  return data as unknown as Message;
 }
 
 export type Notification = Tables<"notifications"> & { actor: Profile | null };
