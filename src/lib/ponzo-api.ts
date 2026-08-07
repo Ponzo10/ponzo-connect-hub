@@ -417,16 +417,21 @@ export async function sendMedia(
   mediaUrl: string | null,
   mediaType: string,
   replyToId?: string | null,
-) {
-  const { error } = await supabase.from("messages").insert({
-    sender_id: senderId,
-    recipient_id: recipientId,
-    body,
-    media_url: mediaUrl,
-    media_type: mediaType,
-    reply_to_id: replyToId ?? null,
-  });
+): Promise<Message> {
+  const { data, error } = await supabase
+    .from("messages")
+    .insert({
+      sender_id: senderId,
+      recipient_id: recipientId,
+      body,
+      media_url: mediaUrl,
+      media_type: mediaType,
+      reply_to_id: replyToId ?? null,
+    })
+    .select(MESSAGE_SELECT)
+    .single();
   if (error) throw error;
+  return data as unknown as Message;
 }
 
 export async function unreadCounts(userId: string) {
