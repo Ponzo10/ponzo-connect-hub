@@ -153,6 +153,18 @@ function Messages() {
     void queryClient.invalidateQueries({ queryKey: ["messages"] });
   }, [queryClient]);
 
+  /** Ajoute immédiatement un message envoyé au cache : affichage instantané, sans attendre le réseau. */
+  const pushMessage = useCallback(
+    (message: Message) => {
+      queryClient.setQueryData<Message[]>(["messages", user?.id], (prev) => {
+        const list = prev ?? [];
+        if (list.some((m) => m.id === message.id)) return list;
+        return [...list, message];
+      });
+    },
+    [queryClient, user?.id],
+  );
+
   useEffect(() => {
     if (!user) return;
     void markMessagesDelivered().then(refreshMessages);
