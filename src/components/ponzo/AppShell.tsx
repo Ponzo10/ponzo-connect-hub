@@ -177,6 +177,7 @@ export function BottomNav() {
             <li key={item.to} className="flex-1">
               <Link
                 to={item.to}
+                onClick={item.to === "/" ? refreshHome : undefined}
                 className={cn(
                   "flex flex-col items-center gap-1 py-2 text-[10px] font-medium transition-colors",
                   active ? "text-primary" : "text-muted-foreground",
