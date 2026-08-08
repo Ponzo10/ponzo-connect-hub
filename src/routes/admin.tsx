@@ -118,6 +118,7 @@ function Admin() {
 
       <div className="space-y-2 px-3 py-4">
         {tab === "Vue d'ensemble" && <OverviewTab d={dashboard.data} />}
+        {tab === "Assistant IA" && <AdminAssistant />}
         {tab === "Contenu" && <ContentTab d={dashboard.data} />}
         {tab === "Usage" && <UsageTab d={dashboard.data} />}
         {tab === "Performance" && <PerformanceTab d={dashboard.data} />}
