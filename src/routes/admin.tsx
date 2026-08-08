@@ -4,6 +4,7 @@ import { Bell, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AdminAssistant } from "@/components/ponzo/AdminAssistant";
 import { AppShell } from "@/components/ponzo/AppShell";
 import {
   ContentTab,
@@ -49,6 +50,7 @@ export const Route = createFileRoute("/admin")({
 
 const tabs = [
   "Vue d'ensemble",
+  "Assistant IA",
   "Contenu",
   "Usage",
   "Performance",
@@ -117,6 +119,7 @@ function Admin() {
 
       <div className="space-y-2 px-3 py-4">
         {tab === "Vue d'ensemble" && <OverviewTab d={dashboard.data} />}
+        {tab === "Assistant IA" && <AdminAssistant />}
         {tab === "Contenu" && <ContentTab d={dashboard.data} />}
         {tab === "Usage" && <UsageTab d={dashboard.data} />}
         {tab === "Performance" && <PerformanceTab d={dashboard.data} />}

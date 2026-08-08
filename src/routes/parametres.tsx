@@ -19,6 +19,8 @@ import {
 import { useEffect, useState } from "react";
 import { toast } from "sonner";
 
+import { RecoveryCodesCard } from "@/components/ponzo/RecoveryCodesCard";
+
 import { AppShell } from "@/components/ponzo/AppShell";
 import { BADGES, BadgePreview } from "@/components/ponzo/Badge3D";
 import { supabase } from "@/integrations/supabase/client";
@@ -397,6 +399,10 @@ function Parametres() {
               </button>
             </div>
           </div>
+        </Section>
+
+        <Section title="Sécurité du compte">
+          <RecoveryCodesCard />
         </Section>
 
         <Section title="Assistance et informations">
