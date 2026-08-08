@@ -399,6 +399,10 @@ function Parametres() {
           </div>
         </Section>
 
+        <Section title="Sécurité du compte">
+          <RecoveryCodesCard />
+        </Section>
+
         <Section title="Assistance et informations">
           <Expandable icon={<HelpCircle className="h-5 w-5 text-primary" />} label="Centre d'aide">
             Besoin d'aide ? Écris-nous depuis la messagerie ou signale un contenu directement depuis le menu « … » d'une
