@@ -49,6 +49,7 @@ export const Route = createFileRoute("/admin")({
 
 const tabs = [
   "Vue d'ensemble",
+  "Assistant IA",
   "Contenu",
   "Usage",
   "Performance",
