@@ -128,7 +128,7 @@ function AuthPage() {
       if (signInError) throw new Error("Ce numéro est déjà associé à un compte. Connecte-toi plutôt.");
     }
     await supabase.from("profiles").update({ phone: cleaned }).eq("id", (await supabase.auth.getUser()).data.user?.id ?? "");
-    const result = await makeCodes({ data: {} });
+    const result = await makeCodes();
     setCodes(result.codes);
     setPassword("");
     setStep("codes");
