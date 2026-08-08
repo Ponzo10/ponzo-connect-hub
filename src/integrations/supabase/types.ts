@@ -44,6 +44,101 @@ export type Database = {
         }
         Relationships: []
       }
+      ai_findings: {
+        Row: {
+          area: string
+          authorized_at: string | null
+          authorized_by: string | null
+          cause: string
+          created_at: string
+          evidence: Json
+          id: string
+          impact: string
+          priority: string
+          recommendation: string
+          scan_id: string | null
+          status: string
+          title: string
+          updated_at: string
+        }
+        Insert: {
+          area?: string
+          authorized_at?: string | null
+          authorized_by?: string | null
+          cause?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          impact?: string
+          priority?: string
+          recommendation?: string
+          scan_id?: string | null
+          status?: string
+          title: string
+          updated_at?: string
+        }
+        Update: {
+          area?: string
+          authorized_at?: string | null
+          authorized_by?: string | null
+          cause?: string
+          created_at?: string
+          evidence?: Json
+          id?: string
+          impact?: string
+          priority?: string
+          recommendation?: string
+          scan_id?: string | null
+          status?: string
+          title?: string
+          updated_at?: string
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_findings_scan_id_fkey"
+            columns: ["scan_id"]
+            isOneToOne: false
+            referencedRelation: "ai_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_scans: {
+        Row: {
+          created_at: string
+          findings_count: number
+          health_score: number
+          id: string
+          metrics: Json
+          model: string | null
+          requested_by: string | null
+          summary: string
+          trigger: string
+        }
+        Insert: {
+          created_at?: string
+          findings_count?: number
+          health_score?: number
+          id?: string
+          metrics?: Json
+          model?: string | null
+          requested_by?: string | null
+          summary?: string
+          trigger?: string
+        }
+        Update: {
+          created_at?: string
+          findings_count?: number
+          health_score?: number
+          id?: string
+          metrics?: Json
+          model?: string | null
+          requested_by?: string | null
+          summary?: string
+          trigger?: string
+        }
+        Relationships: []
+      }
       app_events: {
         Row: {
           created_at: string
@@ -1015,6 +1110,30 @@ export type Database = {
           title?: string | null
           updated_at?: string
           verified?: boolean
+        }
+        Relationships: []
+      }
+      recovery_codes: {
+        Row: {
+          code_hash: string
+          created_at: string
+          id: string
+          used_at: string | null
+          user_id: string
+        }
+        Insert: {
+          code_hash: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id: string
+        }
+        Update: {
+          code_hash?: string
+          created_at?: string
+          id?: string
+          used_at?: string | null
+          user_id?: string
         }
         Relationships: []
       }
