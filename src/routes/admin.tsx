@@ -4,6 +4,7 @@ import { Bell, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { AdminAssistant } from "@/components/ponzo/AdminAssistant";
 import { AppShell } from "@/components/ponzo/AppShell";
 import {
   ContentTab,
