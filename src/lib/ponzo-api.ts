@@ -129,7 +129,7 @@ export type Message = Tables<"messages"> & {
 };
 
 const MESSAGE_SELECT =
-  "*, sender:profiles!messages_sender_profile_fkey(*), recipient:profiles!messages_recipient_profile_fkey(*), reply_to:messages!messages_reply_to_id_fkey(id, body, sender_id, media_type), message_reactions(user_id, emoji)";
+  "*, sender:profiles!messages_sender_profile_fkey(*), recipient:profiles!messages_recipient_profile_fkey(*), reply_to:messages!reply_to_id(id, body, sender_id, media_type), message_reactions(user_id, emoji)";
 
 export async function fetchMessages(userId: string): Promise<Message[]> {
   const { data, error } = await supabase

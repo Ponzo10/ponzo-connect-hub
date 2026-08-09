@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Bot, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Bot, RefreshCw, Send, ShieldCheck, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { askAdminAssistant, runDiagnosticScan } from "@/lib/ai-monitor.functions";
+import { executeRemediation, listRemediationActions } from "@/lib/ai-remediation.functions";
 import { timeAgo } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
@@ -35,6 +36,61 @@ export function AdminAssistant() {
 
   const scan = useServerFn(runDiagnosticScan);
   const ask = useServerFn(askAdminAssistant);
+  const listActions = useServerFn(listRemediationActions);
+  const runFix = useServerFn(executeRemediation);
+  const [choice, setChoice] = useState<Record<string, string>>({});
+
+  const actions = useQuery({ queryKey: ["ai-actions"], queryFn: () => listActions({}), staleTime: 300_000 });
+
+  const remediations = useQuery({
+    queryKey: ["ai-remediations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ai_remediations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 30_000,
+  });
+
+  const fix = useMutation({
+    mutationFn: async (vars: { findingId: string; actionKey: string; confirmSensitive: boolean }) =>
+      runFix({ data: vars }),
+    onSuccess: async (result, vars) => {
+      if (result.requiresConfirmation) {
+        if (window.confirm(`Action sensible — ${result.label}\n\n${result.plan}\n\nConfirmer l'exécution ?`)) {
+          fix.mutate({ ...vars, confirmSensitive: true });
+        }
+        return;
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: [
+            `🛠️ Rapport de correction — ${result.label}`,
+            `Résultat : ${result.outcome === "resolved" ? "résolu ✅" : result.outcome === "partial" ? "partiellement résolu ⚠️" : "échec ❌"}`,
+            `Action appliquée : ${result.applied}`,
+            `Éléments concernés : ${result.targets}`,
+            `Tests : ${result.tests.map((t) => `${t.passed ? "✅" : "❌"} ${t.name} (${t.detail})`).join(" · ") || "aucun"}`,
+            result.recommendations ? `Recommandations : ${result.recommendations}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        },
+      ]);
+      toast.success("Correction exécutée et tracée.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["ai-findings"] }),
+        queryClient.invalidateQueries({ queryKey: ["ai-remediations"] }),
+      ]);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Correction impossible."),
+  });
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
@@ -208,11 +264,56 @@ export function AdminAssistant() {
                 Ignorer
               </button>
             </div>
+          ) : f.status === "authorized" ? (
+            <div className="mt-3 space-y-2">
+              {(() => {
+                const area = (f.area ?? "").toLowerCase();
+                const eligible = (actions.data ?? []).filter((a) =>
+                  a.areas.some((x) => area.includes(x) || x.includes(area)),
+                );
+                if (!eligible.length) {
+                  return (
+                    <p className="text-[11px] text-muted-foreground">
+                      Correction autorisée — aucune action automatique sûre n'existe pour ce domaine, elle doit être
+                      appliquée manuellement.
+                    </p>
+                  );
+                }
+                const selected = choice[f.id] ?? eligible[0]?.key ?? "";
+                const action = eligible.find((a) => a.key === selected);
+                return (
+                  <>
+                    <select
+                      value={selected}
+                      onChange={(e) => setChoice((prev) => ({ ...prev, [f.id]: e.target.value }))}
+                      className="w-full rounded-xl bg-muted px-3 py-2 text-xs font-semibold outline-none"
+                    >
+                      {eligible.map((a) => (
+                        <option key={a.key} value={a.key}>
+                          {a.label}
+                          {a.sensitive ? " (sensible)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {action && <p className="text-[11px] text-muted-foreground">{action.plan}</p>}
+                    <button
+                      onClick={() =>
+                        fix.mutate({ findingId: f.id, actionKey: selected, confirmSensitive: false })
+                      }
+                      disabled={fix.isPending}
+                      className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-[11px] font-semibold text-primary-foreground disabled:opacity-60"
+                    >
+                      <Wrench className="h-3.5 w-3.5" />
+                      {fix.isPending ? "Exécution…" : "Exécuter la correction"}
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
           ) : (
-            <p className="mt-3 text-[11px] font-semibold text-muted-foreground">
-              Statut : {f.status === "authorized" ? "correction autorisée (en attente de l'étape 2)" : f.status}
-            </p>
+            <p className="mt-3 text-[11px] font-semibold text-muted-foreground">Statut : {f.status}</p>
           )}
+
         </div>
       ))}
 
@@ -269,6 +370,23 @@ export function AdminAssistant() {
               Santé {s.health_score}/100 · {s.findings_count} anomalie(s) · {timeAgo(s.created_at)}
             </p>
             <p className="text-[11px] text-muted-foreground">{s.summary}</p>
+          </div>
+        ))}
+      </div>
+
+      <div className="rounded-2xl bg-surface p-4 shadow-soft">
+        <p className="text-sm font-bold">Corrections exécutées</p>
+        {(remediations.data ?? []).length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">Aucune correction exécutée pour le moment.</p>
+        )}
+        {(remediations.data ?? []).map((r) => (
+          <div key={r.id} className="mt-2 border-t border-border pt-2 first:border-0 first:pt-0">
+            <p className="text-xs font-semibold">
+              {r.problem || r.action_key} · {r.outcome === "resolved" ? "résolu ✅" : r.outcome === "partial" ? "partiel ⚠️" : "échec ❌"} ·{" "}
+              {timeAgo(r.created_at)}
+            </p>
+            <p className="text-[11px] text-muted-foreground">{r.applied}</p>
+            {r.recommendations && <p className="text-[11px] text-muted-foreground">→ {r.recommendations}</p>}
           </div>
         ))}
       </div>
