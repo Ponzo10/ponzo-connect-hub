@@ -264,11 +264,56 @@ export function AdminAssistant() {
                 Ignorer
               </button>
             </div>
+          ) : f.status === "authorized" ? (
+            <div className="mt-3 space-y-2">
+              {(() => {
+                const area = (f.area ?? "").toLowerCase();
+                const eligible = (actions.data ?? []).filter((a) =>
+                  a.areas.some((x) => area.includes(x) || x.includes(area)),
+                );
+                if (!eligible.length) {
+                  return (
+                    <p className="text-[11px] text-muted-foreground">
+                      Correction autorisée — aucune action automatique sûre n'existe pour ce domaine, elle doit être
+                      appliquée manuellement.
+                    </p>
+                  );
+                }
+                const selected = choice[f.id] ?? eligible[0]?.key ?? "";
+                const action = eligible.find((a) => a.key === selected);
+                return (
+                  <>
+                    <select
+                      value={selected}
+                      onChange={(e) => setChoice((prev) => ({ ...prev, [f.id]: e.target.value }))}
+                      className="w-full rounded-xl bg-muted px-3 py-2 text-xs font-semibold outline-none"
+                    >
+                      {eligible.map((a) => (
+                        <option key={a.key} value={a.key}>
+                          {a.label}
+                          {a.sensitive ? " (sensible)" : ""}
+                        </option>
+                      ))}
+                    </select>
+                    {action && <p className="text-[11px] text-muted-foreground">{action.plan}</p>}
+                    <button
+                      onClick={() =>
+                        fix.mutate({ findingId: f.id, actionKey: selected, confirmSensitive: false })
+                      }
+                      disabled={fix.isPending}
+                      className="flex items-center gap-1.5 rounded-full bg-brand px-3 py-1.5 text-[11px] font-semibold text-primary-foreground disabled:opacity-60"
+                    >
+                      <Wrench className="h-3.5 w-3.5" />
+                      {fix.isPending ? "Exécution…" : "Exécuter la correction"}
+                    </button>
+                  </>
+                );
+              })()}
+            </div>
           ) : (
-            <p className="mt-3 text-[11px] font-semibold text-muted-foreground">
-              Statut : {f.status === "authorized" ? "correction autorisée (en attente de l'étape 2)" : f.status}
-            </p>
+            <p className="mt-3 text-[11px] font-semibold text-muted-foreground">Statut : {f.status}</p>
           )}
+
         </div>
       ))}
 
