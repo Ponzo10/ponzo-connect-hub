@@ -373,6 +373,23 @@ export function AdminAssistant() {
           </div>
         ))}
       </div>
+
+      <div className="rounded-2xl bg-surface p-4 shadow-soft">
+        <p className="text-sm font-bold">Corrections exécutées</p>
+        {(remediations.data ?? []).length === 0 && (
+          <p className="mt-2 text-xs text-muted-foreground">Aucune correction exécutée pour le moment.</p>
+        )}
+        {(remediations.data ?? []).map((r) => (
+          <div key={r.id} className="mt-2 border-t border-border pt-2 first:border-0 first:pt-0">
+            <p className="text-xs font-semibold">
+              {r.problem || r.action_key} · {r.outcome === "resolved" ? "résolu ✅" : r.outcome === "partial" ? "partiel ⚠️" : "échec ❌"} ·{" "}
+              {timeAgo(r.created_at)}
+            </p>
+            <p className="text-[11px] text-muted-foreground">{r.applied}</p>
+            {r.recommendations && <p className="text-[11px] text-muted-foreground">→ {r.recommendations}</p>}
+          </div>
+        ))}
+      </div>
     </div>
   );
 }
