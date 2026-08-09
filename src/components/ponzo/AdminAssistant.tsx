@@ -1,11 +1,12 @@
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { useServerFn } from "@tanstack/react-start";
-import { AlertTriangle, Bot, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { AlertTriangle, Bot, RefreshCw, Send, ShieldCheck, Wrench } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { supabase } from "@/integrations/supabase/client";
 import { askAdminAssistant, runDiagnosticScan } from "@/lib/ai-monitor.functions";
+import { executeRemediation, listRemediationActions } from "@/lib/ai-remediation.functions";
 import { timeAgo } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
