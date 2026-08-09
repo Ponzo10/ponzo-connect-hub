@@ -46,6 +46,7 @@ export type Database = {
       }
       ai_findings: {
         Row: {
+          action_key: string | null
           area: string
           authorized_at: string | null
           authorized_by: string | null
@@ -57,11 +58,13 @@ export type Database = {
           priority: string
           recommendation: string
           scan_id: string | null
+          sensitive: boolean
           status: string
           title: string
           updated_at: string
         }
         Insert: {
+          action_key?: string | null
           area?: string
           authorized_at?: string | null
           authorized_by?: string | null
@@ -73,11 +76,13 @@ export type Database = {
           priority?: string
           recommendation?: string
           scan_id?: string | null
+          sensitive?: boolean
           status?: string
           title: string
           updated_at?: string
         }
         Update: {
+          action_key?: string | null
           area?: string
           authorized_at?: string | null
           authorized_by?: string | null
@@ -89,6 +94,7 @@ export type Database = {
           priority?: string
           recommendation?: string
           scan_id?: string | null
+          sensitive?: boolean
           status?: string
           title?: string
           updated_at?: string
@@ -99,6 +105,68 @@ export type Database = {
             columns: ["scan_id"]
             isOneToOne: false
             referencedRelation: "ai_scans"
+            referencedColumns: ["id"]
+          },
+        ]
+      }
+      ai_remediations: {
+        Row: {
+          action_key: string
+          applied: string
+          authorized_at: string
+          authorized_by: string | null
+          cause: string
+          confirmed_sensitive: boolean
+          created_at: string
+          detail: string
+          finding_id: string | null
+          id: string
+          outcome: string
+          problem: string
+          recommendations: string
+          targets: string
+          tests: Json
+        }
+        Insert: {
+          action_key: string
+          applied?: string
+          authorized_at?: string
+          authorized_by?: string | null
+          cause?: string
+          confirmed_sensitive?: boolean
+          created_at?: string
+          detail?: string
+          finding_id?: string | null
+          id?: string
+          outcome?: string
+          problem?: string
+          recommendations?: string
+          targets?: string
+          tests?: Json
+        }
+        Update: {
+          action_key?: string
+          applied?: string
+          authorized_at?: string
+          authorized_by?: string | null
+          cause?: string
+          confirmed_sensitive?: boolean
+          created_at?: string
+          detail?: string
+          finding_id?: string | null
+          id?: string
+          outcome?: string
+          problem?: string
+          recommendations?: string
+          targets?: string
+          tests?: Json
+        }
+        Relationships: [
+          {
+            foreignKeyName: "ai_remediations_finding_id_fkey"
+            columns: ["finding_id"]
+            isOneToOne: false
+            referencedRelation: "ai_findings"
             referencedColumns: ["id"]
           },
         ]
