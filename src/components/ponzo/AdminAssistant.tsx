@@ -36,6 +36,61 @@ export function AdminAssistant() {
 
   const scan = useServerFn(runDiagnosticScan);
   const ask = useServerFn(askAdminAssistant);
+  const listActions = useServerFn(listRemediationActions);
+  const runFix = useServerFn(executeRemediation);
+  const [choice, setChoice] = useState<Record<string, string>>({});
+
+  const actions = useQuery({ queryKey: ["ai-actions"], queryFn: () => listActions({}), staleTime: 300_000 });
+
+  const remediations = useQuery({
+    queryKey: ["ai-remediations"],
+    queryFn: async () => {
+      const { data, error } = await supabase
+        .from("ai_remediations")
+        .select("*")
+        .order("created_at", { ascending: false })
+        .limit(10);
+      if (error) throw error;
+      return data;
+    },
+    staleTime: 30_000,
+  });
+
+  const fix = useMutation({
+    mutationFn: async (vars: { findingId: string; actionKey: string; confirmSensitive: boolean }) =>
+      runFix({ data: vars }),
+    onSuccess: async (result, vars) => {
+      if (result.requiresConfirmation) {
+        if (window.confirm(`Action sensible — ${result.label}\n\n${result.plan}\n\nConfirmer l'exécution ?`)) {
+          fix.mutate({ ...vars, confirmSensitive: true });
+        }
+        return;
+      }
+      setMessages((prev) => [
+        ...prev,
+        {
+          role: "assistant",
+          content: [
+            `🛠️ Rapport de correction — ${result.label}`,
+            `Résultat : ${result.outcome === "resolved" ? "résolu ✅" : result.outcome === "partial" ? "partiellement résolu ⚠️" : "échec ❌"}`,
+            `Action appliquée : ${result.applied}`,
+            `Éléments concernés : ${result.targets}`,
+            `Tests : ${result.tests.map((t) => `${t.passed ? "✅" : "❌"} ${t.name} (${t.detail})`).join(" · ") || "aucun"}`,
+            result.recommendations ? `Recommandations : ${result.recommendations}` : "",
+          ]
+            .filter(Boolean)
+            .join("\n"),
+        },
+      ]);
+      toast.success("Correction exécutée et tracée.");
+      await Promise.all([
+        queryClient.invalidateQueries({ queryKey: ["ai-findings"] }),
+        queryClient.invalidateQueries({ queryKey: ["ai-remediations"] }),
+      ]);
+    },
+    onError: (error) => toast.error(error instanceof Error ? error.message : "Correction impossible."),
+  });
+
 
   useEffect(() => {
     if (typeof window === "undefined") return;
