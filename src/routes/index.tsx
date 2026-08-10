@@ -149,7 +149,13 @@ function Feed() {
 
       <section className="mt-4 sm:px-3">
         <h2 className="sr-only">Fil d'actualité</h2>
-        {feed.isLoading && <p className="px-4 py-6 text-sm text-muted-foreground">Chargement du fil…</p>}
+        {feed.isLoading && (
+          <div className="space-y-3 px-3 sm:px-0" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <FeedSkeleton key={i} />
+            ))}
+          </div>
+        )}
         {!feed.isLoading && timeline.length === 0 && (
           <div className="mx-3 rounded-2xl bg-surface p-6 text-center shadow-soft">
             <p className="text-sm font-semibold">Le fil est encore vide</p>
@@ -171,6 +177,15 @@ function Feed() {
             <PostCard key={`p-${item.post.id}`} post={item.post} />
           ),
         )}
+
+        <div ref={sentinel} aria-hidden className="h-1" />
+        {feed.isFetchingNextPage && (
+          <div className="px-3 sm:px-0">
+            <FeedSkeleton />
+          </div>
+        )}
+
+
 
 
       </section>
