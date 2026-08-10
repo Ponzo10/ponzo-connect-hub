@@ -317,13 +317,31 @@ function Publier() {
               <progress
                 className="h-1.5 w-full overflow-hidden rounded-full accent-primary"
                 max={100}
-                value={Math.max(4, Math.round(uploadProgress * 100))}
+                value={upload.status === "uploading" ? Math.max(4, Math.round(upload.progress * 100)) : 100}
               />
               <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
-                Envoi sécurisé… {Math.round(uploadProgress * 100)} %
+                {upload.status === "validating" && "Vérification du fichier…"}
+                {upload.status === "uploading" && `Envoi sécurisé… ${Math.round(upload.progress * 100)} %`}
+                {upload.status === "checking" && "Contrôle du média envoyé…"}
               </p>
             </div>
           )}
+          {upload.status === "error" && (
+            <div className="mt-3 rounded-xl bg-destructive/10 p-3 text-xs" role="alert">
+              <p className="font-semibold text-destructive">{upload.message}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">Code : {upload.code}</p>
+              {lastPick.current && (
+                <button
+                  type="button"
+                  onClick={retryPick}
+                  className="mt-2 rounded-full bg-brand px-4 py-1.5 text-[11px] font-bold text-primary-foreground"
+                >
+                  Réessayer l'envoi
+                </button>
+              )}
+            </div>
+          )}
+
         </div>
 
         <button
