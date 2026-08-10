@@ -1,5 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useEffect, useMemo, useRef } from "react";
 import {
   Briefcase,
   Flame,
@@ -20,7 +21,7 @@ import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
 import { fetchNews } from "@/lib/news-api";
-import { asPerson, fetchFeed } from "@/lib/ponzo-api";
+import { FEED_PAGE_SIZE, asPerson, fetchFeed } from "@/lib/ponzo-api";
 
 
 export const Route = createFileRoute("/")({
@@ -56,9 +57,12 @@ const quickActions = [
 
 function Feed() {
   const { user, profile } = useAuth();
-  const feed = useQuery({
+  const feed = useInfiniteQuery({
     queryKey: ["feed"],
-    queryFn: fetchFeed,
+    queryFn: ({ pageParam }) => fetchFeed(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.length < FEED_PAGE_SIZE ? undefined : (lastPage[lastPage.length - 1]?.created_at ?? undefined),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
@@ -71,10 +75,33 @@ function Feed() {
     refetchOnWindowFocus: false,
   });
 
-  const timeline = [
-    ...(feed.data ?? []).map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
-    ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
-  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  const posts = useMemo(() => feed.data?.pages.flat() ?? [], [feed.data]);
+  const timeline = useMemo(
+    () =>
+      [
+        ...posts.map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
+        ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
+      ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
+    [posts, news.data],
+  );
+
+  // Chargement progressif : la page suivante démarre avant que l'utilisateur
+  // n'atteigne le bas du fil, sans bouton « voir plus ».
+  const sentinel = useRef<HTMLDivElement | null>(null);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = feed;
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
 
 
   return (
@@ -122,7 +149,13 @@ function Feed() {
 
       <section className="mt-4 sm:px-3">
         <h2 className="sr-only">Fil d'actualité</h2>
-        {feed.isLoading && <p className="px-4 py-6 text-sm text-muted-foreground">Chargement du fil…</p>}
+        {feed.isLoading && (
+          <div className="space-y-3 px-3 sm:px-0" aria-busy="true">
+            {[0, 1, 2].map((i) => (
+              <FeedSkeleton key={i} />
+            ))}
+          </div>
+        )}
         {!feed.isLoading && timeline.length === 0 && (
           <div className="mx-3 rounded-2xl bg-surface p-6 text-center shadow-soft">
             <p className="text-sm font-semibold">Le fil est encore vide</p>
@@ -145,6 +178,15 @@ function Feed() {
           ),
         )}
 
+        <div ref={sentinel} aria-hidden className="h-1" />
+        {feed.isFetchingNextPage && (
+          <div className="px-3 sm:px-0">
+            <FeedSkeleton />
+          </div>
+        )}
+
+
+
 
       </section>
     </AppShell>
@@ -160,5 +202,24 @@ function ComposerChip({ icon, label, to }: { icon: React.ReactNode; label: strin
       {icon}
       {label}
     </Link>
+  );
+}
+
+function FeedSkeleton() {
+  return (
+    <div className="mb-3 animate-pulse rounded-2xl bg-surface p-4 shadow-soft">
+      <div className="flex items-center gap-3">
+        <div className="h-10 w-10 rounded-full bg-muted" />
+        <div className="flex-1 space-y-2">
+          <div className="h-3 w-1/3 rounded bg-muted" />
+          <div className="h-2.5 w-1/5 rounded bg-muted" />
+        </div>
+      </div>
+      <div className="mt-3 space-y-2">
+        <div className="h-3 w-full rounded bg-muted" />
+        <div className="h-3 w-4/5 rounded bg-muted" />
+      </div>
+      <div className="mt-3 h-40 rounded-xl bg-muted" />
+    </div>
   );
 }

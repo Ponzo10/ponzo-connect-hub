@@ -73,7 +73,7 @@ function Admin() {
   const dashboard = useOwnerDashboard(isStaff);
   const people = useQuery({ queryKey: ["admin-people"], queryFn: () => fetchProfiles(), enabled: isStaff });
   const roles = useQuery({ queryKey: ["admin-roles"], queryFn: fetchAllRoles, enabled: isStaff });
-  const posts = useQuery({ queryKey: ["admin-posts"], queryFn: fetchFeed, enabled: isStaff });
+  const posts = useQuery({ queryKey: ["admin-posts"], queryFn: () => fetchFeed(null, 50), enabled: isStaff });
   const reports = useQuery({ queryKey: ["admin-reports"], queryFn: fetchReports, enabled: isStaff });
   const shops = useQuery({ queryKey: ["admin-shops"], queryFn: () => fetchShops(), enabled: isStaff });
   const log = useQuery({ queryKey: ["admin-log"], queryFn: fetchActivityLog, enabled: isStaff });

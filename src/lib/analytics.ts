@@ -62,13 +62,22 @@ const SESSION_KEY = "ponzo_session_id";
 
 export function sessionId(): string {
   if (typeof window === "undefined") return "ssr";
-  let id = sessionStorage.getItem(SESSION_KEY);
-  if (!id) {
-    id = crypto.randomUUID();
-    sessionStorage.setItem(SESSION_KEY, id);
+  try {
+    let id = sessionStorage.getItem(SESSION_KEY);
+    if (!id) {
+      // crypto.randomUUID est absent de certains WebView Android / contextes non sécurisés.
+      id =
+        typeof crypto !== "undefined" && typeof crypto.randomUUID === "function"
+          ? crypto.randomUUID()
+          : `${Date.now().toString(36)}-${Math.random().toString(36).slice(2, 12)}`;
+      sessionStorage.setItem(SESSION_KEY, id);
+    }
+    return id;
+  } catch {
+    return "anonymous";
   }
-  return id;
 }
+
 
 /** Enregistre un évènement d'usage. Silencieux en cas d'échec. */
 export async function trackEvent(input: {

@@ -10,6 +10,13 @@ import { useAuth } from "@/lib/auth";
 import { extractHashtags, searchHashtags } from "@/lib/trending-api";
 import { asPerson, createPost } from "@/lib/ponzo-api";
 import { removeUploadedMedia, uploadMedia } from "@/lib/upload";
+import {
+  PipelineError,
+  classifyUploadError,
+  trackStage,
+  validateMediaFile,
+  verifyMediaReadable,
+} from "@/lib/media-pipeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/publier")({
@@ -49,17 +56,27 @@ const kinds = [
   { label: "Mon projet", icon: Briefcase },
 ] as const;
 
+type UploadState =
+  | { status: "idle" }
+  | { status: "validating" }
+  | { status: "uploading"; progress: number }
+  | { status: "checking" }
+  | { status: "ready" }
+  | { status: "error"; code: string; message: string };
+
 function Publier() {
   const [kind, setKind] = useState<(typeof kinds)[number]["label"]>("Publication");
   const [text, setText] = useState("");
   const [media, setMedia] = useState<{ url: string; path: string; type: "image" | "video" } | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [upload, setUpload] = useState<UploadState>({ status: "idle" });
   const [busy, setBusy] = useState(false);
+  const lastPick = useRef<{ file: File; expected: "image" | "video" } | null>(null);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const photoRef = useRef<HTMLInputElement>(null);
+
+  const uploading = upload.status === "validating" || upload.status === "uploading" || upload.status === "checking";
 
   const currentTags = useMemo(() => extractHashtags(text), [text]);
   const typing = /#([A-Za-z0-9_À-ÿ]{1,50})$/.exec(text)?.[1] ?? "";
@@ -86,21 +103,53 @@ function Publier() {
       toast.error("Connecte-toi pour ajouter un fichier.");
       return;
     }
-    setUploading(true);
-    setUploadProgress(0);
+    lastPick.current = { file, expected };
+    let uploadedPath: string | null = null;
     try {
-      const result = await uploadMedia(user.id, file, "posts", expected, setUploadProgress);
+      // 1. Validation locale — aucun envoi réseau si le fichier est invalide.
+      setUpload({ status: "validating" });
+      trackStage("validate", "start", { expected, size: file.size, mime: file.type || "unknown" });
+      validateMediaFile(file, expected);
+      trackStage("validate", "ok", { expected, size: file.size });
+
+      // 2. Envoi réel vers le stockage.
+      setUpload({ status: "uploading", progress: 0 });
+      trackStage("upload", "start", { expected, size: file.size });
+      const result = await uploadMedia(user.id, file, "posts", expected, (p) =>
+        setUpload({ status: "uploading", progress: p }),
+      );
+      uploadedPath = result.path;
+      trackStage("upload", "ok", { expected, size: file.size });
+
+      // 3. Vérification que le média est réellement lisible avant de l'accepter.
       const type = result.kind === "video" || expected === "video" ? "video" : "image";
+      setUpload({ status: "checking" });
+      await verifyMediaReadable(result.url, type);
+      trackStage("preview", "ok", { type });
+
       setMedia({ url: result.url, path: result.path, type });
-      toast.success("Fichier ajouté");
+      setUpload({ status: "ready" });
+      toast.success(type === "video" ? "Vidéo envoyée et vérifiée" : "Photo envoyée et vérifiée");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Envoi du fichier impossible.");
+      const failure = error instanceof PipelineError ? error : classifyUploadError(error);
+      // Aucun média partiel ne doit rester attaché à une publication.
+      setMedia(null);
+      if (uploadedPath) void removeUploadedMedia(uploadedPath).catch(() => undefined);
+      trackStage(failure.stage, "fail", { code: failure.code, expected });
+      setUpload({ status: "error", code: failure.code, message: failure.message });
+      toast.error(failure.message);
     } finally {
-      setUploading(false);
       if (photoRef.current) photoRef.current.value = "";
       if (videoRef.current) videoRef.current.value = "";
     }
   };
+
+  const retryPick = () => {
+    const previous = lastPick.current;
+    if (!previous) return;
+    void pick(previous.file, previous.expected);
+  };
+
 
 
   const publish = async () => {
@@ -117,17 +166,21 @@ function Publier() {
       return;
     }
     setBusy(true);
+    trackStage("post_create", "start", { hasMedia: !!media, mediaType: media?.type ?? null });
     try {
       const destination = media?.type === "video" ? "/videos" : "/";
-      await createPost({
+      const postId = await createPost({
         authorId: user.id,
         body: text.trim(),
         tag: kind === "Publication" ? null : kind,
         mediaUrl: media?.url ?? null,
         mediaType: media?.type ?? null,
       });
+      trackStage("post_create", "ok", { postId, mediaType: media?.type ?? null });
       setText("");
       setMedia(null);
+      setUpload({ status: "idle" });
+      lastPick.current = null;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["feed"] }),
         queryClient.invalidateQueries({ queryKey: ["videos"] }),
@@ -137,10 +190,12 @@ function Publier() {
       void navigate({ to: destination });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Publication impossible";
+      trackStage("post_create", "fail", { code: "POST_CREATION_FAILED", message: message.slice(0, 200) });
       toast.error(`Publication impossible : ${message}`);
     } finally {
       setBusy(false);
     }
+
   };
 
 
@@ -275,13 +330,31 @@ function Publier() {
               <progress
                 className="h-1.5 w-full overflow-hidden rounded-full accent-primary"
                 max={100}
-                value={Math.max(4, Math.round(uploadProgress * 100))}
+                value={upload.status === "uploading" ? Math.max(4, Math.round(upload.progress * 100)) : 100}
               />
               <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
-                Envoi sécurisé… {Math.round(uploadProgress * 100)} %
+                {upload.status === "validating" && "Vérification du fichier…"}
+                {upload.status === "uploading" && `Envoi sécurisé… ${Math.round(upload.progress * 100)} %`}
+                {upload.status === "checking" && "Contrôle du média envoyé…"}
               </p>
             </div>
           )}
+          {upload.status === "error" && (
+            <div className="mt-3 rounded-xl bg-destructive/10 p-3 text-xs" role="alert">
+              <p className="font-semibold text-destructive">{upload.message}</p>
+              <p className="mt-0.5 text-[11px] text-muted-foreground">Code : {upload.code}</p>
+              {lastPick.current && (
+                <button
+                  type="button"
+                  onClick={retryPick}
+                  className="mt-2 rounded-full bg-brand px-4 py-1.5 text-[11px] font-bold text-primary-foreground"
+                >
+                  Réessayer l'envoi
+                </button>
+              )}
+            </div>
+          )}
+
         </div>
 
         <button
