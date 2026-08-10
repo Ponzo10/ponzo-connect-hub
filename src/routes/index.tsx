@@ -56,9 +56,12 @@ const quickActions = [
 
 function Feed() {
   const { user, profile } = useAuth();
-  const feed = useQuery({
+  const feed = useInfiniteQuery({
     queryKey: ["feed"],
-    queryFn: fetchFeed,
+    queryFn: ({ pageParam }) => fetchFeed(pageParam),
+    initialPageParam: null as string | null,
+    getNextPageParam: (lastPage) =>
+      lastPage.length < FEED_PAGE_SIZE ? undefined : (lastPage[lastPage.length - 1]?.created_at ?? undefined),
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
@@ -71,10 +74,33 @@ function Feed() {
     refetchOnWindowFocus: false,
   });
 
-  const timeline = [
-    ...(feed.data ?? []).map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
-    ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
-  ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime());
+  const posts = useMemo(() => feed.data?.pages.flat() ?? [], [feed.data]);
+  const timeline = useMemo(
+    () =>
+      [
+        ...posts.map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
+        ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
+      ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
+    [posts, news.data],
+  );
+
+  // Chargement progressif : la page suivante démarre avant que l'utilisateur
+  // n'atteigne le bas du fil, sans bouton « voir plus ».
+  const sentinel = useRef<HTMLDivElement | null>(null);
+  const { fetchNextPage, hasNextPage, isFetchingNextPage } = feed;
+  useEffect(() => {
+    const node = sentinel.current;
+    if (!node || !hasNextPage) return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting && !isFetchingNextPage) void fetchNextPage();
+      },
+      { rootMargin: "600px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [fetchNextPage, hasNextPage, isFetchingNextPage]);
+
 
 
   return (
