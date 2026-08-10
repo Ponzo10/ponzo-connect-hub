@@ -21,7 +21,7 @@ import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
 import { fetchNews } from "@/lib/news-api";
-import { asPerson, fetchFeed } from "@/lib/ponzo-api";
+import { FEED_PAGE_SIZE, asPerson, fetchFeed } from "@/lib/ponzo-api";
 
 
 export const Route = createFileRoute("/")({
