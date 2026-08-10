@@ -49,17 +49,27 @@ const kinds = [
   { label: "Mon projet", icon: Briefcase },
 ] as const;
 
+type UploadState =
+  | { status: "idle" }
+  | { status: "validating" }
+  | { status: "uploading"; progress: number }
+  | { status: "checking" }
+  | { status: "ready" }
+  | { status: "error"; code: string; message: string };
+
 function Publier() {
   const [kind, setKind] = useState<(typeof kinds)[number]["label"]>("Publication");
   const [text, setText] = useState("");
   const [media, setMedia] = useState<{ url: string; path: string; type: "image" | "video" } | null>(null);
-  const [uploading, setUploading] = useState(false);
-  const [uploadProgress, setUploadProgress] = useState(0);
+  const [upload, setUpload] = useState<UploadState>({ status: "idle" });
   const [busy, setBusy] = useState(false);
+  const lastPick = useRef<{ file: File; expected: "image" | "video" } | null>(null);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
   const photoRef = useRef<HTMLInputElement>(null);
+
+  const uploading = upload.status === "validating" || upload.status === "uploading" || upload.status === "checking";
 
   const currentTags = useMemo(() => extractHashtags(text), [text]);
   const typing = /#([A-Za-z0-9_À-ÿ]{1,50})$/.exec(text)?.[1] ?? "";
@@ -86,21 +96,53 @@ function Publier() {
       toast.error("Connecte-toi pour ajouter un fichier.");
       return;
     }
-    setUploading(true);
-    setUploadProgress(0);
+    lastPick.current = { file, expected };
+    let uploadedPath: string | null = null;
     try {
-      const result = await uploadMedia(user.id, file, "posts", expected, setUploadProgress);
+      // 1. Validation locale — aucun envoi réseau si le fichier est invalide.
+      setUpload({ status: "validating" });
+      trackStage("validate", "start", { expected, size: file.size, mime: file.type || "unknown" });
+      validateMediaFile(file, expected);
+      trackStage("validate", "ok", { expected, size: file.size });
+
+      // 2. Envoi réel vers le stockage.
+      setUpload({ status: "uploading", progress: 0 });
+      trackStage("upload", "start", { expected, size: file.size });
+      const result = await uploadMedia(user.id, file, "posts", expected, (p) =>
+        setUpload({ status: "uploading", progress: p }),
+      );
+      uploadedPath = result.path;
+      trackStage("upload", "ok", { expected, size: file.size });
+
+      // 3. Vérification que le média est réellement lisible avant de l'accepter.
       const type = result.kind === "video" || expected === "video" ? "video" : "image";
+      setUpload({ status: "checking" });
+      await verifyMediaReadable(result.url, type);
+      trackStage("preview", "ok", { type });
+
       setMedia({ url: result.url, path: result.path, type });
-      toast.success("Fichier ajouté");
+      setUpload({ status: "ready" });
+      toast.success(type === "video" ? "Vidéo envoyée et vérifiée" : "Photo envoyée et vérifiée");
     } catch (error) {
-      toast.error(error instanceof Error ? error.message : "Envoi du fichier impossible.");
+      const failure = error instanceof PipelineError ? error : classifyUploadError(error);
+      // Aucun média partiel ne doit rester attaché à une publication.
+      setMedia(null);
+      if (uploadedPath) void removeUploadedMedia(uploadedPath).catch(() => undefined);
+      trackStage(failure.stage, "fail", { code: failure.code, expected });
+      setUpload({ status: "error", code: failure.code, message: failure.message });
+      toast.error(failure.message);
     } finally {
-      setUploading(false);
       if (photoRef.current) photoRef.current.value = "";
       if (videoRef.current) videoRef.current.value = "";
     }
   };
+
+  const retryPick = () => {
+    const previous = lastPick.current;
+    if (!previous) return;
+    void pick(previous.file, previous.expected);
+  };
+
 
 
   const publish = async () => {
