@@ -166,17 +166,21 @@ function Publier() {
       return;
     }
     setBusy(true);
+    trackStage("post_create", "start", { hasMedia: !!media, mediaType: media?.type ?? null });
     try {
       const destination = media?.type === "video" ? "/videos" : "/";
-      await createPost({
+      const postId = await createPost({
         authorId: user.id,
         body: text.trim(),
         tag: kind === "Publication" ? null : kind,
         mediaUrl: media?.url ?? null,
         mediaType: media?.type ?? null,
       });
+      trackStage("post_create", "ok", { postId, mediaType: media?.type ?? null });
       setText("");
       setMedia(null);
+      setUpload({ status: "idle" });
+      lastPick.current = null;
       await Promise.all([
         queryClient.invalidateQueries({ queryKey: ["feed"] }),
         queryClient.invalidateQueries({ queryKey: ["videos"] }),
@@ -186,10 +190,12 @@ function Publier() {
       void navigate({ to: destination });
     } catch (error) {
       const message = error instanceof Error ? error.message : "Publication impossible";
+      trackStage("post_create", "fail", { code: "POST_CREATION_FAILED", message: message.slice(0, 200) });
       toast.error(`Publication impossible : ${message}`);
     } finally {
       setBusy(false);
     }
+
   };
 
 
