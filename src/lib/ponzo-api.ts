@@ -44,15 +44,24 @@ export function timeAgo(iso: string): string {
   return new Date(iso).toLocaleDateString("fr-FR", { day: "numeric", month: "short" });
 }
 
-export async function fetchFeed(): Promise<FeedPost[]> {
-  const { data, error } = await supabase
+export const FEED_PAGE_SIZE = 15;
+
+/**
+ * Fil paginé par curseur (created_at). Charger 15 publications à la fois garde
+ * l'affichage initial rapide même quand la base grossit.
+ */
+export async function fetchFeed(cursor?: string | null, limit = FEED_PAGE_SIZE): Promise<FeedPost[]> {
+  let query = supabase
     .from("posts")
     .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
     .order("created_at", { ascending: false })
-    .limit(50);
+    .limit(limit);
+  if (cursor) query = query.lt("created_at", cursor);
+  const { data, error } = await query;
   if (error) throw error;
   return (data ?? []) as unknown as FeedPost[];
 }
+
 
 export async function fetchPostsByAuthor(authorId: string): Promise<FeedPost[]> {
   const { data, error } = await supabase
