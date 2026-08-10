@@ -10,6 +10,13 @@ import { useAuth } from "@/lib/auth";
 import { extractHashtags, searchHashtags } from "@/lib/trending-api";
 import { asPerson, createPost } from "@/lib/ponzo-api";
 import { removeUploadedMedia, uploadMedia } from "@/lib/upload";
+import {
+  PipelineError,
+  classifyUploadError,
+  trackStage,
+  validateMediaFile,
+  verifyMediaReadable,
+} from "@/lib/media-pipeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/publier")({
