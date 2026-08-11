@@ -85,7 +85,7 @@ function Profil() {
 
       <div className="relative">
         <button onClick={() => coverRef.current?.click()} className="relative block h-36 w-full bg-brand" aria-label="Changer la couverture">
-          {profile?.cover_url && <img src={profile.cover_url} alt="Couverture" className="h-full w-full object-cover" />}
+          {profile?.cover_url && <img src={profile.cover_url} alt="Couverture" loading="lazy" decoding="async" className="h-full w-full object-cover" />}
           <span className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/85">
             <Camera className="h-4 w-4" />
           </span>

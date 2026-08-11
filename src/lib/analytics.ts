@@ -59,6 +59,8 @@ export type SecurityEvent = {
 /* ------------------------------------------------------------------ */
 
 const SESSION_KEY = "ponzo_session_id";
+const analyticsQueue: Parameters<typeof trackEvent>[0][] = [];
+let analyticsTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function sessionId(): string {
   if (typeof window === "undefined") return "ssr";
@@ -87,19 +89,32 @@ export async function trackEvent(input: {
   durationMs?: number | null;
   metadata?: Record<string, unknown>;
 }) {
+  analyticsQueue.push(input);
+  if (analyticsTimer) return;
+  analyticsTimer = setTimeout(() => {
+    analyticsTimer = null;
+    const batch = analyticsQueue.splice(0, analyticsQueue.length);
+    void flushEvents(batch);
+  }, 800);
+}
+
+async function flushEvents(batch: Parameters<typeof trackEvent>[0][]) {
+  if (batch.length === 0) return;
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user.id;
     if (!userId) return;
-    await supabase.from("app_events").insert({
-      user_id: userId,
-      session_id: sessionId(),
-      kind: input.kind,
-      name: input.name.slice(0, 120),
-      path: input.path ?? null,
-      duration_ms: input.durationMs ?? null,
-      metadata: (input.metadata ?? {}) as never,
-    });
+    await supabase.from("app_events").insert(
+      batch.map((input) => ({
+        user_id: userId,
+        session_id: sessionId(),
+        kind: input.kind,
+        name: input.name.slice(0, 120),
+        path: input.path ?? null,
+        duration_ms: input.durationMs ?? null,
+        metadata: (input.metadata ?? {}) as never,
+      })),
+    );
   } catch {
     /* analytics ne doit jamais casser l'app */
   }

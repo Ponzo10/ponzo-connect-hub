@@ -99,7 +99,7 @@ function AuthPage() {
   /** Connexion par numéro + mot de passe (sans SMS). */
   const signInPhone = async () => {
     const cleaned = normalizePhone(phone);
-    if (!cleaned) throw new Error("Utilise le format international, ex : +243900000000");
+    if (!cleaned) throw new Error("Saisis un numéro valide, ex. 0990000000 ou +243990000000");
     const { error } = await supabase.auth.signInWithPassword({ email: phoneToEmail(cleaned), password });
     if (error) throw new Error("Numéro ou mot de passe incorrect.");
     toast.success("Bienvenue sur PONZO 👋");
@@ -108,7 +108,7 @@ function AuthPage() {
   /** Création définitive du compte téléphone, après confirmation des informations. */
   const createPhoneAccount = async () => {
     const cleaned = normalizePhone(phone);
-    if (!cleaned) throw new Error("Utilise le format international, ex : +243900000000");
+    if (!cleaned) throw new Error("Saisis un numéro valide, ex. 0990000000 ou +243990000000");
     const { data, error } = await supabase.auth.signUp({
       email: phoneToEmail(cleaned),
       password,
@@ -142,7 +142,7 @@ function AuthPage() {
       if (channel === "email") await submitEmail();
       else if (mode === "signup") {
         const cleaned = normalizePhone(phone);
-        if (!cleaned) throw new Error("Utilise le format international, ex : +243900000000");
+        if (!cleaned) throw new Error("Saisis un numéro valide, ex. 0990000000 ou +243990000000");
         if (password.length < 6) throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
         setStep("confirm");
       } else await signInPhone();
@@ -271,7 +271,7 @@ function AuthPage() {
               <p className="text-xs text-muted-foreground">
                 Saisis ton numéro, l'un de tes codes de récupération et ton nouveau mot de passe.
               </p>
-              <Field label="Numéro de téléphone" type="tel" value={phone} onChange={setPhone} placeholder="+243900000000" />
+               <Field label="Numéro de téléphone" type="tel" value={phone} onChange={setPhone} placeholder="099 000 00 00" />
               <Field label="Code de récupération" value={recoveryCode} onChange={setRecoveryCode} placeholder="ABCD-EFGH-JKLM" />
               <PasswordField
                 label="Nouveau mot de passe (6 caractères min.)"
@@ -357,7 +357,7 @@ function AuthPage() {
                       type="tel"
                       value={phone}
                       onChange={setPhone}
-                      placeholder="+243900000000"
+                       placeholder="099 000 00 00"
                       required
                     />
                   )}

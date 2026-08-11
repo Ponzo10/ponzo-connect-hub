@@ -45,7 +45,8 @@ function useUnread() {
     queryKey: ["unread", user?.id],
     queryFn: () => unreadCounts(user!.id),
     enabled: !!user,
-    refetchInterval: 20000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {

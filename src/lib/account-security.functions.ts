@@ -28,7 +28,7 @@ export const resetPasswordWithRecoveryCode = createServerFn({ method: "POST" })
   )
   .handler(async ({ data }) => {
     const phone = normalizePhone(data.phone);
-    if (!phone) throw new Error("Numéro invalide. Format attendu : +243900000000");
+    if (!phone) throw new Error("Numéro invalide. Exemple : 0990000000 ou +243990000000");
     if (data.newPassword.length < 6) throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
 
     const { supabaseAdmin } = await import("@/integrations/supabase/client.server");

@@ -6,6 +6,7 @@ const MAX_BYTES = 200 * 1024 * 1024; // 200 Mo
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
 const RESUMABLE_CHUNK_SIZE = 6 * 1024 * 1024;
 const SIGN_ATTEMPTS = 5;
+const UPLOAD_ATTEMPTS = 3;
 
 export type MediaKind = "image" | "video" | "audio" | "file";
 
@@ -60,6 +61,7 @@ async function resumableUpload(
   file: File,
   contentType: string,
   onProgress?: (progress: number) => void,
+  resume = true,
 ) {
   const accessToken = await activeAccessToken();
   const projectUrl = import.meta.env["VITE_SUPABASE_URL"];
@@ -89,7 +91,7 @@ async function resumableUpload(
       removeFingerprintOnSuccess: true,
       // Le chemin fait partie de l'empreinte. Sans cela, TUS peut reprendre un
       // ancien envoi du même fichier vers un autre objet après une interruption.
-      fingerprint: async () => `ponzo-${path}-${file.size}-${file.lastModified}`,
+      fingerprint: async () => `ponzo-v2-${path}-${file.size}-${file.lastModified}`,
       onProgress: (uploaded, total) => onProgress?.(total > 0 ? uploaded / total : 0),
       onError: reject,
       onSuccess: () => {
@@ -99,7 +101,7 @@ async function resumableUpload(
     });
 
     void upload.findPreviousUploads().then((previousUploads) => {
-      const previous = previousUploads[0];
+      const previous = resume ? previousUploads[0] : undefined;
       if (previous) upload.resumeFromPreviousUpload(previous);
       upload.start();
     }).catch(reject);
@@ -122,14 +124,14 @@ export async function uploadMedia(
   const kind: MediaKind = detected === "file" && expected ? expected : detected;
   const name = file.name || `${folder}-${Date.now()}`;
   const contentType = file.type || (kind === "video" ? "video/mp4" : kind === "image" ? "image/jpeg" : "application/octet-stream");
-  const path = `${userId}/${folder}/${safeId()}.${safeExt(name, kind)}`;
+  let path = `${userId}/${folder}/${safeId()}.${safeExt(name, kind)}`;
   let lastError: unknown = null;
   let uploaded = false;
 
-  for (let attempt = 0; attempt < 3; attempt += 1) {
+  for (let attempt = 0; attempt < UPLOAD_ATTEMPTS; attempt += 1) {
     try {
       if (file.size >= RESUMABLE_THRESHOLD) {
-        await resumableUpload(path, file, contentType, onProgress);
+        await resumableUpload(path, file, contentType, onProgress, attempt === 0);
       } else {
         await activeAccessToken();
         const { error } = await supabase.storage
@@ -142,7 +144,13 @@ export async function uploadMedia(
       break;
     } catch (error) {
       lastError = error;
-      if (attempt < 2) {
+      if (attempt < UPLOAD_ATTEMPTS - 1) {
+        // Une reprise TUS peut pointer vers une ressource serveur expirée. Après
+        // le premier échec, repartir sur un objet neuf évite les boucles 404/409.
+        if (file.size >= RESUMABLE_THRESHOLD) {
+          path = `${userId}/${folder}/${safeId()}.${safeExt(name, kind)}`;
+          onProgress?.(0);
+        }
         if (typeof navigator !== "undefined" && !navigator.onLine) {
           await new Promise<void>((resolve) => {
             const timeout = window.setTimeout(resolve, 15_000);

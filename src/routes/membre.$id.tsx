@@ -6,7 +6,7 @@ import { Avatar } from "@/components/ponzo/Avatar";
 import { FollowButton } from "@/components/ponzo/FollowButton";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { useAuth } from "@/lib/auth";
-import { asPerson, fetchFollowCounts, fetchFollowing, fetchPostsByAuthor, fetchProfile } from "@/lib/ponzo-api";
+import { asPerson, displayFollowers, fetchFollowCounts, fetchFollowing, fetchPostsByAuthor, fetchProfile } from "@/lib/ponzo-api";
 
 export const Route = createFileRoute("/membre/$id")({
   head: () => ({
@@ -41,7 +41,7 @@ function MemberPage() {
             <p className="truncate text-lg font-bold">{profile.data?.full_name ?? "Membre PONZO"}</p>
             <p className="truncate text-xs text-muted-foreground">{profile.data?.role ?? "Membre"}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-              {counts.data?.followers ?? 0} abonnés · {counts.data?.following ?? 0} abonnements
+               {displayFollowers(counts.data?.followers ?? 0, profile.data)} abonnés · {counts.data?.following ?? 0} abonnements
             </p>
           </div>
         </div>

@@ -45,7 +45,6 @@ export function UsageTracker() {
     if (!user) return;
     const enter = performance.now();
     void trackEvent({ kind: "page_view", name: featureFor(pathname), path: pathname });
-    void trackEvent({ kind: "feature", name: featureFor(pathname), path: pathname });
 
     const raf = requestAnimationFrame(() => {
       void trackEvent({
@@ -91,10 +90,6 @@ export function UsageTracker() {
     startedAt.current = Date.now();
     sent.current = false;
 
-    const heartbeat = setInterval(() => {
-      void trackEvent({ kind: "page_view", name: "heartbeat", path: window.location.pathname });
-    }, 120_000);
-
     const flush = () => {
       if (sent.current) return;
       sent.current = true;
@@ -111,7 +106,6 @@ export function UsageTracker() {
     document.addEventListener("visibilitychange", onVisibility);
     window.addEventListener("pagehide", flush);
     return () => {
-      clearInterval(heartbeat);
       document.removeEventListener("visibilitychange", onVisibility);
       window.removeEventListener("pagehide", flush);
       flush();

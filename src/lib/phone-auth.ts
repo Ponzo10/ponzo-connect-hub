@@ -10,11 +10,21 @@
 /** Domaine interne réservé aux identifiants dérivés d'un numéro. */
 export const PHONE_EMAIL_DOMAIN = "phone.ponzo.app";
 
+const DEFAULT_COUNTRY_CODE = "243";
+
 /** Normalise un numéro au format international (+ suivi de chiffres). */
 export function normalizePhone(raw: string): string | null {
-  const cleaned = raw.replace(/[^\d+]/g, "");
-  const digits = cleaned.replace(/\D/g, "");
-  if (!cleaned.startsWith("+") || digits.length < 8 || digits.length > 15) return null;
+  const compact = raw.trim().replace(/[\s().-]/g, "");
+  if (!compact || /[^\d+]/.test(compact) || (compact.match(/\+/g)?.length ?? 0) > 1) return null;
+
+  let digits = compact.replace(/\D/g, "");
+  if (compact.startsWith("00")) digits = digits.slice(2);
+  else if (!compact.startsWith("+")) {
+    if (digits.startsWith("0")) digits = `${DEFAULT_COUNTRY_CODE}${digits.slice(1)}`;
+    else if (digits.length === 9) digits = `${DEFAULT_COUNTRY_CODE}${digits}`;
+  }
+
+  if (digits.length < 8 || digits.length > 15 || digits.startsWith("0")) return null;
   return `+${digits}`;
 }
 
