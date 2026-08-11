@@ -106,10 +106,12 @@ export function verifyMediaReadable(url: string, type: "image" | "video", timeou
       if (done) return;
       done = true;
       window.clearTimeout(timer);
-      el.removeAttribute("src");
-      if (type === "video") (el as HTMLVideoElement).load();
       if (ok) resolve();
       else reject(new PipelineError("PREVIEW_FAILED", "preview", "Le fichier envoyé n'est pas lisible. Réessaie."));
+      window.setTimeout(() => {
+        el.removeAttribute("src");
+        if (type === "video") (el as HTMLVideoElement).load();
+      }, 0);
     };
     const timer = window.setTimeout(() => finish(false), timeoutMs);
     if (type === "video") {

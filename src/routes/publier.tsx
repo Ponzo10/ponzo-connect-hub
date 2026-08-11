@@ -107,7 +107,6 @@ function Publier() {
     lastPick.current = { file, expected };
     const sequence = ++pickSequence.current;
     const previousMedia = media;
-    setMedia(null);
     let uploadedPath: string | null = null;
     try {
       // 1. Validation locale — aucun envoi réseau si le fichier est invalide.
@@ -149,7 +148,7 @@ function Publier() {
       if (sequence !== pickSequence.current) return;
       const failure = error instanceof PipelineError ? error : classifyUploadError(error);
       // Aucun média partiel ne doit rester attaché à une publication.
-      setMedia(null);
+      setMedia(previousMedia);
       if (uploadedPath) void removeUploadedMedia(uploadedPath).catch(() => undefined);
       trackStage(failure.stage, "fail", { code: failure.code, expected });
       setUpload({ status: "error", code: failure.code, message: failure.message });

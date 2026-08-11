@@ -151,6 +151,11 @@ export async function uploadMedia(
           path = `${userId}/${folder}/${safeId()}.${safeExt(name, kind)}`;
           onProgress?.(0);
         }
+        try {
+          await activeAccessToken();
+        } catch {
+          // Le prochain essai renverra l'erreur d'authentification utile.
+        }
         if (typeof navigator !== "undefined" && !navigator.onLine) {
           await new Promise<void>((resolve) => {
             const timeout = window.setTimeout(resolve, 15_000);

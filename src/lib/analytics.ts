@@ -59,7 +59,15 @@ export type SecurityEvent = {
 /* ------------------------------------------------------------------ */
 
 const SESSION_KEY = "ponzo_session_id";
-const analyticsQueue: Parameters<typeof trackEvent>[0][] = [];
+type TrackEventInput = {
+  kind: EventKind;
+  name: string;
+  path?: string | null;
+  durationMs?: number | null;
+  metadata?: Record<string, unknown>;
+};
+
+const analyticsQueue: TrackEventInput[] = [];
 let analyticsTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function sessionId(): string {
@@ -82,13 +90,7 @@ export function sessionId(): string {
 
 
 /** Enregistre un évènement d'usage. Silencieux en cas d'échec. */
-export async function trackEvent(input: {
-  kind: EventKind;
-  name: string;
-  path?: string | null;
-  durationMs?: number | null;
-  metadata?: Record<string, unknown>;
-}) {
+export async function trackEvent(input: TrackEventInput) {
   analyticsQueue.push(input);
   if (analyticsTimer) return;
   analyticsTimer = setTimeout(() => {
@@ -98,7 +100,7 @@ export async function trackEvent(input: {
   }, 800);
 }
 
-async function flushEvents(batch: Parameters<typeof trackEvent>[0][]) {
+async function flushEvents(batch: TrackEventInput[]) {
   if (batch.length === 0) return;
   try {
     const { data } = await supabase.auth.getSession();
