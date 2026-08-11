@@ -59,6 +59,16 @@ export type SecurityEvent = {
 /* ------------------------------------------------------------------ */
 
 const SESSION_KEY = "ponzo_session_id";
+type TrackEventInput = {
+  kind: EventKind;
+  name: string;
+  path?: string | null;
+  durationMs?: number | null;
+  metadata?: Record<string, unknown>;
+};
+
+const analyticsQueue: TrackEventInput[] = [];
+let analyticsTimer: ReturnType<typeof setTimeout> | null = null;
 
 export function sessionId(): string {
   if (typeof window === "undefined") return "ssr";
@@ -80,26 +90,33 @@ export function sessionId(): string {
 
 
 /** Enregistre un évènement d'usage. Silencieux en cas d'échec. */
-export async function trackEvent(input: {
-  kind: EventKind;
-  name: string;
-  path?: string | null;
-  durationMs?: number | null;
-  metadata?: Record<string, unknown>;
-}) {
+export async function trackEvent(input: TrackEventInput) {
+  analyticsQueue.push(input);
+  if (analyticsTimer) return;
+  analyticsTimer = setTimeout(() => {
+    analyticsTimer = null;
+    const batch = analyticsQueue.splice(0, analyticsQueue.length);
+    void flushEvents(batch);
+  }, 800);
+}
+
+async function flushEvents(batch: TrackEventInput[]) {
+  if (batch.length === 0) return;
   try {
     const { data } = await supabase.auth.getSession();
     const userId = data.session?.user.id;
     if (!userId) return;
-    await supabase.from("app_events").insert({
-      user_id: userId,
-      session_id: sessionId(),
-      kind: input.kind,
-      name: input.name.slice(0, 120),
-      path: input.path ?? null,
-      duration_ms: input.durationMs ?? null,
-      metadata: (input.metadata ?? {}) as never,
-    });
+    await supabase.from("app_events").insert(
+      batch.map((input) => ({
+        user_id: userId,
+        session_id: sessionId(),
+        kind: input.kind,
+        name: input.name.slice(0, 120),
+        path: input.path ?? null,
+        duration_ms: input.durationMs ?? null,
+        metadata: (input.metadata ?? {}) as never,
+      })),
+    );
   } catch {
     /* analytics ne doit jamais casser l'app */
   }

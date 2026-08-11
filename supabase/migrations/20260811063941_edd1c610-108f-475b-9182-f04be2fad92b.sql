@@ -1,0 +1,1 @@
+-- Auth setting is applied through the managed auth configuration, not SQL.

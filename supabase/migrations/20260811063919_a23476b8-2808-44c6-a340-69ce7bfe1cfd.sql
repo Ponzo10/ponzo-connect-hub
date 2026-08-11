@@ -1,0 +1,1 @@
+REVOKE EXECUTE ON FUNCTION public.log_security_event(text, text, text, text, text, jsonb) FROM PUBLIC, anon;

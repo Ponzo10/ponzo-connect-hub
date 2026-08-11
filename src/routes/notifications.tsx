@@ -65,7 +65,8 @@ function Notifications() {
     queryKey: ["notifications", user?.id],
     queryFn: () => fetchNotifications(user!.id),
     enabled: !!user,
-    refetchInterval: 15000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
   });
 
   useEffect(() => {

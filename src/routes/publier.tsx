@@ -1,7 +1,7 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
 import { Briefcase, Image as ImageIcon, Loader2, Search, Sparkles, Users, Video, X } from "lucide-react";
-import { useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
@@ -71,6 +71,7 @@ function Publier() {
   const [upload, setUpload] = useState<UploadState>({ status: "idle" });
   const [busy, setBusy] = useState(false);
   const lastPick = useRef<{ file: File; expected: "image" | "video" } | null>(null);
+  const pickSequence = useRef(0);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
   const queryClient = useQueryClient();
@@ -104,6 +105,8 @@ function Publier() {
       return;
     }
     lastPick.current = { file, expected };
+    const sequence = ++pickSequence.current;
+    const previousMedia = media;
     let uploadedPath: string | null = null;
     try {
       // 1. Validation locale — aucun envoi réseau si le fichier est invalide.
@@ -116,24 +119,36 @@ function Publier() {
       setUpload({ status: "uploading", progress: 0 });
       trackStage("upload", "start", { expected, size: file.size });
       const result = await uploadMedia(user.id, file, "posts", expected, (p) =>
-        setUpload({ status: "uploading", progress: p }),
+        sequence === pickSequence.current && setUpload({ status: "uploading", progress: p }),
       );
       uploadedPath = result.path;
+      if (sequence !== pickSequence.current) {
+        await removeUploadedMedia(result.path).catch(() => undefined);
+        return;
+      }
       trackStage("upload", "ok", { expected, size: file.size });
 
       // 3. Vérification que le média est réellement lisible avant de l'accepter.
       const type = result.kind === "video" || expected === "video" ? "video" : "image";
       setUpload({ status: "checking" });
       await verifyMediaReadable(result.url, type);
+      if (sequence !== pickSequence.current) {
+        await removeUploadedMedia(result.path).catch(() => undefined);
+        return;
+      }
       trackStage("preview", "ok", { type });
 
       setMedia({ url: result.url, path: result.path, type });
       setUpload({ status: "ready" });
+      if (previousMedia?.path && previousMedia.path !== result.path) {
+        void removeUploadedMedia(previousMedia.path).catch(() => undefined);
+      }
       toast.success(type === "video" ? "Vidéo envoyée et vérifiée" : "Photo envoyée et vérifiée");
     } catch (error) {
+      if (sequence !== pickSequence.current) return;
       const failure = error instanceof PipelineError ? error : classifyUploadError(error);
       // Aucun média partiel ne doit rester attaché à une publication.
-      setMedia(null);
+      setMedia(previousMedia);
       if (uploadedPath) void removeUploadedMedia(uploadedPath).catch(() => undefined);
       trackStage(failure.stage, "fail", { code: failure.code, expected });
       setUpload({ status: "error", code: failure.code, message: failure.message });
@@ -143,6 +158,13 @@ function Publier() {
       if (videoRef.current) videoRef.current.value = "";
     }
   };
+
+  useEffect(
+    () => () => {
+      pickSequence.current += 1;
+    },
+    [],
+  );
 
   const retryPick = () => {
     const previous = lastPick.current;
@@ -279,8 +301,10 @@ function Publier() {
               )}
               <button
                  onClick={() => {
+                    pickSequence.current += 1;
                    const uploaded = media;
                    setMedia(null);
+                    setUpload({ status: "idle" });
                    void removeUploadedMedia(uploaded.path).catch(() => undefined);
                  }}
                 aria-label="Retirer le fichier"

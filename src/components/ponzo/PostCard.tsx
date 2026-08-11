@@ -308,7 +308,7 @@ export function PostCard({ post }: { post: FeedPost }) {
             alt="Visuel de la publication PONZO"
             loading="lazy"
             decoding="async"
-            className="max-h-[520px] w-full object-cover"
+            className="max-h-[520px] w-full bg-muted object-contain"
           />
         </button>
       )}

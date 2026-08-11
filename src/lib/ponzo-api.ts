@@ -12,7 +12,8 @@ export type FeedPost = Post & {
   post_saves: { user_id: string }[];
 };
 
-const AUTHOR = "author:profiles!posts_author_profile_fkey(*)";
+const PROFILE_FIELDS = "id,full_name,handle,role,bio,city,avatar_url,cover_url,verified,created_at,updated_at,badge,follower_boost,title,allow_photo_download,allow_video_download,language,last_seen_at,show_online,show_last_seen";
+const AUTHOR = `author:profiles!posts_author_profile_fkey(${PROFILE_FIELDS})`;
 
 export const tones = ["green", "gold", "teal", "sand"] as const;
 export type Tone = (typeof tones)[number];
@@ -541,12 +542,6 @@ export async function fetchMyRoles(userId: string): Promise<string[]> {
   const { data, error } = await supabase.from("user_roles").select("role").eq("user_id", userId);
   if (error) return [];
   return (data ?? []).map((r) => r.role as string);
-}
-
-export async function claimOwnership() {
-  const { data, error } = await supabase.rpc("claim_ownership");
-  if (error) throw error;
-  return data as boolean;
 }
 
 export async function setUserRole(userId: string, role: "owner" | "admin" | "moderator" | "user", grant: boolean) {

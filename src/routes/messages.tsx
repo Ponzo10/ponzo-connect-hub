@@ -128,7 +128,8 @@ function Messages() {
     queryKey: ["messages", user?.id],
     queryFn: () => fetchMessages(user!.id),
     enabled: !!user,
-    refetchInterval: 15000,
+    staleTime: 60_000,
+    refetchOnWindowFocus: true,
   });
   const members = useQuery({ queryKey: ["profiles", "recent"], queryFn: () => fetchProfiles(), enabled: !!user });
   const settings = useQuery({

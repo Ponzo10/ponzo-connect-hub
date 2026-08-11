@@ -97,7 +97,7 @@ export function classifyUploadError(error: unknown): PipelineError {
  * considérer comme « prêt à publier ». Évite l'aperçu vide / la publication
  * cassée quand l'objet n'est pas encore servi par le stockage.
  */
-export function verifyMediaReadable(url: string, type: "image" | "video", timeoutMs = 15000) {
+export function verifyMediaReadable(url: string, type: "image" | "video", timeoutMs = 30000) {
   return new Promise<void>((resolve, reject) => {
     if (typeof window === "undefined") return resolve();
     const el = type === "image" ? new Image() : document.createElement("video");
@@ -108,6 +108,10 @@ export function verifyMediaReadable(url: string, type: "image" | "video", timeou
       window.clearTimeout(timer);
       if (ok) resolve();
       else reject(new PipelineError("PREVIEW_FAILED", "preview", "Le fichier envoyé n'est pas lisible. Réessaie."));
+      window.setTimeout(() => {
+        el.removeAttribute("src");
+        if (type === "video") (el as HTMLVideoElement).load();
+      }, 0);
     };
     const timer = window.setTimeout(() => finish(false), timeoutMs);
     if (type === "video") {
@@ -116,11 +120,13 @@ export function verifyMediaReadable(url: string, type: "image" | "video", timeou
       video.muted = true;
       video.onloadedmetadata = () => finish(true);
       video.onerror = () => finish(false);
+      video.onloadeddata = () => finish(true);
     } else {
       const img = el as HTMLImageElement;
       img.onload = () => finish(true);
       img.onerror = () => finish(false);
     }
     el.src = url;
+    if (type === "video") (el as HTMLVideoElement).load();
   });
 }
