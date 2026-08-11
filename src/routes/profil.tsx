@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookMarked, Camera, Crown, Pencil, Settings, ShieldCheck, Store } from "lucide-react";
+import { BookMarked, Camera, Pencil, Settings, ShieldCheck, Store } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -11,7 +11,6 @@ import { PostCard } from "@/components/ponzo/PostCard";
 import { useAuth } from "@/lib/auth";
 import {
   asPerson,
-  claimOwnership,
   displayFollowers,
   fetchFollowCounts,
   fetchPostsByAuthor,
@@ -36,7 +35,7 @@ export const Route = createFileRoute("/profil")({
 });
 
 function Profil() {
-  const { user, profile, isOwner, isStaff, refreshProfile } = useAuth();
+  const { user, profile, isStaff, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
@@ -61,20 +60,6 @@ function Profil() {
       toast.success(field === "avatar_url" ? "Photo de profil mise à jour" : "Photo de couverture mise à jour");
     } catch {
       toast.error("Envoi de l'image impossible.");
-    }
-  };
-
-  const claim = async () => {
-    try {
-      const ok = await claimOwnership();
-      if (ok) {
-        await refreshProfile();
-        toast.success("Tu es maintenant Propriétaire de PONZO 👑");
-      } else {
-        toast.error("Le compte propriétaire est déjà attribué.");
-      }
-    } catch {
-      toast.error("Action impossible.");
     }
   };
 
@@ -162,14 +147,6 @@ function Profil() {
             </Link>
           </div>
 
-          {!isOwner && (
-            <button
-              onClick={claim}
-              className="mt-3 flex w-full items-center justify-center gap-2 rounded-2xl border border-dashed border-primary/50 py-3 text-xs font-semibold text-primary"
-            >
-              <Crown className="h-4 w-4" /> Revendiquer le compte officiel PONZO (propriétaire)
-            </button>
-          )}
         </div>
       </div>
 

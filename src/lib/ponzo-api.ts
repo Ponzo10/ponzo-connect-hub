@@ -544,12 +544,6 @@ export async function fetchMyRoles(userId: string): Promise<string[]> {
   return (data ?? []).map((r) => r.role as string);
 }
 
-export async function claimOwnership() {
-  const { data, error } = await supabase.rpc("claim_ownership");
-  if (error) throw error;
-  return data as boolean;
-}
-
 export async function setUserRole(userId: string, role: "owner" | "admin" | "moderator" | "user", grant: boolean) {
   const { error } = await supabase.rpc("set_user_role", { _user_id: userId, _role: role, _grant: grant });
   if (error) throw error;
