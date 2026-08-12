@@ -32,9 +32,15 @@ function usePresenceHeartbeat() {
     beat();
     const id = window.setInterval(beat, 45000);
     document.addEventListener("visibilitychange", beat);
+    // Retour de réseau : on rattrape immédiatement les accusés de réception
+    // au lieu d'attendre le prochain battement.
+    window.addEventListener("online", beat);
+    window.addEventListener("focus", beat);
     return () => {
       window.clearInterval(id);
       document.removeEventListener("visibilitychange", beat);
+      window.removeEventListener("online", beat);
+      window.removeEventListener("focus", beat);
     };
   }, [user]);
 }
@@ -51,16 +57,37 @@ function useUnread() {
 
   useEffect(() => {
     if (!user) return;
+    // Filtres serveur : seuls les évènements qui me concernent traversent le
+    // réseau (moins de trafic realtime, moins de refetch inutiles).
     const channel = supabase
       .channel(`unread-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => void query.refetch())
-      .on("postgres_changes", { event: "*", schema: "public", table: "notifications" }, () => void query.refetch())
+      .on(
+        "postgres_changes",
+        { event: "INSERT", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        () => {
+          // Accusé de réception immédiat : le message est réellement arrivé
+          // sur cet appareil, on peut le marquer « distribué ».
+          void markMessagesDelivered();
+          void query.refetch();
+        },
+      )
+      .on(
+        "postgres_changes",
+        { event: "UPDATE", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        () => void query.refetch(),
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "notifications", filter: `user_id=eq.${user.id}` },
+        () => void query.refetch(),
+      )
       .subscribe();
     return () => {
       void supabase.removeChannel(channel);
     };
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [user?.id]);
+
 
   return query.data ?? { notifications: 0, messages: 0 };
 }

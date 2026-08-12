@@ -173,18 +173,37 @@ function Messages() {
 
   useEffect(() => {
     if (!user) return;
+    // Filtres serveur : seuls mes messages traversent le realtime (le flux
+    // global renvoyait auparavant tous les évènements de la table).
+    const onChange = () => {
+      refreshMessages();
+      void queryClient.invalidateQueries({ queryKey: ["unread"] });
+    };
     const channel = supabase
       .channel(`messages-${user.id}`)
-      .on("postgres_changes", { event: "*", schema: "public", table: "messages" }, () => {
-        refreshMessages();
-        void queryClient.invalidateQueries({ queryKey: ["unread"] });
-      })
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `recipient_id=eq.${user.id}` },
+        onChange,
+      )
+      .on(
+        "postgres_changes",
+        { event: "*", schema: "public", table: "messages", filter: `sender_id=eq.${user.id}` },
+        onChange,
+      )
       .on("postgres_changes", { event: "*", schema: "public", table: "message_reactions" }, refreshMessages)
       .subscribe();
+    // Reprise après coupure réseau : on resynchronise le fil et les accusés.
+    const resync = () => {
+      void markMessagesDelivered().then(refreshMessages);
+    };
+    window.addEventListener("online", resync);
     return () => {
+      window.removeEventListener("online", resync);
       void supabase.removeChannel(channel);
     };
   }, [user, queryClient, refreshMessages]);
+
 
   useEffect(() => {
     if (!user || !to) {

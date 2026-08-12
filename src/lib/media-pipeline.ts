@@ -92,22 +92,39 @@ export function classifyUploadError(error: unknown): PipelineError {
   return new PipelineError("UPLOAD_FAILED", "upload", message);
 }
 
-/**
- * Vérifie que le média est réellement lisible depuis son URL avant de le
- * considérer comme « prêt à publier ». Évite l'aperçu vide / la publication
- * cassée quand l'objet n'est pas encore servi par le stockage.
- */
-export function verifyMediaReadable(url: string, type: "image" | "video", timeoutMs = 30000) {
-  return new Promise<void>((resolve, reject) => {
-    if (typeof window === "undefined") return resolve();
+/** Résultat détaillé de la vérification post-envoi. */
+export type MediaCheck = { accessible: boolean; decodable: boolean; bytes: number | null };
+
+/** Le fichier est-il réellement servi par le stockage ? (source de vérité) */
+async function fetchAccessible(url: string, timeoutMs: number): Promise<{ ok: boolean; bytes: number | null }> {
+  const controller = new AbortController();
+  const timer = setTimeout(() => controller.abort(), timeoutMs);
+  try {
+    // Range 0-0 : on ne télécharge qu'un octet, suffisant pour prouver l'accès.
+    const response = await fetch(url, { headers: { Range: "bytes=0-0" }, signal: controller.signal, cache: "no-store" });
+    if (!response.ok && response.status !== 206) return { ok: false, bytes: null };
+    const total = response.headers.get("content-range")?.split("/")[1] ?? response.headers.get("content-length");
+    const bytes = total ? Number(total) : null;
+    if (bytes !== null && Number.isFinite(bytes) && bytes === 0) return { ok: false, bytes: 0 };
+    return { ok: true, bytes: Number.isFinite(bytes as number) ? bytes : null };
+  } catch {
+    return { ok: false, bytes: null };
+  } finally {
+    clearTimeout(timer);
+  }
+}
+
+/** Le navigateur courant sait-il décoder ce média ? (signal secondaire, non bloquant) */
+function decodable(url: string, type: "image" | "video", timeoutMs: number) {
+  return new Promise<boolean>((resolve) => {
+    if (typeof window === "undefined") return resolve(true);
     const el = type === "image" ? new Image() : document.createElement("video");
     let done = false;
     const finish = (ok: boolean) => {
       if (done) return;
       done = true;
       window.clearTimeout(timer);
-      if (ok) resolve();
-      else reject(new PipelineError("PREVIEW_FAILED", "preview", "Le fichier envoyé n'est pas lisible. Réessaie."));
+      resolve(ok);
       window.setTimeout(() => {
         el.removeAttribute("src");
         if (type === "video") (el as HTMLVideoElement).load();
@@ -119,8 +136,8 @@ export function verifyMediaReadable(url: string, type: "image" | "video", timeou
       video.preload = "metadata";
       video.muted = true;
       video.onloadedmetadata = () => finish(true);
-      video.onerror = () => finish(false);
       video.onloadeddata = () => finish(true);
+      video.onerror = () => finish(false);
     } else {
       const img = el as HTMLImageElement;
       img.onload = () => finish(true);
@@ -130,3 +147,46 @@ export function verifyMediaReadable(url: string, type: "image" | "video", timeou
     if (type === "video") (el as HTMLVideoElement).load();
   });
 }
+
+/**
+ * Vérifie que le média est réellement disponible avant de le considérer comme
+ * « prêt à publier ».
+ *
+ * Critère bloquant : le fichier doit être servi par le stockage (requête
+ * partielle réussie, taille non nulle). Le décodage par le navigateur n'est
+ * qu'un signal secondaire : un HEVC/.mov d'iPhone ou un HEIC peut être
+ * parfaitement stocké et lisible ailleurs tout en n'étant pas décodable ici —
+ * c'était la cause réelle des « publi_preview_fail ».
+ *
+ * Le stockage peut mettre un instant à servir un objet fraîchement écrit :
+ * on réessaie plusieurs fois avant de déclarer l'échec.
+ */
+export async function verifyMediaReadable(
+  url: string,
+  type: "image" | "video",
+  timeoutMs = 30000,
+): Promise<MediaCheck> {
+  if (typeof window === "undefined") return { accessible: true, decodable: true, bytes: null };
+
+  const deadline = Date.now() + timeoutMs;
+  let access = await fetchAccessible(url, 10000);
+  let attempt = 1;
+  while (!access.ok && Date.now() < deadline && attempt < 4) {
+    await new Promise((r) => setTimeout(r, 700 * attempt));
+    access = await fetchAccessible(url, 10000);
+    attempt += 1;
+  }
+
+  if (!access.ok) {
+    throw new PipelineError(
+      "PREVIEW_FAILED",
+      "preview",
+      "Le fichier envoyé n'est pas encore accessible. Réessaie dans un instant.",
+    );
+  }
+
+  const remaining = Math.max(4000, deadline - Date.now());
+  const canDecode = await decodable(url, type, Math.min(remaining, 15000));
+  return { accessible: true, decodable: canDecode, bytes: access.bytes };
+}
+

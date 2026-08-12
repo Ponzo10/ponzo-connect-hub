@@ -58,8 +58,8 @@ const quickActions = [
 function Feed() {
   const { user, profile } = useAuth();
   const feed = useInfiniteQuery({
-    queryKey: ["feed"],
-    queryFn: ({ pageParam }) => fetchFeed(pageParam),
+    queryKey: ["feed", user?.id ?? null],
+    queryFn: ({ pageParam }) => fetchFeed(pageParam, FEED_PAGE_SIZE, user?.id ?? null),
     initialPageParam: null as string | null,
     getNextPageParam: (lastPage) =>
       lastPage.length < FEED_PAGE_SIZE ? undefined : (lastPage[lastPage.length - 1]?.created_at ?? undefined),
