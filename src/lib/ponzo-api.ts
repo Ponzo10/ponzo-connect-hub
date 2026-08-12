@@ -87,7 +87,7 @@ export async function fetchFeed(
     mine_saves?: { user_id: string }[];
   };
 
-  return ((data ?? []) as Row[]).map((row) => {
+  return ((data ?? []) as unknown as Row[]).map((row) => {
     const { likes, comments, saves, mine_likes, mine_saves, ...post } = row;
     return {
       ...post,
