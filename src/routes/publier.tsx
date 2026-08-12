@@ -131,26 +131,48 @@ function Publier() {
       // 3. Vérification que le média est réellement lisible avant de l'accepter.
       const type = result.kind === "video" || expected === "video" ? "video" : "image";
       setUpload({ status: "checking" });
-      await verifyMediaReadable(result.url, type);
+      const check = await verifyMediaReadable(result.url, type);
       if (sequence !== pickSequence.current) {
         await removeUploadedMedia(result.path).catch(() => undefined);
         return;
       }
-      trackStage("preview", "ok", { type });
+      trackStage("preview", "ok", {
+        type,
+        mime: file.type || "unknown",
+        size: file.size,
+        bytes: check.bytes,
+        decodable: check.decodable,
+        path: result.path,
+        ua: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 120) : null,
+      });
 
       setMedia({ url: result.url, path: result.path, type });
       setUpload({ status: "ready" });
       if (previousMedia?.path && previousMedia.path !== result.path) {
         void removeUploadedMedia(previousMedia.path).catch(() => undefined);
       }
-      toast.success(type === "video" ? "Vidéo envoyée et vérifiée" : "Photo envoyée et vérifiée");
+      if (check.decodable) {
+        toast.success(type === "video" ? "Vidéo envoyée et vérifiée" : "Photo envoyée et vérifiée");
+      } else {
+        // Fichier bien stocké et accessible, mais non décodable par CE navigateur
+        // (ex. .mov/HEVC iPhone, HEIC). La publication reste possible.
+        toast.success("Fichier envoyé ✓ — l'aperçu n'est pas pris en charge par ce navigateur.");
+      }
     } catch (error) {
       if (sequence !== pickSequence.current) return;
       const failure = error instanceof PipelineError ? error : classifyUploadError(error);
       // Aucun média partiel ne doit rester attaché à une publication.
       setMedia(previousMedia);
       if (uploadedPath) void removeUploadedMedia(uploadedPath).catch(() => undefined);
-      trackStage(failure.stage, "fail", { code: failure.code, expected });
+      trackStage(failure.stage, "fail", {
+        code: failure.code,
+        expected,
+        mime: file.type || "unknown",
+        size: file.size,
+        message: failure.message.slice(0, 200),
+        path: uploadedPath,
+        ua: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 120) : null,
+      });
       setUpload({ status: "error", code: failure.code, message: failure.message });
       toast.error(failure.message);
     } finally {
