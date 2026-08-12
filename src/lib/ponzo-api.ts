@@ -11,6 +11,10 @@ export type FeedPost = Post & {
   post_likes: { user_id: string }[];
   post_comments: { id: string }[];
   post_saves: { user_id: string }[];
+  /** Compteurs agrégés côté base (évite de rapatrier toutes les lignes). */
+  like_count?: number;
+  comment_count?: number;
+  save_count?: number;
 };
 
 const PROFILE_FIELDS = "id,full_name,handle,role,bio,city,avatar_url,cover_url,verified,created_at,updated_at,badge,follower_boost,title,allow_photo_download,allow_video_download,language,last_seen_at,show_online,show_last_seen";
@@ -52,16 +56,49 @@ export const FEED_PAGE_SIZE = 15;
  * Fil paginé par curseur (created_at). Charger 15 publications à la fois garde
  * l'affichage initial rapide même quand la base grossit.
  */
-export async function fetchFeed(cursor?: string | null, limit = FEED_PAGE_SIZE): Promise<FeedPost[]> {
+export async function fetchFeed(
+  cursor?: string | null,
+  limit = FEED_PAGE_SIZE,
+  userId?: string | null,
+): Promise<FeedPost[]> {
+  // Optimisation clé du fil : on ne rapatrie plus toutes les lignes de likes /
+  // commentaires / enregistrements (une publication virale en compte des
+  // milliers), seulement leurs compteurs agrégés + mes propres lignes.
   let query = supabase
     .from("posts")
-    .select(`*, ${AUTHOR}, post_likes(user_id), post_comments(id), post_saves(user_id)`)
+    .select(
+      `*, ${AUTHOR}, likes:post_likes(count), comments:post_comments(count), saves:post_saves(count),` +
+        ` mine_likes:post_likes(user_id), mine_saves:post_saves(user_id)`,
+    )
     .order("created_at", { ascending: false })
     .limit(limit);
   if (cursor) query = query.lt("created_at", cursor);
+  if (userId) {
+    query = query.eq("mine_likes.user_id", userId).eq("mine_saves.user_id", userId);
+  }
   const { data, error } = await query;
   if (error) throw error;
-  return (data ?? []) as unknown as FeedPost[];
+
+  type Row = Record<string, unknown> & {
+    likes?: { count: number }[];
+    comments?: { count: number }[];
+    saves?: { count: number }[];
+    mine_likes?: { user_id: string }[];
+    mine_saves?: { user_id: string }[];
+  };
+
+  return ((data ?? []) as Row[]).map((row) => {
+    const { likes, comments, saves, mine_likes, mine_saves, ...post } = row;
+    return {
+      ...post,
+      like_count: likes?.[0]?.count ?? 0,
+      comment_count: comments?.[0]?.count ?? 0,
+      save_count: saves?.[0]?.count ?? 0,
+      post_likes: userId ? (mine_likes ?? []) : [],
+      post_comments: [],
+      post_saves: userId ? (mine_saves ?? []) : [],
+    } as unknown as FeedPost;
+  });
 }
 
 

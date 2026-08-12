@@ -61,7 +61,7 @@ export function PostCard({ post }: { post: FeedPost }) {
 
   const liked = !!user && post.post_likes.some((l) => l.user_id === user.id);
   const saved = !!user && (post.post_saves ?? []).some((s) => s.user_id === user.id);
-  const likeCount = post.post_likes.length;
+  const likeCount = post.like_count ?? post.post_likes.length;
   const isMine = user?.id === post.author_id;
 
   const invalidate = () => {
@@ -339,7 +339,7 @@ export function PostCard({ post }: { post: FeedPost }) {
 
       <div className="flex items-center justify-between px-4 py-2.5 text-xs text-muted-foreground">
         <span>{likeCount.toLocaleString("fr-FR")} réactions</span>
-        <span>{post.post_comments.length} commentaires</span>
+        <span>{post.comment_count ?? post.post_comments.length} commentaires</span>
         <span>{(post.share_count ?? 0).toLocaleString("fr-FR")} partages</span>
       </div>
 
