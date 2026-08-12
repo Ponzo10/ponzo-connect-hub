@@ -10,7 +10,7 @@ import { lovable } from "@/integrations/lovable/index";
 import { regenerateRecoveryCodes, resetPasswordWithRecoveryCode } from "@/lib/account-security.functions";
 import { logSecurityEvent } from "@/lib/analytics";
 import { useAuth } from "@/lib/auth";
-import { normalizePhone, phoneToEmail } from "@/lib/phone-auth";
+import { COUNTRY_CODES, DEFAULT_COUNTRY_CODE, normalizePhone, phoneToEmail } from "@/lib/phone-auth";
 import { cn } from "@/lib/utils";
 
 type Search = { redirect?: string | undefined };
@@ -49,6 +49,7 @@ function AuthPage() {
   const [step, setStep] = useState<Step>("form");
   const [email, setEmail] = useState("");
   const [phone, setPhone] = useState("");
+  const [dialCode, setDialCode] = useState<string>(DEFAULT_COUNTRY_CODE);
   const [password, setPassword] = useState("");
   const [showPassword, setShowPassword] = useState(false);
   const [fullName, setFullName] = useState("");
@@ -98,8 +99,8 @@ function AuthPage() {
 
   /** Connexion par numéro + mot de passe (sans SMS). */
   const signInPhone = async () => {
-    const cleaned = normalizePhone(phone);
-    if (!cleaned) throw new Error("Saisis un numéro valide, ex. 0990000000 ou +243990000000");
+    const cleaned = normalizePhone(phone, dialCode);
+    if (!cleaned) throw new Error("Numéro invalide. Saisis ton numéro local (ex. 0990000000) ou au format international (ex. +33612345678).");
     const { error } = await supabase.auth.signInWithPassword({ email: phoneToEmail(cleaned), password });
     if (error) throw new Error("Numéro ou mot de passe incorrect.");
     toast.success("Bienvenue sur PONZO 👋");
@@ -107,8 +108,8 @@ function AuthPage() {
 
   /** Création définitive du compte téléphone, après confirmation des informations. */
   const createPhoneAccount = async () => {
-    const cleaned = normalizePhone(phone);
-    if (!cleaned) throw new Error("Saisis un numéro valide, ex. 0990000000 ou +243990000000");
+    const cleaned = normalizePhone(phone, dialCode);
+    if (!cleaned) throw new Error("Numéro invalide. Saisis ton numéro local (ex. 0990000000) ou au format international (ex. +33612345678).");
     const { data, error } = await supabase.auth.signUp({
       email: phoneToEmail(cleaned),
       password,
@@ -141,8 +142,8 @@ function AuthPage() {
     try {
       if (channel === "email") await submitEmail();
       else if (mode === "signup") {
-        const cleaned = normalizePhone(phone);
-        if (!cleaned) throw new Error("Saisis un numéro valide, ex. 0990000000 ou +243990000000");
+        const cleaned = normalizePhone(phone, dialCode);
+        if (!cleaned) throw new Error("Numéro invalide. Saisis ton numéro local (ex. 0990000000) ou au format international (ex. +33612345678).");
         if (password.length < 6) throw new Error("Le mot de passe doit contenir au moins 6 caractères.");
         setStep("confirm");
       } else await signInPhone();
@@ -220,7 +221,7 @@ function AuthPage() {
               <div className="space-y-2 rounded-2xl bg-muted p-3 text-sm">
                 <div>
                   <p className="text-[11px] font-semibold uppercase text-muted-foreground">Numéro de téléphone</p>
-                  <p className="font-semibold">{normalizePhone(phone) ?? phone}</p>
+                  <p className="font-semibold">{normalizePhone(phone, dialCode) ?? phone}</p>
                 </div>
                 <div>
                   <p className="text-[11px] font-semibold uppercase text-muted-foreground">Mot de passe</p>
@@ -352,14 +353,38 @@ function AuthPage() {
                   {channel === "email" ? (
                     <Field label="E-mail" type="email" value={email} onChange={setEmail} placeholder="toi@exemple.com" required />
                   ) : (
-                    <Field
-                      label="Numéro de téléphone"
-                      type="tel"
-                      value={phone}
-                      onChange={setPhone}
-                       placeholder="099 000 00 00"
-                      required
-                    />
+                    <label className="block">
+                      <span className="mb-1 block text-xs font-semibold text-muted-foreground">
+                        Numéro de téléphone
+                      </span>
+                      <div className="flex gap-2">
+                        <select
+                          value={dialCode}
+                          onChange={(e) => setDialCode(e.target.value)}
+                          aria-label="Indicatif du pays"
+                          className="w-28 shrink-0 rounded-xl border border-border bg-background px-2 py-2.5 text-sm outline-none focus:border-primary"
+                        >
+                          {COUNTRY_CODES.map((c) => (
+                            <option key={c.code} value={c.code}>
+                              {c.flag} +{c.code}
+                            </option>
+                          ))}
+                        </select>
+                        <input
+                          type="tel"
+                          inputMode="tel"
+                          autoComplete="tel"
+                          value={phone}
+                          required
+                          placeholder="099 000 00 00"
+                          onChange={(e) => setPhone(e.target.value)}
+                          className="w-full rounded-xl border border-border bg-background px-3 py-2.5 text-sm outline-none focus:border-primary"
+                        />
+                      </div>
+                      <span className="mt-1 block text-[11px] text-muted-foreground">
+                        Numéro local ou international (+ indicatif) — tous les pays sont acceptés.
+                      </span>
+                    </label>
                   )}
 
                   <PasswordField
