@@ -1,4 +1,5 @@
 import { supabase } from "@/integrations/supabase/client";
+import { trackEvent } from "@/lib/analytics";
 import type { Tables } from "@/integrations/supabase/types";
 
 export type Profile = Tables<"profiles">;
@@ -153,19 +154,73 @@ export async function fetchMessages(userId: string): Promise<Message[]> {
 }
 
 /** Insère un message et renvoie la ligne complète pour un affichage immédiat. */
+/** UUID sûr (crypto.randomUUID absent de certains WebView Android). */
+function newMessageId() {
+  try {
+    if (typeof crypto !== "undefined" && typeof crypto.randomUUID === "function") return crypto.randomUUID();
+  } catch {
+    /* ignore */
+  }
+  const hex = "0123456789abcdef";
+  let out = "";
+  for (let i = 0; i < 36; i += 1) {
+    if (i === 8 || i === 13 || i === 18 || i === 23) out += "-";
+    else if (i === 14) out += "4";
+    else if (i === 19) out += hex[(Math.floor(Math.random() * 4) + 8)]!;
+    else out += hex[Math.floor(Math.random() * 16)]!;
+  }
+  return out;
+}
+
+/** Trace technique d'un échec d'envoi (sans le contenu du message). */
+function logSendFailure(meta: Record<string, unknown>) {
+  void trackEvent({ kind: "error", name: "message_send_fail", metadata: meta });
+}
+
+/**
+ * Envoie un message avec réessais idempotents.
+ *
+ * L'identifiant est généré côté client : un réessai après une coupure réseau
+ * réutilise le même id, donc un message déjà enregistré n'est jamais dupliqué
+ * (il est simplement relu). Écrire → Enregistrer → Distribuer reste garanti.
+ */
 export async function sendMessage(
   senderId: string,
   recipientId: string,
   body: string,
   replyToId?: string | null,
+  messageId?: string,
 ): Promise<Message> {
-  const { data, error } = await supabase
-    .from("messages")
-    .insert({ sender_id: senderId, recipient_id: recipientId, body, reply_to_id: replyToId ?? null })
-    .select(MESSAGE_SELECT)
-    .single();
-  if (error) throw error;
-  return data as unknown as Message;
+  const id = messageId ?? newMessageId();
+  const row = { id, sender_id: senderId, recipient_id: recipientId, body, reply_to_id: replyToId ?? null };
+  let lastError: unknown = null;
+
+  for (let attempt = 0; attempt < 3; attempt += 1) {
+    const { data, error } = await supabase.from("messages").insert(row).select(MESSAGE_SELECT).single();
+    if (!error && data) return data as unknown as Message;
+    lastError = error;
+
+    // Doublon : le message est bien passé lors d'une tentative précédente.
+    if (error?.code === "23505") {
+      const existing = await supabase.from("messages").select(MESSAGE_SELECT).eq("id", id).maybeSingle();
+      if (existing.data) return existing.data as unknown as Message;
+    }
+
+    logSendFailure({
+      message_id: id,
+      sender_id: senderId,
+      recipient_id: recipientId,
+      attempt: attempt + 1,
+      stage: "insert",
+      code: error?.code ?? null,
+      error: error?.message?.slice(0, 200) ?? null,
+      online: typeof navigator !== "undefined" ? navigator.onLine : null,
+    });
+
+    if (attempt < 2) await new Promise((r) => setTimeout(r, 600 * (attempt + 1)));
+  }
+
+  throw lastError instanceof Error ? lastError : new Error("Envoi du message impossible");
 }
 
 export type Notification = Tables<"notifications"> & { actor: Profile | null };
