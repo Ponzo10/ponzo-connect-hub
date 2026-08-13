@@ -64,6 +64,7 @@ import {
   sendMessage,
   type Message,
 } from "@/lib/ponzo-api";
+import { fetchGroups } from "@/lib/groups-api";
 import { uploadMedia } from "@/lib/upload";
 
 export const Route = createFileRoute("/messages")({
@@ -132,6 +133,12 @@ function Messages() {
     refetchOnWindowFocus: true,
   });
   const members = useQuery({ queryKey: ["profiles", "recent"], queryFn: () => fetchProfiles(), enabled: !!user });
+  const groups = useQuery({
+    queryKey: ["groups", user?.id],
+    queryFn: () => fetchGroups(user!.id),
+    enabled: !!user,
+    staleTime: 60_000,
+  });
   const settings = useQuery({
     queryKey: ["conversation-settings", user?.id],
     queryFn: () => fetchConversationSettings(user!.id),
@@ -937,6 +944,38 @@ function Messages() {
               </button>
             ))}
         </div>
+
+        {!showArchived && (groups.data?.memberGroups ?? []).length > 0 && (
+          <ul className="mt-4 space-y-1">
+            {(groups.data?.memberGroups ?? [])
+              .filter((g) => g.name.toLowerCase().includes(q.toLowerCase()))
+              .map((g) => (
+                <li key={g.id}>
+                  <button
+                    onClick={() => navigate({ to: "/groupe/$id", params: { id: g.id } })}
+                    className="grid w-full grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 rounded-2xl bg-surface p-3 text-left shadow-soft"
+                  >
+                    <span className="grid h-[50px] w-[50px] shrink-0 place-items-center overflow-hidden rounded-full bg-primary-soft text-primary">
+                      {g.photo_url ? (
+                        <img src={g.photo_url} alt="" className="h-full w-full object-cover" />
+                      ) : (
+                        <Users className="h-6 w-6" />
+                      )}
+                    </span>
+                    <span className="min-w-0">
+                      <span className="truncate text-sm font-semibold">{g.name}</span>
+                      <span className="block truncate text-xs text-muted-foreground">
+                        {g.description || t("msg.members")}
+                      </span>
+                    </span>
+                    <span className="shrink-0 rounded-full bg-primary-soft px-2 py-0.5 text-[10px] font-bold text-primary">
+                      Groupe
+                    </span>
+                  </button>
+                </li>
+              ))}
+          </ul>
+        )}
 
         <ul className="mt-4 space-y-1">
           {filtered.map((c) => {

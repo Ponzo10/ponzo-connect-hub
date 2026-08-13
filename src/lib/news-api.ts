@@ -39,8 +39,9 @@ export async function fetchNews(opts: { category?: string; search?: string; limi
   let q = supabase
     .from("news_articles")
     .select(SELECT)
-    .order("relevance", { ascending: false })
+    // Tri strictement chronologique : la dernière actualité publiée arrive en tête.
     .order("published_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(opts.limit ?? 60);
   if (opts.category && opts.category !== "Tout") q = q.eq("category", opts.category);
   if (opts.search) {
@@ -146,5 +147,42 @@ export async function updateNewsComment(id: string, body: string) {
 
 export async function deleteNewsComment(id: string) {
   const { error } = await supabase.from("news_comments").delete().eq("id", id);
+  if (error) throw error;
+}
+
+/** Publie une actualité (réservé au staff par les règles de sécurité de la base). */
+export async function createNewsArticle(input: {
+  title: string;
+  summary?: string | null;
+  content?: string | null;
+  image_url?: string | null;
+  source: string;
+  source_url?: string | null;
+  category: string;
+  is_important?: boolean;
+}) {
+  const { data, error } = await supabase
+    .from("news_articles")
+    .insert({
+      title: input.title.trim(),
+      summary: input.summary?.trim() || null,
+      content: input.content?.trim() || null,
+      image_url: input.image_url?.trim() || null,
+      source: input.source.trim() || "PONZO",
+      source_url: input.source_url?.trim() || null,
+      category: input.category,
+      is_important: input.is_important ?? false,
+      published_at: new Date().toISOString(),
+      relevance: 100,
+    })
+    .select("id")
+    .single();
+  if (error) throw error;
+  return data.id as string;
+}
+
+/** Retire une actualité (staff uniquement). */
+export async function deleteNewsArticle(id: string) {
+  const { error } = await supabase.from("news_articles").delete().eq("id", id);
   if (error) throw error;
 }
