@@ -39,8 +39,9 @@ export async function fetchNews(opts: { category?: string; search?: string; limi
   let q = supabase
     .from("news_articles")
     .select(SELECT)
-    .order("relevance", { ascending: false })
+    // Tri strictement chronologique : la dernière actualité publiée arrive en tête.
     .order("published_at", { ascending: false })
+    .order("created_at", { ascending: false })
     .limit(opts.limit ?? 60);
   if (opts.category && opts.category !== "Tout") q = q.eq("category", opts.category);
   if (opts.search) {
