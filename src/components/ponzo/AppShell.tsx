@@ -1,7 +1,7 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
-import { useEffect, useRef, type ReactNode } from "react";
+import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
+import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PonzoLogo, PonzoMark } from "./PonzoLogo";
 import { Avatar } from "./Avatar";
@@ -92,6 +92,42 @@ function useUnread() {
   return query.data ?? { notifications: 0, messages: 0 };
 }
 
+const SEEN_KEY = "ponzo:feed-seen-at";
+
+function seenAt() {
+  if (typeof window === "undefined") return new Date().toISOString();
+  return window.localStorage.getItem(SEEN_KEY) ?? new Date(Date.now() - 86_400_000).toISOString();
+}
+
+/** Compte les publications parues depuis la dernière consultation du fil. */
+function useNewPosts() {
+  const { user } = useAuth();
+  const [since, setSince] = useState<string>(() => seenAt());
+
+  const query = useQuery({
+    queryKey: ["feed-new", since],
+    enabled: !!user,
+    staleTime: 60_000,
+    refetchInterval: 120_000,
+    queryFn: async () => {
+      const { count, error } = await supabase
+        .from("posts")
+        .select("id", { count: "exact", head: true })
+        .gt("created_at", since);
+      if (error) throw error;
+      return count ?? 0;
+    },
+  });
+
+  const reset = useCallback(() => {
+    const now = new Date().toISOString();
+    if (typeof window !== "undefined") window.localStorage.setItem(SEEN_KEY, now);
+    setSince(now);
+  }, []);
+
+  return { count: query.data ?? 0, reset };
+}
+
 function Count({ n }: { n: number }) {
   if (!n) return null;
   return (
@@ -103,6 +139,12 @@ function Count({ n }: { n: number }) {
 
 export function TopBar({ title }: { title?: string | undefined }) {
   const unread = useUnread();
+  const pathname = useRouterState({ select: (s) => s.location.pathname });
+  const navigate = useNavigate();
+  const goBack = () => {
+    if (typeof window !== "undefined" && window.history.length > 1) window.history.back();
+    else void navigate({ to: "/" });
+  };
   const { profile } = useAuth();
   const { t } = useI18n();
   usePresenceHeartbeat();
@@ -113,6 +155,16 @@ export function TopBar({ title }: { title?: string | undefined }) {
         <div className="flex min-w-0 items-center gap-3">
           {title ? (
             <span className="flex min-w-0 items-center gap-2">
+              {pathname !== "/" && (
+                <button
+                  type="button"
+                  onClick={goBack}
+                  aria-label="Retour"
+                  className="-ms-1 grid h-9 w-9 shrink-0 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
+                >
+                  <ArrowLeft className="h-5 w-5" />
+                </button>
+              )}
               <PonzoMark size={30} />
               <h1 className="truncate text-xl font-bold">{title}</h1>
             </span>
@@ -167,6 +219,7 @@ export function BottomNav() {
   const pathname = useRouterState({ select: (s) => s.location.pathname });
   const { t } = useI18n();
   const queryClient = useQueryClient();
+  const newPosts = useNewPosts();
 
   /** Appui sur Accueil : remonte en haut et recharge le fil, comme sur les grands réseaux. */
   const refreshHome = () => {
@@ -174,6 +227,7 @@ export function BottomNav() {
     void queryClient.invalidateQueries({ queryKey: ["feed"] });
     void queryClient.invalidateQueries({ queryKey: ["news"] });
     void queryClient.invalidateQueries({ queryKey: ["stories"] });
+    newPosts.reset();
   };
 
 
@@ -211,8 +265,15 @@ export function BottomNav() {
                   active ? "text-primary" : "text-muted-foreground",
                 )}
               >
-                <Icon className={cn("h-[22px] w-[22px]", active && "stroke-[2.4]")} />
-                <span>{t(item.key)}</span>
+                <span className="relative">
+                  <Icon className={cn("h-[22px] w-[22px]", active && "stroke-[2.4]")} />
+                  {item.to === "/" && newPosts.count > 0 && (
+                    <span className="absolute -right-2.5 -top-1.5 grid h-4 min-w-4 place-items-center rounded-full bg-brand px-1 text-[10px] font-bold text-primary-foreground">
+                      {newPosts.count > 99 ? "99+" : newPosts.count}
+                    </span>
+                  )}
+                </span>
+                <span>{item.to === "/" && newPosts.count > 0 ? `${t(item.key)} (${newPosts.count})` : t(item.key)}</span>
                 <span
                   className={cn("h-0.5 w-6 rounded-full transition-colors", active ? "bg-primary" : "bg-transparent")}
                 />
