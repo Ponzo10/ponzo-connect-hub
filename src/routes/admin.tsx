@@ -4,6 +4,7 @@ import { Bell, ShieldCheck, Trash2 } from "lucide-react";
 import { useState } from "react";
 import { toast } from "sonner";
 
+import { NewsComposer } from "@/components/ponzo/NewsComposer";
 import { AdminAssistant } from "@/components/ponzo/AdminAssistant";
 import { AppShell } from "@/components/ponzo/AppShell";
 import {
@@ -61,6 +62,7 @@ const tabs = [
   "Publications",
   "Signalements",
   "Boutiques",
+  "Actualités",
   "Journal",
   "Diffusion",
 ] as const;
@@ -245,6 +247,8 @@ function Admin() {
               </p>
             </div>
           ))}
+
+        {tab === "Actualités" && <NewsComposer />}
 
         {tab === "Diffusion" && (
           <div className="space-y-2 rounded-2xl bg-surface p-4 shadow-soft">
