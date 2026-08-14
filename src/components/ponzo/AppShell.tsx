@@ -148,6 +148,11 @@ export function TopBar({ title }: { title?: string | undefined }) {
   const { profile } = useAuth();
   const { t } = useI18n();
   usePresenceHeartbeat();
+  // Actualités : ingestion automatique en arrière-plan, sans intervention manuelle.
+  useEffect(() => {
+    pingNewsSync();
+  }, []);
+
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-surface/85 backdrop-blur-xl">
