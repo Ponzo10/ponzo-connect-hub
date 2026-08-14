@@ -320,11 +320,11 @@ export async function fetchFollowCounts(userId: string) {
 
 /** Liste les profils qui suivent ce membre, ou qu'il suit. */
 export async function fetchFollowProfiles(userId: string, kind: "followers" | "following"): Promise<Profile[]> {
-  const column = kind === "followers" ? "follower_id" : "following_id";
+  const relation = kind === "followers" ? "follows_follower_profile_fkey" : "follows_following_profile_fkey";
   const filter = kind === "followers" ? "following_id" : "follower_id";
   const { data, error } = await supabase
     .from("follows")
-    .select(`profile:profiles!follows_${column}_fkey(${PROFILE_FIELDS})`)
+    .select(`profile:profiles!${relation}(${PROFILE_FIELDS})`)
     .eq(filter, userId)
     .order("created_at", { ascending: false })
     .limit(200);
