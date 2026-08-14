@@ -269,14 +269,28 @@ function VideoCard({
 
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
-      <button
-        type="button"
-        aria-label={muted ? "Activer le son" : "Couper le son"}
-        onClick={onToggleMute}
-        className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/15 text-background backdrop-blur-sm"
-      >
-        {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-      </button>
+      <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-background/15 px-2 py-1.5 backdrop-blur-sm">
+        <button
+          type="button"
+          aria-label={muted ? "Activer le son" : "Couper le son"}
+          onClick={onToggleMute}
+          className="grid h-8 w-8 place-items-center rounded-full text-background"
+        >
+          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </button>
+        {!muted && (
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={volume}
+            aria-label="Volume"
+            onChange={(e) => onVolume(Number(e.target.value))}
+            className="h-1 w-20 cursor-pointer accent-brand"
+          />
+        )}
+      </div>
 
       <div className="relative z-10 flex w-full items-end justify-between gap-4 p-5 pb-8">
         <div className="min-w-0 flex-1 text-background">
