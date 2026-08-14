@@ -60,13 +60,15 @@ function parseRss(xml: string, category: string): RawArticle[] {
   return items.map((item) => {
     const link = pick(item, "link");
     const image = item.match(/<media:content[^>]*url="([^"]+)"/i)?.[1] ?? item.match(/<enclosure[^>]*url="([^"]+)"/i)?.[1];
+    const description = pick(item, "description");
+    const publishedAt = pick(item, "pubDate");
     const raw: RawArticle = {
       title: pick(item, "title") ?? "",
-      description: pick(item, "description") ?? null ?? undefined,
       category,
-      publishedAt: pick(item, "pubDate"),
       source: pick(item, "source") ?? "Google Actualités",
     };
+    if (description) raw.description = description;
+    if (publishedAt) raw.publishedAt = publishedAt;
     if (link) raw.url = link;
     if (image) raw.image = image;
     return raw;
