@@ -111,7 +111,9 @@ function Videos() {
             post={post}
             eager={i < 2}
             muted={muted}
-            onToggleMute={() => setMuted((m) => !m)}
+            volume={volume}
+            onToggleMute={() => persist({ muted: !muted, volume: volume || 1 })}
+            onVolume={(v) => persist({ muted: v === 0, volume: v })}
             isFollowing={(following.data ?? []).includes(post.author_id)}
           />
         ))}
@@ -127,13 +129,17 @@ function VideoCard({
   post,
   eager,
   muted,
+  volume,
   onToggleMute,
+  onVolume,
   isFollowing,
 }: {
   post: FeedPost;
   eager: boolean;
   muted: boolean;
+  volume: number;
   onToggleMute: () => void;
+  onVolume: (value: number) => void;
   isFollowing: boolean;
 }) {
   const { user, profile } = useAuth();
