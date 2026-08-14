@@ -50,9 +50,38 @@ function VideosPage() {
   );
 }
 
+const SOUND_KEY = "ponzo.video.sound";
+
+/** Mémorise le choix de son de l'utilisateur d'une session à l'autre. */
+function useSoundPreference() {
+  const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(1);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(SOUND_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { muted?: boolean; volume?: number };
+      if (typeof saved.muted === "boolean") setMuted(saved.muted);
+      if (typeof saved.volume === "number") setVolume(Math.min(1, Math.max(0, saved.volume)));
+    } catch {
+      /* préférence illisible : on garde les valeurs par défaut */
+    }
+  }, []);
+
+  const persist = useCallback((next: { muted: boolean; volume: number }) => {
+    setMuted(next.muted);
+    setVolume(next.volume);
+    if (typeof window !== "undefined") window.localStorage.setItem(SOUND_KEY, JSON.stringify(next));
+  }, []);
+
+  return { muted, volume, persist };
+}
+
 function Videos() {
   const { user } = useAuth();
-  const [muted, setMuted] = useState(true);
+  const { muted, volume, persist } = useSoundPreference();
   const videos = useQuery({ queryKey: ["videos"], queryFn: fetchVideoPosts, staleTime: 20000 });
   const following = useQuery({
     queryKey: ["following", user?.id],
@@ -82,7 +111,9 @@ function Videos() {
             post={post}
             eager={i < 2}
             muted={muted}
-            onToggleMute={() => setMuted((m) => !m)}
+            volume={volume}
+            onToggleMute={() => persist({ muted: !muted, volume: volume || 1 })}
+            onVolume={(v) => persist({ muted: v === 0, volume: v })}
             isFollowing={(following.data ?? []).includes(post.author_id)}
           />
         ))}
@@ -98,13 +129,17 @@ function VideoCard({
   post,
   eager,
   muted,
+  volume,
   onToggleMute,
+  onVolume,
   isFollowing,
 }: {
   post: FeedPost;
   eager: boolean;
   muted: boolean;
+  volume: number;
   onToggleMute: () => void;
+  onVolume: (value: number) => void;
   isFollowing: boolean;
 }) {
   const { user, profile } = useAuth();
@@ -161,6 +196,16 @@ function VideoCard({
     v.pause();
     return;
   }, [active, post.id, counted, user]);
+
+  // Le son original de la vidéo suit le réglage de volume choisi.
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.volume = Math.min(1, Math.max(0, volume));
+    v.muted = muted;
+    // Certains navigateurs bloquent la lecture non muette : on relance après le choix.
+    if (!muted && active) void v.play().catch(() => {});
+  }, [volume, muted, active]);
 
 
   const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: ["videos"] }), [queryClient]);
@@ -224,14 +269,28 @@ function VideoCard({
 
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
-      <button
-        type="button"
-        aria-label={muted ? "Activer le son" : "Couper le son"}
-        onClick={onToggleMute}
-        className="absolute right-4 top-4 grid h-10 w-10 place-items-center rounded-full bg-background/15 text-background backdrop-blur-sm"
-      >
-        {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
-      </button>
+      <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-background/15 px-2 py-1.5 backdrop-blur-sm">
+        <button
+          type="button"
+          aria-label={muted ? "Activer le son" : "Couper le son"}
+          onClick={onToggleMute}
+          className="grid h-8 w-8 place-items-center rounded-full text-background"
+        >
+          {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
+        </button>
+        {!muted && (
+          <input
+            type="range"
+            min={0}
+            max={1}
+            step={0.05}
+            value={volume}
+            aria-label="Volume"
+            onChange={(e) => onVolume(Number(e.target.value))}
+            className="h-1 w-20 cursor-pointer accent-brand"
+          />
+        )}
+      </div>
 
       <div className="relative z-10 flex w-full items-end justify-between gap-4 p-5 pb-8">
         <div className="min-w-0 flex-1 text-background">

@@ -1,5 +1,8 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
+import { useState } from "react";
+
+import { FollowList } from "@/components/ponzo/FollowList";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
@@ -22,6 +25,7 @@ export const Route = createFileRoute("/membre/$id")({
 
 function MemberPage() {
   const { id } = Route.useParams();
+  const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
   const profile = useQuery({ queryKey: ["profile", id], queryFn: () => fetchProfile(id) });
   const posts = useQuery({ queryKey: ["posts", id], queryFn: () => fetchPostsByAuthor(id) });
   const counts = useQuery({ queryKey: ["follow-counts", id], queryFn: () => fetchFollowCounts(id) });
@@ -41,7 +45,13 @@ function MemberPage() {
             <p className="truncate text-lg font-bold">{profile.data?.full_name ?? "Membre PONZO"}</p>
             <p className="truncate text-xs text-muted-foreground">{profile.data?.role ?? "Membre"}</p>
             <p className="mt-1 text-xs text-muted-foreground">
-               {displayFollowers(counts.data?.followers ?? 0, profile.data)} abonnés · {counts.data?.following ?? 0} abonnements
+              <button type="button" className="font-semibold underline-offset-2 hover:underline" onClick={() => setFollowList("followers")}>
+                {displayFollowers(counts.data?.followers ?? 0, profile.data)} abonnés
+              </button>
+              {" · "}
+              <button type="button" className="font-semibold underline-offset-2 hover:underline" onClick={() => setFollowList("following")}>
+                {counts.data?.following ?? 0} abonnements
+              </button>
             </p>
           </div>
         </div>
@@ -59,6 +69,7 @@ function MemberPage() {
           <p className="px-4 text-sm text-muted-foreground">Ce membre n'a pas encore publié.</p>
         )}
       </div>
+      {followList && <FollowList userId={id} kind={followList} onClose={() => setFollowList(null)} />}
     </AppShell>
   );
 }

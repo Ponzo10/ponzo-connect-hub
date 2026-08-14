@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { Badge3D } from "@/components/ponzo/Badge3D";
+import { FollowList } from "@/components/ponzo/FollowList";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { useAuth } from "@/lib/auth";
 import {
@@ -37,6 +38,7 @@ export const Route = createFileRoute("/profil")({
 function Profil() {
   const { user, profile, isStaff, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
@@ -126,9 +128,17 @@ function Profil() {
 
           <div className="mt-4 grid grid-cols-3 gap-2 rounded-2xl bg-surface p-3 text-center shadow-soft">
             <Stat value={String(posts.data?.length ?? 0)} label="Publications" />
-            <Stat value={displayFollowers(counts.data?.followers ?? 0, profile)} label="Abonnés" />
-            <Stat value={String(counts.data?.following ?? 0)} label="Abonnements" />
+            <button type="button" onClick={() => setFollowList("followers")}>
+              <Stat value={displayFollowers(counts.data?.followers ?? 0, profile)} label="Abonnés" />
+            </button>
+            <button type="button" onClick={() => setFollowList("following")}>
+              <Stat value={String(counts.data?.following ?? 0)} label="Abonnements" />
+            </button>
           </div>
+
+          {followList && user && (
+            <FollowList userId={user.id} kind={followList} onClose={() => setFollowList(null)} />
+          )}
 
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Link to="/favoris" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">

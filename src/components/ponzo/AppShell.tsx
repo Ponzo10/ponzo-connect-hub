@@ -8,6 +8,7 @@ import { Avatar } from "./Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
+import { pingNewsSync } from "@/lib/news-auto";
 import { asPerson, markMessagesDelivered, touchPresence, unreadCounts } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
@@ -148,6 +149,11 @@ export function TopBar({ title }: { title?: string | undefined }) {
   const { profile } = useAuth();
   const { t } = useI18n();
   usePresenceHeartbeat();
+  // Actualités : ingestion automatique en arrière-plan, sans intervention manuelle.
+  useEffect(() => {
+    pingNewsSync();
+  }, []);
+
 
   return (
     <header className="sticky top-0 z-30 border-b border-border/70 bg-surface/85 backdrop-blur-xl">

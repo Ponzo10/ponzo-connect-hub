@@ -323,6 +323,8 @@ function Sheet({ title, children, onClose }: { title: string; children: React.Re
   );
 }
 
+const STORY_STICKERS = ["❤️", "🔥", "😂", "👏", "😮", "😍", "🙏", "💯", "🎉", "👍"] as const;
+
 function StoryComments({ story, onClose }: { story: Story; onClose: () => void }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -335,14 +337,15 @@ function StoryComments({ story, onClose }: { story: Story; onClose: () => void }
   });
 
   const send = useMutation({
-    mutationFn: async () => {
-      if (!user || !text.trim()) return;
-      await addStoryComment(story.id, user.id, text.trim(), replyTo?.id ?? null);
+    mutationFn: async (override?: string) => {
+      const value = (override ?? text).trim();
+      if (!user || !value) return;
+      await addStoryComment(story.id, user.id, value, replyTo?.id ?? null);
       await notify({
         userId: replyTo ? story.author_id : story.author_id,
         actorId: user.id,
         kind: "story_comment",
-        body: `${profile?.full_name ?? "Un membre"} a commenté votre story : « ${text.trim().slice(0, 60)} »`,
+        body: `${profile?.full_name ?? "Un membre"} a commenté votre story : « ${value.slice(0, 60)} »`,
         entityId: story.id,
       });
     },
@@ -387,11 +390,27 @@ function StoryComments({ story, onClose }: { story: Story; onClose: () => void }
         {roots.length === 0 && <p className="text-xs text-muted-foreground">Aucun commentaire pour l'instant.</p>}
       </div>
 
+      {/* Stickers : réaction instantanée à la story en un seul geste. */}
+      <div className="sticky bottom-16 mt-3 flex gap-1 overflow-x-auto bg-surface pb-1 no-scrollbar">
+        {STORY_STICKERS.map((sticker) => (
+          <button
+            key={sticker}
+            type="button"
+            aria-label={`Envoyer ${sticker}`}
+            disabled={send.isPending}
+            onClick={() => send.mutate(sticker)}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-xl transition-transform active:scale-90"
+          >
+            {sticker}
+          </button>
+        ))}
+      </div>
+
       <form
         className="sticky bottom-0 mt-4 flex items-center gap-2 bg-surface pt-2"
         onSubmit={(e) => {
           e.preventDefault();
-          send.mutate();
+          send.mutate(undefined);
         }}
       >
         <input
