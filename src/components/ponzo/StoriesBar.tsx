@@ -323,6 +323,8 @@ function Sheet({ title, children, onClose }: { title: string; children: React.Re
   );
 }
 
+const STORY_STICKERS = ["❤️", "🔥", "😂", "👏", "😮", "😍", "🙏", "💯", "🎉", "👍"] as const;
+
 function StoryComments({ story, onClose }: { story: Story; onClose: () => void }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -396,11 +398,7 @@ function StoryComments({ story, onClose }: { story: Story; onClose: () => void }
             type="button"
             aria-label={`Envoyer ${sticker}`}
             disabled={send.isPending}
-            onClick={() => {
-              setText(sticker);
-              // Envoi immédiat du sticker choisi.
-              setTimeout(() => send.mutate(), 0);
-            }}
+            onClick={() => send.mutate(sticker)}
             className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-xl transition-transform active:scale-90"
           >
             {sticker}
@@ -412,7 +410,7 @@ function StoryComments({ story, onClose }: { story: Story; onClose: () => void }
         className="sticky bottom-0 mt-4 flex items-center gap-2 bg-surface pt-2"
         onSubmit={(e) => {
           e.preventDefault();
-          send.mutate();
+          send.mutate(undefined);
         }}
       >
         <input
