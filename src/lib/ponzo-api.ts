@@ -318,6 +318,22 @@ export async function fetchFollowCounts(userId: string) {
   return { followers: followers.count ?? 0, following: following.count ?? 0 };
 }
 
+/** Liste les profils qui suivent ce membre, ou qu'il suit. */
+export async function fetchFollowProfiles(userId: string, kind: "followers" | "following"): Promise<Profile[]> {
+  const column = kind === "followers" ? "follower_id" : "following_id";
+  const filter = kind === "followers" ? "following_id" : "follower_id";
+  const { data, error } = await supabase
+    .from("follows")
+    .select(`profile:profiles!follows_${column}_fkey(${PROFILE_FIELDS})`)
+    .eq(filter, userId)
+    .order("created_at", { ascending: false })
+    .limit(200);
+  if (error) throw error;
+  return ((data ?? []) as unknown as { profile: Profile | null }[])
+    .map((row) => row.profile)
+    .filter((p): p is Profile => !!p);
+}
+
 export async function createProduct(input: {
   sellerId: string;
   title: string;
