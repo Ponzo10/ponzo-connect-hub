@@ -22,6 +22,7 @@ export const Route = createFileRoute("/membre/$id")({
 
 function MemberPage() {
   const { id } = Route.useParams();
+  const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
   const profile = useQuery({ queryKey: ["profile", id], queryFn: () => fetchProfile(id) });
   const posts = useQuery({ queryKey: ["posts", id], queryFn: () => fetchPostsByAuthor(id) });
   const counts = useQuery({ queryKey: ["follow-counts", id], queryFn: () => fetchFollowCounts(id) });
