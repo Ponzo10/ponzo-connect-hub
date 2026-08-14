@@ -387,6 +387,26 @@ function StoryComments({ story, onClose }: { story: Story; onClose: () => void }
         {roots.length === 0 && <p className="text-xs text-muted-foreground">Aucun commentaire pour l'instant.</p>}
       </div>
 
+      {/* Stickers : réaction instantanée à la story en un seul geste. */}
+      <div className="sticky bottom-16 mt-3 flex gap-1 overflow-x-auto bg-surface pb-1 no-scrollbar">
+        {STORY_STICKERS.map((sticker) => (
+          <button
+            key={sticker}
+            type="button"
+            aria-label={`Envoyer ${sticker}`}
+            disabled={send.isPending}
+            onClick={() => {
+              setText(sticker);
+              // Envoi immédiat du sticker choisi.
+              setTimeout(() => send.mutate(), 0);
+            }}
+            className="grid h-10 w-10 shrink-0 place-items-center rounded-full bg-muted text-xl transition-transform active:scale-90"
+          >
+            {sticker}
+          </button>
+        ))}
+      </div>
+
       <form
         className="sticky bottom-0 mt-4 flex items-center gap-2 bg-surface pt-2"
         onSubmit={(e) => {
