@@ -335,14 +335,15 @@ function StoryComments({ story, onClose }: { story: Story; onClose: () => void }
   });
 
   const send = useMutation({
-    mutationFn: async () => {
-      if (!user || !text.trim()) return;
-      await addStoryComment(story.id, user.id, text.trim(), replyTo?.id ?? null);
+    mutationFn: async (override?: string) => {
+      const value = (override ?? text).trim();
+      if (!user || !value) return;
+      await addStoryComment(story.id, user.id, value, replyTo?.id ?? null);
       await notify({
         userId: replyTo ? story.author_id : story.author_id,
         actorId: user.id,
         kind: "story_comment",
-        body: `${profile?.full_name ?? "Un membre"} a commenté votre story : « ${text.trim().slice(0, 60)} »`,
+        body: `${profile?.full_name ?? "Un membre"} a commenté votre story : « ${value.slice(0, 60)} »`,
         entityId: story.id,
       });
     },
