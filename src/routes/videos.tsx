@@ -197,6 +197,16 @@ function VideoCard({
     return;
   }, [active, post.id, counted, user]);
 
+  // Le son original de la vidéo suit le réglage de volume choisi.
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.volume = Math.min(1, Math.max(0, volume));
+    v.muted = muted;
+    // Certains navigateurs bloquent la lecture non muette : on relance après le choix.
+    if (!muted && active) void v.play().catch(() => {});
+  }, [volume, muted, active]);
+
 
   const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: ["videos"] }), [queryClient]);
 
