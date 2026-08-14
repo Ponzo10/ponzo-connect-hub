@@ -50,9 +50,38 @@ function VideosPage() {
   );
 }
 
+const SOUND_KEY = "ponzo.video.sound";
+
+/** Mémorise le choix de son de l'utilisateur d'une session à l'autre. */
+function useSoundPreference() {
+  const [muted, setMuted] = useState(true);
+  const [volume, setVolume] = useState(1);
+
+  useEffect(() => {
+    if (typeof window === "undefined") return;
+    try {
+      const raw = window.localStorage.getItem(SOUND_KEY);
+      if (!raw) return;
+      const saved = JSON.parse(raw) as { muted?: boolean; volume?: number };
+      if (typeof saved.muted === "boolean") setMuted(saved.muted);
+      if (typeof saved.volume === "number") setVolume(Math.min(1, Math.max(0, saved.volume)));
+    } catch {
+      /* préférence illisible : on garde les valeurs par défaut */
+    }
+  }, []);
+
+  const persist = useCallback((next: { muted: boolean; volume: number }) => {
+    setMuted(next.muted);
+    setVolume(next.volume);
+    if (typeof window !== "undefined") window.localStorage.setItem(SOUND_KEY, JSON.stringify(next));
+  }, []);
+
+  return { muted, volume, persist };
+}
+
 function Videos() {
   const { user } = useAuth();
-  const [muted, setMuted] = useState(true);
+  const { muted, volume, persist } = useSoundPreference();
   const videos = useQuery({ queryKey: ["videos"], queryFn: fetchVideoPosts, staleTime: 20000 });
   const following = useQuery({
     queryKey: ["following", user?.id],
