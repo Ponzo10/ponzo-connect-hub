@@ -7,6 +7,7 @@ import { toast } from "sonner";
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { Badge3D } from "@/components/ponzo/Badge3D";
+import { FollowList } from "@/components/ponzo/FollowList";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { useAuth } from "@/lib/auth";
 import {
