@@ -69,6 +69,7 @@ function MemberPage() {
           <p className="px-4 text-sm text-muted-foreground">Ce membre n'a pas encore publié.</p>
         )}
       </div>
+      {followList && <FollowList userId={id} kind={followList} onClose={() => setFollowList(null)} />}
     </AppShell>
   );
 }
