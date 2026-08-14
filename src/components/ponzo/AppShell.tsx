@@ -8,6 +8,7 @@ import { Avatar } from "./Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
+import { pingNewsSync } from "@/lib/news-auto";
 import { asPerson, markMessagesDelivered, touchPresence, unreadCounts } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
