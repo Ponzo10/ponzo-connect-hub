@@ -37,6 +37,7 @@ export const Route = createFileRoute("/profil")({
 function Profil() {
   const { user, profile, isStaff, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
+  const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
