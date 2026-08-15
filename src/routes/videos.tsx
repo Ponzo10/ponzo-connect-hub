@@ -257,17 +257,34 @@ function VideoCard({
     <section ref={sectionRef} className="relative flex h-[calc(100vh-5rem)] snap-start items-end bg-foreground">
       <video
         ref={ref}
-        src={warm ? (post.media_url ?? undefined) : undefined}
+        src={warm && post.media_url ? `${post.media_url}${post.media_url.includes("#") ? "" : "#t=0.001"}` : undefined}
         className="absolute inset-0 h-full w-full object-contain"
         playsInline
         loop
         muted={muted}
         disablePictureInPicture
-        preload={warm ? "auto" : "none"}
+        preload={active ? "auto" : warm ? "metadata" : "none"}
+        onLoadedData={() => setReady(true)}
+        onWaiting={() => setBuffering(true)}
+        onStalled={() => setBuffering(true)}
+        onPlaying={() => setBuffering(false)}
+        onCanPlay={() => setBuffering(false)}
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
 
+      {!ready && (
+        <div className="absolute inset-0 grid place-items-center bg-foreground">
+          <div className="h-14 w-14 animate-pulse rounded-full bg-background/10" />
+        </div>
+      )}
+      {ready && buffering && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <Loader2 className="h-10 w-10 animate-spin text-background/90" />
+        </div>
+      )}
+
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
+
 
       <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-background/15 px-2 py-1.5 backdrop-blur-sm">
         <button
