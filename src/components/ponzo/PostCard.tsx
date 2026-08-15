@@ -201,7 +201,7 @@ function PostCardBase({ post }: { post: FeedPost }) {
   const repliesOf = (id: string) => (comments.data ?? []).filter((c) => c.parent_id === id);
 
   return (
-    <article className="mb-3 bg-surface shadow-soft sm:rounded-2xl">
+    <article className="cv-auto mb-3 bg-surface shadow-soft sm:rounded-2xl">
       <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 pt-4">
         <Link to="/membre/$id" params={{ id: post.author_id }}>
           <Avatar person={asPerson(post.author)} size={44} />
