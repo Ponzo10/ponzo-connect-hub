@@ -48,7 +48,7 @@ const tagStyle: Record<string, string> = {
   "Mon projet": "bg-secondary text-secondary-foreground",
 };
 
-export function PostCard({ post }: { post: FeedPost }) {
+function PostCardBase({ post }: { post: FeedPost }) {
   const { user } = useAuth();
   const viewer = usePhotoViewer();
   const queryClient = useQueryClient();
