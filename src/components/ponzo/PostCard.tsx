@@ -12,7 +12,7 @@ import {
 } from "lucide-react";
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
-import { useState } from "react";
+import { memo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { Avatar } from "./Avatar";
@@ -48,7 +48,7 @@ const tagStyle: Record<string, string> = {
   "Mon projet": "bg-secondary text-secondary-foreground",
 };
 
-export function PostCard({ post }: { post: FeedPost }) {
+function PostCardBase({ post }: { post: FeedPost }) {
   const { user } = useAuth();
   const viewer = usePhotoViewer();
   const queryClient = useQueryClient();
@@ -59,9 +59,17 @@ export function PostCard({ post }: { post: FeedPost }) {
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
-  const liked = !!user && post.post_likes.some((l) => l.user_id === user.id);
-  const saved = !!user && (post.post_saves ?? []).some((s) => s.user_id === user.id);
-  const likeCount = post.like_count ?? post.post_likes.length;
+  // États optimistes : la réaction est instantanée et n'oblige plus à recharger
+  // tout le fil (une invalidation complète rendait chaque « J'aime » très lent).
+  const [likedOverride, setLikedOverride] = useState<boolean | null>(null);
+  const [savedOverride, setSavedOverride] = useState<boolean | null>(null);
+
+  const likedServer = !!user && post.post_likes.some((l) => l.user_id === user.id);
+  const savedServer = !!user && (post.post_saves ?? []).some((s) => s.user_id === user.id);
+  const liked = likedOverride ?? likedServer;
+  const saved = savedOverride ?? savedServer;
+  const baseLikeCount = post.like_count ?? post.post_likes.length;
+  const likeCount = Math.max(0, baseLikeCount + (liked === likedServer ? 0 : liked ? 1 : -1));
   const isMine = user?.id === post.author_id;
 
   const invalidate = () => {
@@ -73,8 +81,10 @@ export function PostCard({ post }: { post: FeedPost }) {
   const like = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("auth");
-      await toggleLike(post.id, user.id, liked);
-      if (!liked && post.author_id !== user.id) {
+      const next = !liked;
+      setLikedOverride(next);
+      await toggleLike(post.id, user.id, !next);
+      if (next && post.author_id !== user.id) {
         await notify({
           userId: post.author_id,
           actorId: user.id,
@@ -84,20 +94,28 @@ export function PostCard({ post }: { post: FeedPost }) {
         });
       }
     },
-    onSuccess: invalidate,
-    onError: () => toast.error("Réaction impossible pour le moment."),
+    onError: () => {
+      setLikedOverride(null);
+      toast.error("Réaction impossible pour le moment.");
+    },
   });
 
   const save = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("auth");
-      await toggleSave(post.id, user.id, saved);
+      const next = !saved;
+      setSavedOverride(next);
+      await toggleSave(post.id, user.id, !next);
+      return next;
     },
-    onSuccess: () => {
-      toast.success(saved ? "Retiré des favoris" : "Ajouté aux favoris");
-      invalidate();
+    onSuccess: (next) => {
+      toast.success(next ? "Ajouté aux favoris" : "Retiré des favoris");
+      void queryClient.invalidateQueries({ queryKey: ["saved"] });
     },
-    onError: () => toast.error("Action impossible pour le moment."),
+    onError: () => {
+      setSavedOverride(null);
+      toast.error("Action impossible pour le moment.");
+    },
   });
 
   const comments = useQuery({
@@ -183,7 +201,7 @@ export function PostCard({ post }: { post: FeedPost }) {
   const repliesOf = (id: string) => (comments.data ?? []).filter((c) => c.parent_id === id);
 
   return (
-    <article className="mb-3 bg-surface shadow-soft sm:rounded-2xl">
+    <article className="cv-auto mb-3 bg-surface shadow-soft sm:rounded-2xl">
       <div className="relative grid grid-cols-[auto_minmax(0,1fr)_auto] items-center gap-3 px-4 pt-4">
         <Link to="/membre/$id" params={{ id: post.author_id }}>
           <Avatar person={asPerson(post.author)} size={44} />
@@ -314,13 +332,7 @@ export function PostCard({ post }: { post: FeedPost }) {
       )}
       {post.media_url && post.media_type === "video" && (
         <div className="relative">
-          <video
-            src={post.media_url}
-            controls
-            playsInline
-            preload="metadata"
-            className="max-h-[520px] w-full bg-black object-contain"
-          />
+          <LazyVideo src={post.media_url} />
           {(post.author?.allow_video_download ?? true) && (
             <button
               type="button"
@@ -416,6 +428,56 @@ export function PostCard({ post }: { post: FeedPost }) {
         </div>
       )}
     </article>
+  );
+}
+
+// Le fil rend des dizaines de cartes : sans mémoïsation, chaque changement
+// d'état parent (pagination, actualités) re-rendait toutes les publications.
+export const PostCard = memo(PostCardBase, (a, b) => {
+  const x = a.post;
+  const y = b.post;
+  return (
+    x.id === y.id &&
+    x.body === y.body &&
+    x.media_url === y.media_url &&
+    x.like_count === y.like_count &&
+    x.comment_count === y.comment_count &&
+    x.share_count === y.share_count &&
+    x.post_likes.length === y.post_likes.length &&
+    (x.post_saves?.length ?? 0) === (y.post_saves?.length ?? 0)
+  );
+});
+
+/** La vidéo n'ouvre une connexion réseau qu'à l'approche de l'écran. */
+function LazyVideo({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || near || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [near]);
+
+  return (
+    <video
+      ref={ref}
+      {...(near ? { src } : {})}
+      controls
+      playsInline
+      preload={near ? "metadata" : "none"}
+      className="max-h-[520px] w-full bg-black object-contain"
+    />
   );
 }
 
