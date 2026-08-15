@@ -59,9 +59,17 @@ function PostCardBase({ post }: { post: FeedPost }) {
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
 
-  const liked = !!user && post.post_likes.some((l) => l.user_id === user.id);
-  const saved = !!user && (post.post_saves ?? []).some((s) => s.user_id === user.id);
-  const likeCount = post.like_count ?? post.post_likes.length;
+  // États optimistes : la réaction est instantanée et n'oblige plus à recharger
+  // tout le fil (une invalidation complète rendait chaque « J'aime » très lent).
+  const [likedOverride, setLikedOverride] = useState<boolean | null>(null);
+  const [savedOverride, setSavedOverride] = useState<boolean | null>(null);
+
+  const likedServer = !!user && post.post_likes.some((l) => l.user_id === user.id);
+  const savedServer = !!user && (post.post_saves ?? []).some((s) => s.user_id === user.id);
+  const liked = likedOverride ?? likedServer;
+  const saved = savedOverride ?? savedServer;
+  const baseLikeCount = post.like_count ?? post.post_likes.length;
+  const likeCount = Math.max(0, baseLikeCount + (liked === likedServer ? 0 : liked ? 1 : -1));
   const isMine = user?.id === post.author_id;
 
   const invalidate = () => {
@@ -73,8 +81,10 @@ function PostCardBase({ post }: { post: FeedPost }) {
   const like = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("auth");
-      await toggleLike(post.id, user.id, liked);
-      if (!liked && post.author_id !== user.id) {
+      const next = !liked;
+      setLikedOverride(next);
+      await toggleLike(post.id, user.id, !next);
+      if (next && post.author_id !== user.id) {
         await notify({
           userId: post.author_id,
           actorId: user.id,
@@ -84,20 +94,28 @@ function PostCardBase({ post }: { post: FeedPost }) {
         });
       }
     },
-    onSuccess: invalidate,
-    onError: () => toast.error("Réaction impossible pour le moment."),
+    onError: () => {
+      setLikedOverride(null);
+      toast.error("Réaction impossible pour le moment.");
+    },
   });
 
   const save = useMutation({
     mutationFn: async () => {
       if (!user) throw new Error("auth");
-      await toggleSave(post.id, user.id, saved);
+      const next = !saved;
+      setSavedOverride(next);
+      await toggleSave(post.id, user.id, !next);
+      return next;
     },
-    onSuccess: () => {
-      toast.success(saved ? "Retiré des favoris" : "Ajouté aux favoris");
-      invalidate();
+    onSuccess: (next) => {
+      toast.success(next ? "Ajouté aux favoris" : "Retiré des favoris");
+      void queryClient.invalidateQueries({ queryKey: ["saved"] });
     },
-    onError: () => toast.error("Action impossible pour le moment."),
+    onError: () => {
+      setSavedOverride(null);
+      toast.error("Action impossible pour le moment.");
+    },
   });
 
   const comments = useQuery({
