@@ -149,7 +149,10 @@ function VideoCard({
   const [active, setActive] = useState(eager);
   const [warm, setWarm] = useState(eager);
   const [counted, setCounted] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [buffering, setBuffering] = useState(false);
   const [showComments, setShowComments] = useState(false);
+
 
   const liked = useMemo(() => !!user && post.post_likes.some((l) => l.user_id === user.id), [post.post_likes, user]);
   const saved = useMemo(() => !!user && post.post_saves.some((s) => s.user_id === user.id), [post.post_saves, user]);
