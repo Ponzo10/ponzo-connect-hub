@@ -448,6 +448,39 @@ export const PostCard = memo(PostCardBase, (a, b) => {
   );
 });
 
+/** La vidéo n'ouvre une connexion réseau qu'à l'approche de l'écran. */
+function LazyVideo({ src }: { src: string }) {
+  const ref = useRef<HTMLVideoElement | null>(null);
+  const [near, setNear] = useState(false);
+
+  useEffect(() => {
+    const node = ref.current;
+    if (!node || near || typeof IntersectionObserver === "undefined") return;
+    const observer = new IntersectionObserver(
+      (entries) => {
+        if (entries[0]?.isIntersecting) {
+          setNear(true);
+          observer.disconnect();
+        }
+      },
+      { rootMargin: "400px 0px" },
+    );
+    observer.observe(node);
+    return () => observer.disconnect();
+  }, [near]);
+
+  return (
+    <video
+      ref={ref}
+      {...(near ? { src } : {})}
+      controls
+      playsInline
+      preload={near ? "metadata" : "none"}
+      className="max-h-[520px] w-full bg-black object-contain"
+    />
+  );
+}
+
 function CommentRow({
   comment,
   postId,
