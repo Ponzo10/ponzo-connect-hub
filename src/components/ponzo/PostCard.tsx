@@ -332,13 +332,7 @@ function PostCardBase({ post }: { post: FeedPost }) {
       )}
       {post.media_url && post.media_type === "video" && (
         <div className="relative">
-          <video
-            src={post.media_url}
-            controls
-            playsInline
-            preload="metadata"
-            className="max-h-[520px] w-full bg-black object-contain"
-          />
+          <LazyVideo src={post.media_url} />
           {(post.author?.allow_video_download ?? true) && (
             <button
               type="button"
