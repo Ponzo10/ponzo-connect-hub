@@ -437,6 +437,23 @@ function PostCardBase({ post }: { post: FeedPost }) {
   );
 }
 
+// Le fil rend des dizaines de cartes : sans mémoïsation, chaque changement
+// d'état parent (pagination, actualités) re-rendait toutes les publications.
+export const PostCard = memo(PostCardBase, (a, b) => {
+  const x = a.post;
+  const y = b.post;
+  return (
+    x.id === y.id &&
+    x.body === y.body &&
+    x.media_url === y.media_url &&
+    x.like_count === y.like_count &&
+    x.comment_count === y.comment_count &&
+    x.share_count === y.share_count &&
+    x.post_likes.length === y.post_likes.length &&
+    (x.post_saves?.length ?? 0) === (y.post_saves?.length ?? 0)
+  );
+});
+
 function CommentRow({
   comment,
   postId,
