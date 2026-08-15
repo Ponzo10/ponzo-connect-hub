@@ -451,10 +451,13 @@ export const PostCard = memo(PostCardBase, (a, b) => {
 /** La vidéo n'ouvre une connexion réseau qu'à l'approche de l'écran. */
 function LazyVideo({ src }: { src: string }) {
   const ref = useRef<HTMLVideoElement | null>(null);
+  const wrapRef = useRef<HTMLDivElement | null>(null);
   const [near, setNear] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [buffering, setBuffering] = useState(false);
 
   useEffect(() => {
-    const node = ref.current;
+    const node = wrapRef.current;
     if (!node || near || typeof IntersectionObserver === "undefined") return;
     const observer = new IntersectionObserver(
       (entries) => {
@@ -469,17 +472,39 @@ function LazyVideo({ src }: { src: string }) {
     return () => observer.disconnect();
   }, [near]);
 
+  // #t=0.001 force iOS/Android à ne télécharger que le premier segment (chunk)
+  // et à afficher une image au lieu d'un cadre noir, sans charger toute la vidéo.
+  const streamSrc = near ? `${src}${src.includes("#") ? "" : "#t=0.001"}` : undefined;
+
   return (
-    <video
-      ref={ref}
-      {...(near ? { src } : {})}
-      controls
-      playsInline
-      preload={near ? "metadata" : "none"}
-      className="max-h-[520px] w-full bg-black object-contain"
-    />
+    <div ref={wrapRef} className="relative w-full bg-black">
+      <video
+        ref={ref}
+        {...(streamSrc ? { src: streamSrc } : {})}
+        controls
+        playsInline
+        preload={near ? "metadata" : "none"}
+        onLoadedMetadata={() => setReady(true)}
+        onWaiting={() => setBuffering(true)}
+        onStalled={() => setBuffering(true)}
+        onPlaying={() => setBuffering(false)}
+        onCanPlay={() => setBuffering(false)}
+        className="max-h-[520px] w-full bg-black object-contain"
+      />
+      {!ready && (
+        <div className="absolute inset-0 grid animate-pulse place-items-center bg-muted/30">
+          <Loader2 className="h-6 w-6 animate-spin text-background/80" />
+        </div>
+      )}
+      {ready && buffering && (
+        <div className="pointer-events-none absolute inset-0 grid place-items-center">
+          <Loader2 className="h-8 w-8 animate-spin text-background drop-shadow" />
+        </div>
+      )}
+    </div>
   );
 }
+
 
 function CommentRow({
   comment,
