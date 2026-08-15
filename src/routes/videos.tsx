@@ -95,8 +95,11 @@ function Videos() {
     <div className="min-h-screen bg-foreground pb-20">
       <div className="snap-y-page h-[calc(100vh-5rem)] snap-y snap-mandatory overflow-y-auto no-scrollbar">
         {videos.isLoading && (
-          <p className="grid h-[60vh] place-items-center text-sm text-background/70">Chargement des vidéos…</p>
+          <div className="h-[calc(100vh-5rem)] snap-start bg-foreground p-5">
+            <div className="h-full w-full animate-pulse rounded-2xl bg-background/10" />
+          </div>
         )}
+
         {!videos.isLoading && list.length === 0 && (
           <div className="grid h-[calc(100vh-5rem)] place-items-center px-8 text-center text-background">
             <div>
