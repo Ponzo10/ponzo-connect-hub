@@ -1,0 +1,1 @@
+CREATE INDEX IF NOT EXISTS post_saves_user_idx ON public.post_saves USING btree (user_id, post_id);

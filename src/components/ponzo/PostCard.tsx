@@ -21,6 +21,7 @@ import { Avatar } from "./Avatar";
 import { Badge3D } from "./Badge3D";
 import { FollowButton } from "./FollowButton";
 import { usePhotoViewer } from "./PhotoViewer";
+import { SmartImg } from "./SmartImg";
 
 import { HashtagText } from "@/components/ponzo/HashtagText";
 import { useAuth } from "@/lib/auth";
@@ -323,11 +324,11 @@ function PostCardBase({ post }: { post: FeedPost }) {
             })
           }
         >
-          <img
+          <SmartImg
             src={post.media_url}
             alt="Visuel de la publication PONZO"
-            loading="lazy"
-            decoding="async"
+            width={720}
+            quality={70}
             className="max-h-[520px] w-full bg-muted object-contain"
           />
         </button>

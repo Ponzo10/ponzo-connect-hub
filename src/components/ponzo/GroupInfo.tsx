@@ -21,6 +21,7 @@ import {
   type GroupMember,
 } from "@/lib/groups-api";
 import { cn } from "@/lib/utils";
+import { SmartImg } from "./SmartImg";
 
 const TABS = ["Infos", "Membres", "Demandes", "Médias", "Réglages"] as const;
 type Tab = (typeof TABS)[number];
@@ -127,7 +128,7 @@ export function GroupInfoPanel({
               <div className="grid grid-cols-3 gap-2">
                 {media.map((m) =>
                   m.media_type === "image" ? (
-                    <img key={m.id} src={m.media_url!} alt="Média" loading="lazy" className="aspect-square w-full rounded-xl object-cover" />
+                    <SmartImg key={m.id} src={m.media_url!} alt="Média" width={160} quality={60} className="aspect-square w-full rounded-xl object-cover" />
                   ) : m.media_type === "video" ? (
                     <video key={m.id} src={m.media_url!} className="aspect-square w-full rounded-xl bg-black object-cover" />
                   ) : (

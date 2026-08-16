@@ -66,6 +66,7 @@ import {
 } from "@/lib/ponzo-api";
 import { fetchGroups } from "@/lib/groups-api";
 import { uploadMedia } from "@/lib/upload";
+import { SmartImg } from "@/components/ponzo/SmartImg";
 
 export const Route = createFileRoute("/messages")({
   validateSearch: z.object({ to: z.string().optional() }),
@@ -634,7 +635,7 @@ function Messages() {
                             </span>
                           )}
                           {m.media_url && (m.media_type === "image" || m.media_type === "gif") && (
-                            <img src={m.media_url} alt={t("msg.attachment")} className="mb-1 max-h-64 rounded-xl object-cover" />
+                            <SmartImg src={m.media_url} alt={t("msg.attachment")} width={480} quality={65} className="mb-1 max-h-64 rounded-xl object-cover" />
                           )}
                           {m.media_url && m.media_type === "video" && (
                             <video src={m.media_url} controls playsInline className="mb-1 max-h-64 rounded-xl" />

@@ -22,6 +22,7 @@ import { Avatar } from "@/components/ponzo/Avatar";
 import { asPerson, compactCount, formatPrice } from "@/lib/ponzo-api";
 import { downloadMedia, fetchTrending, type TrendingPost } from "@/lib/trending-api";
 import { cn } from "@/lib/utils";
+import { SmartImg } from "@/components/ponzo/SmartImg";
 
 export const Route = createFileRoute("/tendances")({
   head: () => ({
@@ -215,7 +216,7 @@ function TendancesPage() {
               <Link key={pd.id} to="/marketplace" className="overflow-hidden rounded-2xl bg-surface shadow-soft">
                 <span className="block aspect-square bg-gold">
                   {pd.image_url && (
-                    <img src={pd.image_url} alt={pd.title} loading="lazy" className="h-full w-full object-cover" />
+                    <SmartImg src={pd.image_url} alt={pd.title} width={160} quality={60} className="h-full w-full object-cover" />
                   )}
                 </span>
                 <div className="p-3">
@@ -238,7 +239,7 @@ function TendancesPage() {
               >
                 <span className="grid h-12 w-12 shrink-0 place-items-center overflow-hidden rounded-xl bg-primary-soft text-primary">
                   {s.logo_url ? (
-                    <img src={s.logo_url} alt={s.name} loading="lazy" className="h-full w-full object-cover" />
+                    <SmartImg src={s.logo_url} alt={s.name} width={96} quality={60} className="h-full w-full object-cover" />
                   ) : (
                     <Store className="h-5 w-5" />
                   )}

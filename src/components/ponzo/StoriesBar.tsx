@@ -22,6 +22,7 @@ import {
 } from "@/lib/stories-api";
 import { uploadMedia } from "@/lib/upload";
 import { cn } from "@/lib/utils";
+import { SmartImg } from "./SmartImg";
 
 export function StoriesBar() {
   const { user, profile } = useAuth();
@@ -101,11 +102,11 @@ export function StoriesBar() {
               className="relative flex h-44 w-28 shrink-0 flex-col items-center justify-end gap-1 overflow-hidden rounded-2xl bg-secondary p-2 text-left shadow-soft"
             >
               {cover.media_type === "image" ? (
-                <img
+                <SmartImg
                   src={cover.media_url}
                   alt=""
-                  loading="lazy"
-                  decoding="async"
+                  width={140}
+                  quality={55}
                   className="absolute inset-0 h-full w-full object-cover opacity-90"
                 />
               ) : (
