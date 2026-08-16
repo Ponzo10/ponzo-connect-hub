@@ -47,6 +47,7 @@ import {
 import { timeAgo } from "@/lib/ponzo-api";
 import { uploadMedia } from "@/lib/upload";
 import { cn } from "@/lib/utils";
+import { SmartImg } from "@/components/ponzo/SmartImg";
 
 const EMOJIS = ["😀", "😂", "😍", "🥳", "😎", "🙏", "👏", "🔥", "💚", "💛", "👍", "👌", "🤝", "💡", "🚀", "🎯", "✅", "❤️"];
 const STICKERS = ["🦁", "🐘", "🌍", "🌴", "☀️", "⚽", "🎉", "🏆", "💼", "📈", "🎶", "🍲"];
@@ -364,7 +365,7 @@ function GroupChat() {
                     ) : (
                       <>
                         {m.media_url && m.media_type === "image" && (
-                          <img src={m.media_url} alt="Photo" loading="lazy" className="mt-1 max-h-64 rounded-xl object-cover" />
+                          <SmartImg src={m.media_url} alt="Photo" width={480} quality={65} className="mt-1 max-h-64 rounded-xl object-cover" />
                         )}
                         {m.media_url && m.media_type === "video" && (
                           <video src={m.media_url} controls playsInline preload="metadata" className="mt-1 max-h-64 rounded-xl bg-black" />

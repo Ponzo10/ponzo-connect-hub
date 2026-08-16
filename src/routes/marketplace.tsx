@@ -8,6 +8,7 @@ import { AppShell } from "@/components/ponzo/AppShell";
 import { useAuth } from "@/lib/auth";
 import { createProduct, fetchProducts, formatPrice } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
+import { SmartImg } from "@/components/ponzo/SmartImg";
 
 export const Route = createFileRoute("/marketplace")({
   head: () => ({
@@ -96,7 +97,7 @@ function Marketplace() {
               <article key={p.id} className="overflow-hidden rounded-2xl bg-surface shadow-soft">
                 <div className="relative h-28 bg-brand">
                   {p.image_url && (
-                    <img src={p.image_url} alt={p.title} loading="lazy" className="h-full w-full object-cover" />
+                    <SmartImg src={p.image_url} alt={p.title} width={220} quality={60} className="h-full w-full object-cover" />
                   )}
                   <button
                     onClick={() => setFavs((f) => (fav ? f.filter((x) => x !== p.id) : [...f, p.id]))}

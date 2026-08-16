@@ -21,6 +21,7 @@ import {
 } from "@/lib/news-api";
 import { asPerson, timeAgo } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
+import { SmartImg } from "./SmartImg";
 
 export function NewsCard({ article, detailed = false }: { article: NewsItem; detailed?: boolean }) {
   const { user } = useAuth();
@@ -108,10 +109,11 @@ export function NewsCard({ article, detailed = false }: { article: NewsItem; det
     <article className="mb-3 overflow-hidden rounded-2xl bg-surface shadow-soft">
       {article.image_url && (
         <Link to="/actualite/$id" params={{ id: article.id }} className="block">
-          <img
+          <SmartImg
             src={article.image_url}
             alt={article.title}
-            loading="lazy"
+            width={720}
+            quality={65}
             className={cn("w-full object-cover", detailed ? "max-h-80" : "h-44")}
           />
         </Link>
