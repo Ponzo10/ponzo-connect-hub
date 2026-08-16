@@ -57,9 +57,12 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     };
 
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
+      const changedUser = loadedFor !== null && next?.user.id !== loadedFor;
       setSession(next);
       setLoading(false);
       void loadProfile(next?.user.id, event === "USER_UPDATED");
+      // Changement réel de compte : on repart d'un cache propre.
+      if (changedUser && next?.user.id) void queryClient.invalidateQueries();
       // Un rafraîchissement de jeton (très fréquent) ne doit plus vider tout le
       // cache : cela relançait toutes les requêtes de l'application.
       if (event === "SIGNED_OUT") queryClient.clear();
