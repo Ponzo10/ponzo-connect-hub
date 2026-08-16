@@ -19,6 +19,13 @@ export type FeedPost = Post & {
 
 const PROFILE_FIELDS = "id,full_name,handle,role,bio,city,avatar_url,cover_url,verified,created_at,updated_at,badge,follower_boost,title,allow_photo_download,allow_video_download,language,last_seen_at,show_online,show_last_seen";
 const AUTHOR = `author:profiles!posts_author_profile_fkey(${PROFILE_FIELDS})`;
+/** Champs strictement nécessaires à l'affichage d'une carte du fil. */
+const FEED_AUTHOR_FIELDS =
+  "id,full_name,handle,role,title,avatar_url,verified,badge,allow_photo_download,allow_video_download";
+const FEED_AUTHOR = `author:profiles!posts_author_profile_fkey(${FEED_AUTHOR_FIELDS})`;
+/** Colonnes du post utiles au fil (on évite de rapatrier les champs longs inutilisés). */
+const FEED_POST_FIELDS =
+  "id,author_id,body,tag,media_url,media_type,created_at,updated_at,share_count,view_count,group_id";
 
 export const tones = ["green", "gold", "teal", "sand"] as const;
 export type Tone = (typeof tones)[number];
