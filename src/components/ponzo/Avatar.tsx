@@ -1,6 +1,7 @@
 import { cn } from "@/lib/utils";
 import type { Person } from "@/data/demo";
 import { usePhotoViewer } from "./PhotoViewer";
+import { SmartImg } from "./SmartImg";
 
 const toneClass: Record<Person["tone"], string> = {
   green: "bg-brand text-primary-foreground",
