@@ -34,11 +34,11 @@ export function Avatar({
 
   if (person.src) {
     const img = (
-      <img
+      <SmartImg
         src={person.src}
         alt={person.name}
-        loading="lazy"
-        decoding="async"
+        width={size}
+        quality={60}
         className={cn(
           "h-full w-full shrink-0 rounded-full object-cover",
           ring && "ring-2 ring-primary ring-offset-2 ring-offset-background",
