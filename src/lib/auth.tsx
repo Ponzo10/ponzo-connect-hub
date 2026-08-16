@@ -31,15 +31,22 @@ export function AuthProvider({ children }: { children: ReactNode }) {
 
   useEffect(() => {
     let active = true;
+    // Le profil et les rôles ne sont chargés qu'une seule fois par utilisateur :
+    // avant, l'évènement de session initiale et `getSession()` déclenchaient
+    // deux paires de requêtes identiques au démarrage.
+    let loadedFor: string | null = null;
 
-    const loadProfile = async (userId: string | undefined) => {
+    const loadProfile = async (userId: string | undefined, force = false) => {
       if (!userId) {
+        loadedFor = null;
         if (active) {
           setProfile(null);
           setRoles([]);
         }
         return;
       }
+      if (!force && loadedFor === userId) return;
+      loadedFor = userId;
       const [{ data }, { data: roleRows }] = await Promise.all([
         supabase.from("profiles").select("*").eq("id", userId).maybeSingle(),
         supabase.from("user_roles").select("role").eq("user_id", userId),
@@ -52,11 +59,11 @@ export function AuthProvider({ children }: { children: ReactNode }) {
     const { data: sub } = supabase.auth.onAuthStateChange((event, next) => {
       setSession(next);
       setLoading(false);
-      void loadProfile(next?.user.id);
-      if (event === "SIGNED_IN" || event === "SIGNED_OUT" || event === "USER_UPDATED") {
-        if (event === "SIGNED_OUT") queryClient.clear();
-        else void queryClient.invalidateQueries();
-      }
+      void loadProfile(next?.user.id, event === "USER_UPDATED");
+      // Un rafraîchissement de jeton (très fréquent) ne doit plus vider tout le
+      // cache : cela relançait toutes les requêtes de l'application.
+      if (event === "SIGNED_OUT") queryClient.clear();
+      else if (event === "USER_UPDATED") void queryClient.invalidateQueries();
     });
 
     void supabase.auth.getSession().then(({ data }) => {
