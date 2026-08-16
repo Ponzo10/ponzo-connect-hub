@@ -25,7 +25,7 @@ const FEED_AUTHOR_FIELDS =
 const FEED_AUTHOR = `author:profiles!posts_author_profile_fkey(${FEED_AUTHOR_FIELDS})`;
 /** Colonnes du post utiles au fil (on évite de rapatrier les champs longs inutilisés). */
 const FEED_POST_FIELDS =
-  "id,author_id,body,tag,media_url,media_type,created_at,updated_at,share_count,view_count,group_id";
+  "id,author_id,body,tag,media_url,media_type,created_at,updated_at,share_count,view_count";
 
 export const tones = ["green", "gold", "teal", "sand"] as const;
 export type Tone = (typeof tones)[number];
@@ -74,7 +74,7 @@ export async function fetchFeed(
   let query = supabase
     .from("posts")
     .select(
-      `*, ${AUTHOR}, likes:post_likes(count), comments:post_comments(count), saves:post_saves(count),` +
+      `${FEED_POST_FIELDS}, ${FEED_AUTHOR}, likes:post_likes(count), comments:post_comments(count), saves:post_saves(count),` +
         ` mine_likes:post_likes(user_id), mine_saves:post_saves(user_id)`,
     )
     .order("created_at", { ascending: false })
