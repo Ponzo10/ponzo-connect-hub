@@ -66,6 +66,9 @@ function Feed() {
     staleTime: 60_000,
     gcTime: 10 * 60_000,
     refetchOnWindowFocus: false,
+    // Inutile de charger le fil tant que la session n'est pas connue :
+    // cela évitait un aller-retour réseau perdu à chaque ouverture.
+    enabled: !!user,
   });
   const news = useQuery({
     queryKey: ["news", "feed"],
@@ -73,6 +76,7 @@ function Feed() {
     staleTime: 5 * 60_000,
     gcTime: 15 * 60_000,
     refetchOnWindowFocus: false,
+    enabled: !!user,
   });
 
   const posts = useMemo(() => feed.data?.pages.flat() ?? [], [feed.data]);
