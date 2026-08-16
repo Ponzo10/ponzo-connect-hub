@@ -21,6 +21,7 @@ import { Avatar } from "./Avatar";
 import { Badge3D } from "./Badge3D";
 import { FollowButton } from "./FollowButton";
 import { usePhotoViewer } from "./PhotoViewer";
+import { SmartImg } from "./SmartImg";
 
 import { HashtagText } from "@/components/ponzo/HashtagText";
 import { useAuth } from "@/lib/auth";
