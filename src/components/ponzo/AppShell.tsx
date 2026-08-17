@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
+import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, ShoppingBag, User } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PonzoLogo, PonzoMark } from "./PonzoLogo";
@@ -14,11 +14,12 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", key: "nav.home", icon: Home },
-  { to: "/decouvrir", key: "nav.discover", icon: Compass },
+  { to: "/videos", key: "nav.discover", icon: Compass },
   { to: "/publier", key: "nav.publish", icon: Plus, primary: true },
-  { to: "/marketplace", key: "nav.shop", icon: Search },
+  { to: "/marketplace", key: "nav.shop", icon: ShoppingBag },
   { to: "/profil", key: "nav.profile", icon: User },
 ] as const satisfies readonly { to: string; key: TranslationKey; icon: typeof Home; primary?: boolean }[];
+
 
 /** Maintient la présence « en ligne » et marque les messages reçus comme distribués. */
 function usePresenceHeartbeat() {

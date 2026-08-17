@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Briefcase, Compass, Flame, Megaphone, Newspaper, Search, ShoppingBag, Users, Video } from "lucide-react";
 import { useState } from "react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
@@ -30,6 +30,20 @@ export const Route = createFileRoute("/recherche")({
 
 const tabs = ["Personnes", "Hashtags", "Publications", "Produits", "Projets"] as const;
 
+/** Raccourcis déplacés depuis l'accueil (accueil épuré, aucune fonctionnalité perdue). */
+const shortcuts = [
+  { label: "Tendances", icon: Flame, to: "/tendances", tone: "text-destructive" },
+  { label: "Actualités", icon: Newspaper, to: "/actualites", tone: "text-primary" },
+  { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
+  { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
+  { label: "Mon projet", icon: Briefcase, to: "/publier", tone: "text-primary" },
+  { label: "Marketplace", icon: ShoppingBag, to: "/marketplace", tone: "text-foreground" },
+  { label: "Vidéos", icon: Video, to: "/videos", tone: "text-destructive" },
+  { label: "Groupes", icon: Users, to: "/groupes", tone: "text-accent-foreground" },
+  { label: "Découvrir+", icon: Compass, to: "/decouvrir", tone: "text-primary" },
+] as const;
+
+
 function RecherchePage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Personnes");
   const [q, setQ] = useState("");
@@ -55,6 +69,23 @@ function RecherchePage() {
             className="min-w-0 flex-1 bg-transparent text-sm outline-none placeholder:text-muted-foreground"
           />
         </label>
+
+        <nav aria-label="Raccourcis PONZO" className="mt-3 grid grid-cols-4 gap-2">
+          {shortcuts.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Link
+                key={s.label}
+                to={s.to}
+                className="flex flex-col items-center gap-1.5 rounded-2xl bg-surface px-1 py-2.5 text-center shadow-soft transition-colors hover:bg-muted"
+              >
+                <Icon className={`h-5 w-5 ${s.tone}`} />
+                <span className="text-[11px] font-semibold leading-tight">{s.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
 
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
           {tabs.map((t) => (
