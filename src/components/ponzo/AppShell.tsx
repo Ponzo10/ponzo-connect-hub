@@ -14,11 +14,12 @@ import { cn } from "@/lib/utils";
 
 const navItems = [
   { to: "/", key: "nav.home", icon: Home },
-  { to: "/decouvrir", key: "nav.discover", icon: Compass },
+  { to: "/videos", key: "nav.discover", icon: Compass },
   { to: "/publier", key: "nav.publish", icon: Plus, primary: true },
-  { to: "/marketplace", key: "nav.shop", icon: Search },
+  { to: "/marketplace", key: "nav.shop", icon: ShoppingBag },
   { to: "/profil", key: "nav.profile", icon: User },
 ] as const satisfies readonly { to: string; key: TranslationKey; icon: typeof Home; primary?: boolean }[];
+
 
 /** Maintient la présence « en ligne » et marque les messages reçus comme distribués. */
 function usePresenceHeartbeat() {
