@@ -177,7 +177,7 @@ export function TopBar({ title }: { title?: string | undefined }) {
             </span>
           ) : (
             <Link to="/" aria-label="PONZO — accueil">
-              <PonzoLogo size={38} />
+              <PonzoLogo size={38} tagline={false} />
             </Link>
           )}
         </div>
@@ -212,9 +212,6 @@ export function TopBar({ title }: { title?: string | undefined }) {
             className="grid h-10 w-10 place-items-center rounded-full text-foreground transition-colors hover:bg-muted"
           >
             <Settings className="h-5 w-5" />
-          </Link>
-          <Link to="/profil" aria-label={t("nav.myProfile")} className="ml-1">
-            <Avatar person={asPerson(profile)} size={30} />
           </Link>
         </div>
       </div>
