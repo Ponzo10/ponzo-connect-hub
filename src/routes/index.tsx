@@ -159,17 +159,6 @@ function Feed() {
   );
 }
 
-function ComposerChip({ icon, label, to }: { icon: React.ReactNode; label: string; to: string }) {
-  return (
-    <Link
-      to={to}
-      className="flex items-center justify-center gap-2 rounded-xl bg-surface py-2.5 text-xs font-semibold shadow-soft transition-colors hover:bg-muted"
-    >
-      {icon}
-      {label}
-    </Link>
-  );
-}
 
 function FeedSkeleton() {
   return (
