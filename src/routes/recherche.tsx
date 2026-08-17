@@ -30,6 +30,20 @@ export const Route = createFileRoute("/recherche")({
 
 const tabs = ["Personnes", "Hashtags", "Publications", "Produits", "Projets"] as const;
 
+/** Raccourcis déplacés depuis l'accueil (accueil épuré, aucune fonctionnalité perdue). */
+const shortcuts = [
+  { label: "Tendances", icon: Flame, to: "/tendances", tone: "text-destructive" },
+  { label: "Actualités", icon: Newspaper, to: "/actualites", tone: "text-primary" },
+  { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
+  { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
+  { label: "Mon projet", icon: Briefcase, to: "/publier", tone: "text-primary" },
+  { label: "Marketplace", icon: ShoppingBag, to: "/marketplace", tone: "text-foreground" },
+  { label: "Vidéos", icon: Video, to: "/videos", tone: "text-destructive" },
+  { label: "Groupes", icon: Users, to: "/groupes", tone: "text-accent-foreground" },
+  { label: "Découvrir+", icon: Compass, to: "/decouvrir", tone: "text-primary" },
+] as const;
+
+
 function RecherchePage() {
   const [tab, setTab] = useState<(typeof tabs)[number]>("Personnes");
   const [q, setQ] = useState("");
