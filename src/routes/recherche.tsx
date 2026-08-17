@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { Search } from "lucide-react";
+import { Briefcase, Compass, Flame, Megaphone, Newspaper, Search, ShoppingBag, Users, Video } from "lucide-react";
 import { useState } from "react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
