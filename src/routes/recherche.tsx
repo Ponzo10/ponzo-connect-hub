@@ -56,6 +56,23 @@ function RecherchePage() {
           />
         </label>
 
+        <nav aria-label="Raccourcis PONZO" className="mt-3 grid grid-cols-4 gap-2">
+          {shortcuts.map((s) => {
+            const Icon = s.icon;
+            return (
+              <Link
+                key={s.label}
+                to={s.to}
+                className="flex flex-col items-center gap-1.5 rounded-2xl bg-surface px-1 py-2.5 text-center shadow-soft transition-colors hover:bg-muted"
+              >
+                <Icon className={`h-5 w-5 ${s.tone}`} />
+                <span className="text-[11px] font-semibold leading-tight">{s.label}</span>
+              </Link>
+            );
+          })}
+        </nav>
+
+
         <div className="no-scrollbar mt-3 flex gap-2 overflow-x-auto pb-1">
           {tabs.map((t) => (
             <button
