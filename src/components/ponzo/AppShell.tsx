@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
+import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, ShoppingBag, User } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PonzoLogo, PonzoMark } from "./PonzoLogo";
