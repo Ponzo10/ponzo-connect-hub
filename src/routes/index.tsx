@@ -32,7 +32,7 @@ export const Route = createFileRoute("/")({
 
 
 function Feed() {
-  const { user, profile } = useAuth();
+  const { user } = useAuth();
   const feed = useInfiniteQuery({
     queryKey: ["feed", user?.id ?? null],
     queryFn: ({ pageParam }) => fetchFeed(pageParam, FEED_PAGE_SIZE, user?.id ?? null),
