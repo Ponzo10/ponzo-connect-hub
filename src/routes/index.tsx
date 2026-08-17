@@ -1,27 +1,14 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
-import {
-  Briefcase,
-  Flame,
-  ImageIcon,
-  Megaphone,
-  Newspaper,
-  Radio,
-  Search,
-  ShoppingBag,
-  Users,
-  Video,
-} from "lucide-react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
-import { Avatar } from "@/components/ponzo/Avatar";
 import { NewsCard } from "@/components/ponzo/NewsCard";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
 import { fetchNews } from "@/lib/news-api";
-import { FEED_PAGE_SIZE, asPerson, fetchFeed } from "@/lib/ponzo-api";
+import { FEED_PAGE_SIZE, fetchFeed } from "@/lib/ponzo-api";
 
 
 export const Route = createFileRoute("/")({
@@ -43,17 +30,6 @@ export const Route = createFileRoute("/")({
   component: Feed,
 });
 
-const quickActions = [
-  { label: "Tendances", icon: Flame, to: "/tendances", tone: "text-destructive" },
-  { label: "Actualités", icon: Newspaper, to: "/actualites", tone: "text-primary" },
-  { label: "Je cherche", icon: Search, to: "/publier", tone: "text-primary" },
-  { label: "Je propose", icon: Megaphone, to: "/publier", tone: "text-accent-foreground" },
-  { label: "Mon projet", icon: Briefcase, to: "/publier", tone: "text-primary" },
-  { label: "Marketplace", icon: ShoppingBag, to: "/marketplace", tone: "text-foreground" },
-  { label: "Vidéos", icon: Video, to: "/videos", tone: "text-destructive" },
-  { label: "Groupes", icon: Users, to: "/groupes", tone: "text-accent-foreground" },
-  { label: "Live", icon: Radio, to: "/decouvrir", tone: "text-primary" },
-] as const;
 
 function Feed() {
   const { user, profile } = useAuth();
