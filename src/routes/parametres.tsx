@@ -12,7 +12,6 @@ import {
   Moon,
   Shield,
   ShieldCheck,
-  Store,
   Trash2,
   UserCog,
 } from "lucide-react";

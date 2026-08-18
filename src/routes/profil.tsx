@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookMarked, Camera, Pencil, Settings, ShieldCheck, Store } from "lucide-react";
+import { BookMarked, Camera, Pencil, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
