@@ -340,10 +340,6 @@ function Parametres() {
             <BookMarked className="h-5 w-5 text-primary" />
             <span className="text-sm">Publications enregistrées</span>
           </Link>
-          <Link to="/boutique" className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-border/60 p-4">
-            <Store className="h-5 w-5 text-primary" />
-            <span className="text-sm">Ma boutique</span>
-          </Link>
           {isStaff && (
             <Link to="/admin" className="grid grid-cols-[auto_minmax(0,1fr)] items-center gap-3 border-b border-border/60 p-4">
               <ShieldCheck className="h-5 w-5 text-primary" />

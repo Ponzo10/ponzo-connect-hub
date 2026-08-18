@@ -1,6 +1,6 @@
 import { Link, useNavigate, useRouterState } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, ShoppingBag, User } from "lucide-react";
+import { ArrowLeft, Bell, Compass, Home, MessageCircle, Plus, Search, Settings, User } from "lucide-react";
 import { useCallback, useEffect, useRef, useState, type ReactNode } from "react";
 
 import { PonzoLogo, PonzoMark } from "./PonzoLogo";
@@ -8,7 +8,6 @@ import { Avatar } from "./Avatar";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/lib/auth";
 import { useI18n, type TranslationKey } from "@/lib/i18n";
-import { pingNewsSync } from "@/lib/news-auto";
 import { asPerson, markMessagesDelivered, touchPresence, unreadCounts } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 
@@ -16,7 +15,7 @@ const navItems = [
   { to: "/", key: "nav.home", icon: Home },
   { to: "/videos", key: "nav.discover", icon: Compass },
   { to: "/publier", key: "nav.publish", icon: Plus, primary: true },
-  { to: "/marketplace", key: "nav.shop", icon: ShoppingBag },
+  { to: "/recherche", key: "nav.search", icon: Search },
   { to: "/profil", key: "nav.profile", icon: User },
 ] as const satisfies readonly { to: string; key: TranslationKey; icon: typeof Home; primary?: boolean }[];
 
@@ -150,10 +149,6 @@ export function TopBar({ title }: { title?: string | undefined }) {
   const { profile } = useAuth();
   const { t } = useI18n();
   usePresenceHeartbeat();
-  // Actualités : ingestion automatique en arrière-plan, sans intervention manuelle.
-  useEffect(() => {
-    pingNewsSync();
-  }, []);
 
 
   return (
@@ -229,7 +224,6 @@ export function BottomNav() {
   const refreshHome = () => {
     window.scrollTo({ top: 0, behavior: "smooth" });
     void queryClient.invalidateQueries({ queryKey: ["feed"] });
-    void queryClient.invalidateQueries({ queryKey: ["news"] });
     void queryClient.invalidateQueries({ queryKey: ["stories"] });
     newPosts.reset();
   };

@@ -145,9 +145,6 @@ function Profil() {
             <Link to="/favoris" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
               <BookMarked className="h-4 w-4 text-primary" /> Favoris
             </Link>
-            <Link to="/boutique" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
-              <Store className="h-4 w-4 text-primary" /> Ma boutique
-            </Link>
             {isStaff && (
               <Link to="/admin" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
                 <ShieldCheck className="h-4 w-4 text-primary" /> Administration

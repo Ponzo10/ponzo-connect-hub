@@ -137,7 +137,8 @@ function Messages() {
   const groups = useQuery({
     queryKey: ["groups", user?.id],
     queryFn: () => fetchGroups(user!.id),
-    enabled: !!user,
+    // Groupes temporairement désactivés dans l'app utilisateur (code conservé).
+    enabled: false,
     staleTime: 60_000,
   });
   const settings = useQuery({
