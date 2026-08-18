@@ -1,6 +1,6 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
 import { useQuery } from "@tanstack/react-query";
-import { BookMarked, Camera, Pencil, Settings, ShieldCheck, Store } from "lucide-react";
+import { BookMarked, Camera, Pencil, Settings, ShieldCheck } from "lucide-react";
 import { useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -144,9 +144,6 @@ function Profil() {
           <div className="mt-3 grid grid-cols-2 gap-2">
             <Link to="/favoris" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
               <BookMarked className="h-4 w-4 text-primary" /> Favoris
-            </Link>
-            <Link to="/boutique" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">
-              <Store className="h-4 w-4 text-primary" /> Ma boutique
             </Link>
             {isStaff && (
               <Link to="/admin" className="flex items-center gap-2 rounded-2xl bg-surface p-3 text-xs font-semibold shadow-soft">

@@ -1,13 +1,11 @@
 import { createFileRoute, Link } from "@tanstack/react-router";
-import { useInfiniteQuery, useQuery } from "@tanstack/react-query";
+import { useInfiniteQuery } from "@tanstack/react-query";
 import { useEffect, useMemo, useRef } from "react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
-import { NewsCard } from "@/components/ponzo/NewsCard";
 import { PostCard } from "@/components/ponzo/PostCard";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
-import { fetchNews } from "@/lib/news-api";
 import { FEED_PAGE_SIZE, fetchFeed } from "@/lib/ponzo-api";
 
 
@@ -46,25 +44,7 @@ function Feed() {
     // cela évitait un aller-retour réseau perdu à chaque ouverture.
     enabled: !!user,
   });
-  const news = useQuery({
-    queryKey: ["news", "feed"],
-    queryFn: () => fetchNews({ limit: 12 }),
-    staleTime: 5 * 60_000,
-    gcTime: 15 * 60_000,
-    refetchOnWindowFocus: false,
-    enabled: !!user,
-  });
-
   const posts = useMemo(() => feed.data?.pages.flat() ?? [], [feed.data]);
-  const timeline = useMemo(
-    () =>
-      [
-        ...posts.map((p) => ({ kind: "post" as const, at: p.created_at, post: p })),
-        ...(news.data ?? []).map((n) => ({ kind: "news" as const, at: n.published_at, article: n })),
-      ].sort((a, b) => new Date(b.at).getTime() - new Date(a.at).getTime()),
-    [posts, news.data],
-  );
-
   // Chargement progressif : la page suivante démarre avant que l'utilisateur
   // n'atteigne le bas du fil, sans bouton « voir plus ».
   const sentinel = useRef<HTMLDivElement | null>(null);
@@ -98,7 +78,7 @@ function Feed() {
             ))}
           </div>
         )}
-        {!feed.isLoading && timeline.length === 0 && (
+        {!feed.isLoading && posts.length === 0 && (
           <div className="mx-3 rounded-2xl bg-surface p-6 text-center shadow-soft">
             <p className="text-sm font-semibold">Le fil est encore vide</p>
             <p className="mt-1 text-xs text-muted-foreground">Sois le premier à publier sur PONZO.</p>
@@ -110,15 +90,9 @@ function Feed() {
             </Link>
           </div>
         )}
-        {timeline.map((item) =>
-          item.kind === "news" ? (
-            <div key={`n-${item.article.id}`} className="px-3 sm:px-0">
-              <NewsCard article={item.article} />
-            </div>
-          ) : (
-            <PostCard key={`p-${item.post.id}`} post={item.post} />
-          ),
-        )}
+        {posts.map((post) => (
+          <PostCard key={post.id} post={post} />
+        ))}
 
         <div ref={sentinel} aria-hidden className="h-1" />
         {feed.isFetchingNextPage && (
