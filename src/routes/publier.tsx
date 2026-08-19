@@ -215,60 +215,31 @@ function Publier() {
           <div className="mt-3 grid grid-cols-2 gap-2 border-t border-border/70 pt-3">
             <button
               onClick={() => photoRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-xs font-semibold disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-xs font-semibold"
             >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <ImageIcon className="h-4 w-4 text-primary" />}
+              <ImageIcon className="h-4 w-4 text-primary" />
               Ajouter une photo
             </button>
             <button
               onClick={() => videoRef.current?.click()}
-              disabled={uploading}
-              className="flex items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-xs font-semibold disabled:opacity-50"
+              className="flex items-center justify-center gap-2 rounded-xl bg-muted py-2.5 text-xs font-semibold"
             >
-              {uploading ? <Loader2 className="h-4 w-4 animate-spin" /> : <Video className="h-4 w-4 text-destructive" />}
+              <Video className="h-4 w-4 text-destructive" />
               Ajouter une vidéo
             </button>
           </div>
-          {uploading && (
-            <div className="mt-3" role="status" aria-live="polite">
-              <progress
-                className="h-1.5 w-full overflow-hidden rounded-full accent-primary"
-                max={100}
-                value={upload.status === "uploading" ? Math.max(4, Math.round(upload.progress * 100)) : 100}
-              />
-              <p className="mt-1.5 text-center text-xs font-medium text-muted-foreground">
-                {upload.status === "validating" && "Vérification du fichier…"}
-                {upload.status === "uploading" && `Envoi sécurisé… ${Math.round(upload.progress * 100)} %`}
-                {upload.status === "checking" && "Contrôle du média envoyé…"}
-              </p>
-            </div>
-          )}
-          {upload.status === "error" && (
-            <div className="mt-3 rounded-xl bg-destructive/10 p-3 text-xs" role="alert">
-              <p className="font-semibold text-destructive">{upload.message}</p>
-              <p className="mt-0.5 text-[11px] text-muted-foreground">Code : {upload.code}</p>
-              {lastPick.current && (
-                <button
-                  type="button"
-                  onClick={retryPick}
-                  className="mt-2 rounded-full bg-brand px-4 py-1.5 text-[11px] font-bold text-primary-foreground"
-                >
-                  Réessayer l'envoi
-                </button>
-              )}
-            </div>
-          )}
-
         </div>
 
         <button
           onClick={publish}
-          disabled={(!text.trim() && !media) || busy || uploading}
+          disabled={!text.trim() && !media}
           className="w-full rounded-full bg-brand py-3.5 text-sm font-bold text-primary-foreground shadow-lift transition-opacity disabled:opacity-40"
         >
-          {busy ? "Publication…" : "Publier"}
+          Publier
         </button>
+        <p className="pb-2 text-center text-[11px] text-muted-foreground">
+          L'envoi se poursuit en arrière-plan, même sur une connexion lente.
+        </p>
       </div>
     </AppShell>
   );
