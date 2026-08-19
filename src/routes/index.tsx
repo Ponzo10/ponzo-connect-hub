@@ -4,6 +4,7 @@ import { useEffect, useMemo, useRef } from "react";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { PostCard } from "@/components/ponzo/PostCard";
+import { PendingPosts } from "@/components/ponzo/PublishQueue";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
 import { FEED_PAGE_SIZE, fetchFeed } from "@/lib/ponzo-api";
@@ -71,6 +72,7 @@ function Feed() {
       <section className="mt-3 sm:px-3">
 
         <h2 className="sr-only">Fil d'actualité</h2>
+        <PendingPosts />
         {feed.isLoading && (
           <div className="space-y-3 px-3 sm:px-0" aria-busy="true">
             {[0, 1, 2].map((i) => (
