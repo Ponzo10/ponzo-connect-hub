@@ -139,6 +139,7 @@ function RootComponent() {
         <I18nProvider>
           <PhotoViewerProvider>
             <UsageTracker />
+            <PublishQueueRunner />
             {/* Required: nested routes render here. Removing <Outlet /> breaks all child routes. */}
             <Outlet />
             <Toaster position="top-center" />
