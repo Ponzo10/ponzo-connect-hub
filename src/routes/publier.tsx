@@ -187,13 +187,7 @@ function Publier() {
                 <video src={media.url} controls playsInline className="max-h-72 w-full bg-black object-contain" />
               )}
               <button
-                 onClick={() => {
-                    pickSequence.current += 1;
-                   const uploaded = media;
-                   setMedia(null);
-                    setUpload({ status: "idle" });
-                   void removeUploadedMedia(uploaded.path).catch(() => undefined);
-                 }}
+                onClick={clearMedia}
                 aria-label="Retirer le fichier"
                 className="absolute right-2 top-2 grid h-8 w-8 place-items-center rounded-full bg-background/80"
               >
