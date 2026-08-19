@@ -1,22 +1,16 @@
 import { createFileRoute, useNavigate } from "@tanstack/react-router";
-import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Briefcase, Image as ImageIcon, Loader2, Search, Sparkles, Users, Video, X } from "lucide-react";
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useQuery } from "@tanstack/react-query";
+import { Briefcase, Image as ImageIcon, Search, Sparkles, Users, Video, X } from "lucide-react";
+import { useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
 import { AppShell } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { useAuth } from "@/lib/auth";
 import { extractHashtags, searchHashtags } from "@/lib/trending-api";
-import { asPerson, createPost } from "@/lib/ponzo-api";
-import { removeUploadedMedia, uploadMedia } from "@/lib/upload";
-import {
-  PipelineError,
-  classifyUploadError,
-  trackStage,
-  validateMediaFile,
-  verifyMediaReadable,
-} from "@/lib/media-pipeline";
+import { asPerson } from "@/lib/ponzo-api";
+import { enqueuePost } from "@/lib/publish-queue";
+import { validateMediaFile } from "@/lib/media-pipeline";
 import { cn } from "@/lib/utils";
 
 export const Route = createFileRoute("/publier")({
@@ -33,21 +27,8 @@ export const Route = createFileRoute("/publier")({
       { name: "twitter:card", content: "summary_large_image" },
     ],
   }),
-  errorComponent: ({ reset }) => (
-    <div className="grid min-h-screen place-items-center px-6 text-center">
-      <div className="space-y-3">
-        <p className="text-sm font-semibold">Création de publication</p>
-        <p className="text-xs text-muted-foreground">Recharge cet écran pour continuer.</p>
-        <button onClick={reset} className="rounded-full bg-brand px-5 py-2.5 text-sm font-bold text-primary-foreground">
-          Réessayer
-        </button>
-      </div>
-    </div>
-  ),
-
   component: Publier,
 });
-
 
 const kinds = [
   { label: "Publication", icon: Sparkles },
@@ -56,28 +37,16 @@ const kinds = [
   { label: "Mon projet", icon: Briefcase },
 ] as const;
 
-type UploadState =
-  | { status: "idle" }
-  | { status: "validating" }
-  | { status: "uploading"; progress: number }
-  | { status: "checking" }
-  | { status: "ready" }
-  | { status: "error"; code: string; message: string };
+type Picked = { file: File; url: string; type: "image" | "video" };
 
 function Publier() {
   const [kind, setKind] = useState<(typeof kinds)[number]["label"]>("Publication");
   const [text, setText] = useState("");
-  const [media, setMedia] = useState<{ url: string; path: string; type: "image" | "video" } | null>(null);
-  const [upload, setUpload] = useState<UploadState>({ status: "idle" });
-  const [busy, setBusy] = useState(false);
-  const lastPick = useRef<{ file: File; expected: "image" | "video" } | null>(null);
-  const pickSequence = useRef(0);
+  const [media, setMedia] = useState<Picked | null>(null);
   const { user, profile } = useAuth();
   const navigate = useNavigate();
-  const queryClient = useQueryClient();
   const photoRef = useRef<HTMLInputElement>(null);
-
-  const uploading = upload.status === "validating" || upload.status === "uploading" || upload.status === "checking";
+  const videoRef = useRef<HTMLInputElement>(null);
 
   const currentTags = useMemo(() => extractHashtags(text), [text]);
   const typing = /#([A-Za-z0-9_À-ÿ]{1,50})$/.exec(text)?.[1] ?? "";
@@ -96,152 +65,48 @@ function Publier() {
       return `${base}${sep}#${tag} `;
     });
   };
-  const videoRef = useRef<HTMLInputElement>(null);
 
-  const pick = async (file: File | undefined, expected: "image" | "video") => {
+  // Aucun envoi réseau à la sélection : on garde le fichier localement, l'envoi
+  // se fait en arrière-plan après « Publier ».
+  const pick = (file: File | undefined, expected: "image" | "video") => {
+    if (photoRef.current) photoRef.current.value = "";
+    if (videoRef.current) videoRef.current.value = "";
     if (!file) return;
-    if (!user) {
-      toast.error("Connecte-toi pour ajouter un fichier.");
+    try {
+      validateMediaFile(file, expected);
+    } catch (error) {
+      toast.error(error instanceof Error ? error.message : "Fichier invalide");
       return;
     }
-    lastPick.current = { file, expected };
-    const sequence = ++pickSequence.current;
-    const previousMedia = media;
-    let uploadedPath: string | null = null;
-    try {
-      // 1. Validation locale — aucun envoi réseau si le fichier est invalide.
-      setUpload({ status: "validating" });
-      trackStage("validate", "start", { expected, size: file.size, mime: file.type || "unknown" });
-      validateMediaFile(file, expected);
-      trackStage("validate", "ok", { expected, size: file.size });
-
-      // 2. Envoi réel vers le stockage.
-      setUpload({ status: "uploading", progress: 0 });
-      trackStage("upload", "start", { expected, size: file.size });
-      const result = await uploadMedia(user.id, file, "posts", expected, (p) =>
-        sequence === pickSequence.current && setUpload({ status: "uploading", progress: p }),
-      );
-      uploadedPath = result.path;
-      if (sequence !== pickSequence.current) {
-        await removeUploadedMedia(result.path).catch(() => undefined);
-        return;
-      }
-      trackStage("upload", "ok", { expected, size: file.size });
-
-      // 3. Vérification que le média est réellement lisible avant de l'accepter.
-      const type = result.kind === "video" || expected === "video" ? "video" : "image";
-      setUpload({ status: "checking" });
-      const check = await verifyMediaReadable(result.url, type);
-      if (sequence !== pickSequence.current) {
-        await removeUploadedMedia(result.path).catch(() => undefined);
-        return;
-      }
-      trackStage("preview", "ok", {
-        type,
-        mime: file.type || "unknown",
-        size: file.size,
-        bytes: check.bytes,
-        decodable: check.decodable,
-        path: result.path,
-        ua: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 120) : null,
-      });
-
-      setMedia({ url: result.url, path: result.path, type });
-      setUpload({ status: "ready" });
-      if (previousMedia?.path && previousMedia.path !== result.path) {
-        void removeUploadedMedia(previousMedia.path).catch(() => undefined);
-      }
-      if (check.decodable) {
-        toast.success(type === "video" ? "Vidéo envoyée et vérifiée" : "Photo envoyée et vérifiée");
-      } else {
-        // Fichier bien stocké et accessible, mais non décodable par CE navigateur
-        // (ex. .mov/HEVC iPhone, HEIC). La publication reste possible.
-        toast.success("Fichier envoyé ✓ — l'aperçu n'est pas pris en charge par ce navigateur.");
-      }
-    } catch (error) {
-      if (sequence !== pickSequence.current) return;
-      const failure = error instanceof PipelineError ? error : classifyUploadError(error);
-      // Aucun média partiel ne doit rester attaché à une publication.
-      setMedia(previousMedia);
-      if (uploadedPath) void removeUploadedMedia(uploadedPath).catch(() => undefined);
-      trackStage(failure.stage, "fail", {
-        code: failure.code,
-        expected,
-        mime: file.type || "unknown",
-        size: file.size,
-        message: failure.message.slice(0, 200),
-        path: uploadedPath,
-        ua: typeof navigator !== "undefined" ? navigator.userAgent.slice(0, 120) : null,
-      });
-      setUpload({ status: "error", code: failure.code, message: failure.message });
-      toast.error(failure.message);
-    } finally {
-      if (photoRef.current) photoRef.current.value = "";
-      if (videoRef.current) videoRef.current.value = "";
-    }
+    if (media) URL.revokeObjectURL(media.url);
+    setMedia({ file, url: URL.createObjectURL(file), type: expected });
   };
 
-  useEffect(
-    () => () => {
-      pickSequence.current += 1;
-    },
-    [],
-  );
-
-  const retryPick = () => {
-    const previous = lastPick.current;
-    if (!previous) return;
-    void pick(previous.file, previous.expected);
+  const clearMedia = () => {
+    if (media) URL.revokeObjectURL(media.url);
+    setMedia(null);
   };
 
-
-
-  const publish = async () => {
+  const publish = () => {
     if (!user) {
       toast.error("Connecte-toi pour publier.");
-      return;
-    }
-    if (uploading) {
-      toast.info("Envoi du fichier en cours…");
       return;
     }
     if (!text.trim() && !media) {
       toast.error("Ajoute un texte, une photo ou une vidéo.");
       return;
     }
-    setBusy(true);
-    trackStage("post_create", "start", { hasMedia: !!media, mediaType: media?.type ?? null });
-    try {
-      const destination = media?.type === "video" ? "/videos" : "/";
-      const postId = await createPost({
-        authorId: user.id,
-        body: text.trim(),
-        tag: kind === "Publication" ? null : kind,
-        mediaUrl: media?.url ?? null,
-        mediaType: media?.type ?? null,
-      });
-      trackStage("post_create", "ok", { postId, mediaType: media?.type ?? null });
-      setText("");
-      setMedia(null);
-      setUpload({ status: "idle" });
-      lastPick.current = null;
-      await Promise.all([
-        queryClient.invalidateQueries({ queryKey: ["feed"] }),
-        queryClient.invalidateQueries({ queryKey: ["videos"] }),
-        queryClient.invalidateQueries({ queryKey: ["posts", user.id] }),
-      ]);
-      toast.success("Publication en ligne 🎉");
-      void navigate({ to: destination });
-    } catch (error) {
-      const message = error instanceof Error ? error.message : "Publication impossible";
-      trackStage("post_create", "fail", { code: "POST_CREATION_FAILED", message: message.slice(0, 200) });
-      toast.error(`Publication impossible : ${message}`);
-    } finally {
-      setBusy(false);
-    }
-
+    enqueuePost({
+      userId: user.id,
+      body: text.trim(),
+      tag: kind === "Publication" ? null : kind,
+      file: media?.file ?? null,
+      mediaType: media?.type ?? null,
+    });
+    setText("");
+    setMedia(null);
+    void navigate({ to: media?.type === "video" ? "/videos" : "/" });
   };
-
 
   return (
     <AppShell title="Créer">
