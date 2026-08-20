@@ -8,6 +8,8 @@ import { AuthGate, BottomNav } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { FollowButton } from "@/components/ponzo/FollowButton";
 import { HashtagText } from "@/components/ponzo/HashtagText";
+import { usePublishQueue } from "@/components/ponzo/PublishQueue";
+import { UploadPill, uploadLabel } from "@/components/ponzo/UploadProgress";
 import { useAuth } from "@/lib/auth";
 import { downloadMedia } from "@/lib/trending-api";
 import {
@@ -82,6 +84,7 @@ function useSoundPreference() {
 function Videos() {
   const { user } = useAuth();
   const { muted, volume, persist } = useSoundPreference();
+  const pendingVideos = usePublishQueue().filter((i) => i.mediaType === "video");
   const videos = useQuery({ queryKey: ["videos"], queryFn: fetchVideoPosts, staleTime: 20000 });
   const following = useQuery({
     queryKey: ["following", user?.id],
@@ -92,7 +95,14 @@ function Videos() {
   const list = videos.data ?? [];
 
   return (
-    <div className="min-h-screen bg-foreground pb-20">
+    <div className="relative min-h-screen bg-foreground pb-20">
+      {pendingVideos.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex flex-col items-center gap-1 px-4">
+          {pendingVideos.map((item) => (
+            <UploadPill key={item.id} tone="dark" progress={item.progress} label={uploadLabel(item.status, item.progress)} />
+          ))}
+        </div>
+      )}
       <div className="snap-y-page h-[calc(100vh-5rem)] snap-y snap-mandatory overflow-y-auto no-scrollbar">
         {videos.isLoading && (
           <div className="h-[calc(100vh-5rem)] snap-start bg-foreground p-5">

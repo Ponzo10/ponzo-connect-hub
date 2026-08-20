@@ -66,6 +66,7 @@ import {
 } from "@/lib/ponzo-api";
 import { fetchGroups } from "@/lib/groups-api";
 import { uploadMedia } from "@/lib/upload";
+import { UploadBar, uploadLabel } from "@/components/ponzo/UploadProgress";
 import { SmartImg } from "@/components/ponzo/SmartImg";
 
 export const Route = createFileRoute("/messages")({
@@ -116,6 +117,7 @@ function Messages() {
   const [stickers, setStickers] = useState(false);
   const [forwardOpen, setForwardOpen] = useState<Message[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [upload, setUpload] = useState<{ name: string; progress: number } | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const gifRef = useRef<HTMLInputElement>(null);
@@ -336,14 +338,19 @@ function Messages() {
 
   const sendFile = async (file: File | undefined, kindOverride?: string) => {
     if (!file || !user || !to) return;
+    setUpload({ name: file.name, progress: 0 });
     try {
-      const res = await uploadMedia(user.id, file, "messages");
+      const res = await uploadMedia(user.id, file, "messages", undefined, (p) =>
+        setUpload((prev) => (prev ? { ...prev, progress: p } : prev)),
+      );
       const created = await sendMedia(user.id, to, file.name, res.url, kindOverride ?? res.kind, replyTo?.id ?? null);
       pushMessage(created);
       setReplyTo(null);
       void notify({ userId: to, actorId: user.id, kind: "message", body: "t'a envoyé un fichier" });
     } catch {
       toast.error(t("msg.fileFailed"));
+    } finally {
+      setUpload(null);
     }
   };
 
@@ -736,6 +743,16 @@ function Messages() {
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
+            </div>
+          )}
+
+          {upload && (
+            <div className="mt-3 overflow-hidden rounded-2xl bg-surface shadow-soft">
+              <div className="flex items-center gap-2 px-3 py-2 text-[11px] text-muted-foreground" aria-live="polite">
+                <span className="min-w-0 flex-1 truncate font-semibold">{upload.name}</span>
+                <span>{uploadLabel("uploading", upload.progress)}</span>
+              </div>
+              <UploadBar progress={upload.progress} />
             </div>
           )}
 
