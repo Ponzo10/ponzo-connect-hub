@@ -67,14 +67,7 @@ export function PendingPosts() {
                 ) : (
                   <img src={preview} alt="" className="max-h-72 w-full object-cover" />
                 )}
-                {!failed && (
-                  <div className="absolute inset-x-0 bottom-0 h-[2px] bg-muted">
-                    <div
-                      className="h-full bg-brand transition-[width] duration-200"
-                      style={{ width: `${Math.max(4, Math.round(item.progress * 100))}%` }}
-                    />
-                  </div>
-                )}
+                {!failed && <UploadBar progress={item.progress} className="absolute inset-x-0 bottom-0" />}
               </div>
             )}
 
