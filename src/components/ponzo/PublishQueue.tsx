@@ -2,6 +2,7 @@ import { useQueryClient } from "@tanstack/react-query";
 import { useEffect, useSyncExternalStore } from "react";
 
 import { Avatar } from "@/components/ponzo/Avatar";
+import { UploadBar, uploadLabel } from "@/components/ponzo/UploadProgress";
 import { useAuth } from "@/lib/auth";
 import { asPerson } from "@/lib/ponzo-api";
 import {
@@ -51,8 +52,8 @@ export function PendingPosts() {
               <Avatar person={asPerson(profile)} size={40} />
               <div className="min-w-0 flex-1">
                 <p className="truncate text-sm font-semibold">{profile?.full_name ?? "Membre PONZO"}</p>
-                <p className="text-[11px] text-muted-foreground">
-                  {failed ? "Envoi interrompu" : item.status === "uploading" ? "Envoi…" : "En attente de réseau…"}
+                <p className="text-[11px] text-muted-foreground" aria-live="polite">
+                  {uploadLabel(item.status, item.progress)}
                 </p>
               </div>
             </div>
