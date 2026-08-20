@@ -336,8 +336,11 @@ function Messages() {
 
   const sendFile = async (file: File | undefined, kindOverride?: string) => {
     if (!file || !user || !to) return;
+    setUpload({ name: file.name, progress: 0 });
     try {
-      const res = await uploadMedia(user.id, file, "messages");
+      const res = await uploadMedia(user.id, file, "messages", undefined, (p) =>
+        setUpload((prev) => (prev ? { ...prev, progress: p } : prev)),
+      );
       const created = await sendMedia(user.id, to, file.name, res.url, kindOverride ?? res.kind, replyTo?.id ?? null);
       pushMessage(created);
       setReplyTo(null);
