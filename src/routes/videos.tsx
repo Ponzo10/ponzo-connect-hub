@@ -8,6 +8,8 @@ import { AuthGate, BottomNav } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { FollowButton } from "@/components/ponzo/FollowButton";
 import { HashtagText } from "@/components/ponzo/HashtagText";
+import { usePublishQueue } from "@/components/ponzo/PublishQueue";
+import { UploadPill, uploadLabel } from "@/components/ponzo/UploadProgress";
 import { useAuth } from "@/lib/auth";
 import { downloadMedia } from "@/lib/trending-api";
 import {
@@ -82,6 +84,7 @@ function useSoundPreference() {
 function Videos() {
   const { user } = useAuth();
   const { muted, volume, persist } = useSoundPreference();
+  const pendingVideos = usePublishQueue().filter((i) => i.mediaType === "video");
   const videos = useQuery({ queryKey: ["videos"], queryFn: fetchVideoPosts, staleTime: 20000 });
   const following = useQuery({
     queryKey: ["following", user?.id],
