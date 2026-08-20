@@ -100,7 +100,7 @@ async function resumableUpload(
         cacheControl: "31536000",
       },
       uploadSize: file.size,
-      chunkSize: RESUMABLE_CHUNK_SIZE,
+      chunkSize: chunkSizeForNetwork(),
       retryDelays: [0, 1000, 3000, 5000, 10000],
       removeFingerprintOnSuccess: true,
       // Le chemin fait partie de l'empreinte. Sans cela, TUS peut reprendre un
