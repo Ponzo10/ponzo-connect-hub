@@ -348,6 +348,8 @@ function Messages() {
       void notify({ userId: to, actorId: user.id, kind: "message", body: "t'a envoyé un fichier" });
     } catch {
       toast.error(t("msg.fileFailed"));
+    } finally {
+      setUpload(null);
     }
   };
 
