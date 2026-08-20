@@ -88,26 +88,48 @@ async function dbAll(): Promise<StoredItem[]> {
   });
 }
 
+export type NetworkTier = "very-slow" | "slow" | "normal";
+
+/** Mesure le réseau au moment précis de l'envoi (et non à la mise en file). */
+export function networkTier(): NetworkTier {
+  if (typeof navigator === "undefined") return "normal";
+  const conn = (navigator as unknown as { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
+  if (!conn) return "normal";
+  const type = conn.effectiveType;
+  if (type === "slow-2g" || type === "2g") return "very-slow";
+  if (conn.saveData || type === "3g") return "slow";
+  return "normal";
+}
+
 /** Connexion lente ? (2G / 3G / mode économie de données) */
 export function isSlowConnection() {
-  if (typeof navigator === "undefined") return false;
-  const conn = (navigator as unknown as { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
-  if (!conn) return false;
-  if (conn.saveData) return true;
-  return conn.effectiveType === "slow-2g" || conn.effectiveType === "2g" || conn.effectiveType === "3g";
+  return networkTier() !== "normal";
+}
+
+/** Le navigateur sait-il encoder en WebP ? (bien plus léger que le JPEG) */
+function supportsWebp(canvas: HTMLCanvasElement) {
+  try {
+    return canvas.toDataURL("image/webp").startsWith("data:image/webp");
+  } catch {
+    return false;
+  }
 }
 
 /**
- * Sur connexion lente, on allège la photo d'environ 20 % (qualité + largeur
- * maximale) : l'envoi devient nettement plus rapide sans perte visible sur mobile.
+ * Compression adaptative par palier, appliquée juste avant l'envoi :
+ * - 2G / slow-2g : largeur max 720 px, qualité 0,55
+ * - 3G / économie de données : largeur max 1080 px, qualité 0,68
+ * - normal : aucune recompression
+ * Le WebP est utilisé quand il est disponible, sinon JPEG.
  */
 async function lighten(file: File): Promise<File> {
-  if (!file.type.startsWith("image/") || !isSlowConnection()) return file;
+  const tier = networkTier();
+  if (!file.type.startsWith("image/") || tier === "normal") return file;
   if (typeof document === "undefined") return file;
+  const { maxWidth, quality } = tier === "very-slow" ? { maxWidth: 720, quality: 0.55 } : { maxWidth: 1080, quality: 0.68 };
   try {
     const bitmap = await createImageBitmap(file);
-    const maxWidth = Math.min(bitmap.width, 1280);
-    const scale = maxWidth / bitmap.width;
+    const scale = Math.min(1, maxWidth / bitmap.width);
     const canvas = document.createElement("canvas");
     canvas.width = Math.round(bitmap.width * scale);
     canvas.height = Math.round(bitmap.height * scale);
@@ -115,13 +137,17 @@ async function lighten(file: File): Promise<File> {
     if (!ctx) return file;
     ctx.drawImage(bitmap, 0, 0, canvas.width, canvas.height);
     bitmap.close?.();
-    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, "image/jpeg", 0.62));
+    const webp = supportsWebp(canvas);
+    const mime = webp ? "image/webp" : "image/jpeg";
+    const blob = await new Promise<Blob | null>((resolve) => canvas.toBlob(resolve, mime, quality));
     if (!blob || blob.size >= file.size) return file;
-    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ".jpg", { type: "image/jpeg" });
+    const ext = webp ? ".webp" : ".jpg";
+    return new File([blob], file.name.replace(/\.[^.]+$/, "") + ext, { type: mime });
   } catch {
     return file;
   }
 }
+
 
 // ---------------------------------------------------------------- store
 
