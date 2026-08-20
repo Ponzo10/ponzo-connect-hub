@@ -5,6 +5,20 @@ const TEN_YEARS = 60 * 60 * 24 * 3650;
 const MAX_BYTES = 200 * 1024 * 1024; // 200 Mo
 const RESUMABLE_THRESHOLD = 6 * 1024 * 1024;
 const RESUMABLE_CHUNK_SIZE = 6 * 1024 * 1024;
+
+/**
+ * Sur réseau lent, de petits morceaux permettent de reprendre bien plus près
+ * du point de coupure (au lieu de reperdre jusqu'à 6 Mo à chaque interruption).
+ */
+function chunkSizeForNetwork() {
+  if (typeof navigator === "undefined") return RESUMABLE_CHUNK_SIZE;
+  const conn = (navigator as unknown as { connection?: { effectiveType?: string; saveData?: boolean } }).connection;
+  const type = conn?.effectiveType;
+  if (type === "slow-2g" || type === "2g") return 256 * 1024;
+  if (conn?.saveData || type === "3g") return 512 * 1024;
+  return RESUMABLE_CHUNK_SIZE;
+}
+
 const SIGN_ATTEMPTS = 5;
 const UPLOAD_ATTEMPTS = 3;
 
