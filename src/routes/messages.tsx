@@ -116,6 +116,7 @@ function Messages() {
   const [stickers, setStickers] = useState(false);
   const [forwardOpen, setForwardOpen] = useState<Message[] | null>(null);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [upload, setUpload] = useState<{ name: string; progress: number } | null>(null);
 
   const fileRef = useRef<HTMLInputElement>(null);
   const gifRef = useRef<HTMLInputElement>(null);
