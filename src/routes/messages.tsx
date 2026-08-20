@@ -66,6 +66,7 @@ import {
 } from "@/lib/ponzo-api";
 import { fetchGroups } from "@/lib/groups-api";
 import { uploadMedia } from "@/lib/upload";
+import { UploadBar, uploadLabel } from "@/components/ponzo/UploadProgress";
 import { SmartImg } from "@/components/ponzo/SmartImg";
 
 export const Route = createFileRoute("/messages")({
@@ -742,6 +743,16 @@ function Messages() {
               >
                 <X className="h-4 w-4 text-muted-foreground" />
               </button>
+            </div>
+          )}
+
+          {upload && (
+            <div className="mt-3 overflow-hidden rounded-2xl bg-surface shadow-soft">
+              <div className="flex items-center gap-2 px-3 py-2 text-[11px] text-muted-foreground" aria-live="polite">
+                <span className="min-w-0 flex-1 truncate font-semibold">{upload.name}</span>
+                <span>{uploadLabel("uploading", upload.progress)}</span>
+              </div>
+              <UploadBar progress={upload.progress} />
             </div>
           )}
 
