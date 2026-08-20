@@ -95,7 +95,14 @@ function Videos() {
   const list = videos.data ?? [];
 
   return (
-    <div className="min-h-screen bg-foreground pb-20">
+    <div className="relative min-h-screen bg-foreground pb-20">
+      {pendingVideos.length > 0 && (
+        <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex flex-col items-center gap-1 px-4">
+          {pendingVideos.map((item) => (
+            <UploadPill key={item.id} tone="dark" progress={item.progress} label={uploadLabel(item.status, item.progress)} />
+          ))}
+        </div>
+      )}
       <div className="snap-y-page h-[calc(100vh-5rem)] snap-y snap-mandatory overflow-y-auto no-scrollbar">
         {videos.isLoading && (
           <div className="h-[calc(100vh-5rem)] snap-start bg-foreground p-5">
