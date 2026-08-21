@@ -83,13 +83,13 @@ export const Route = createRootRouteWithContext<{ queryClient: QueryClient }>()(
     meta: [
       { charSet: "utf-8" },
       { name: "viewport", content: "width=device-width, initial-scale=1, viewport-fit=cover" },
-      { title: "PONZO — Connecte-toi. Crée. Construis." },
+      { title: "PONZO" },
       {
         name: "description",
-        content: "PONZO, le réseau social professionnel : fil d'actualité, stories, vidéos courtes, marketplace et opportunités.",
+        content: "PONZO, le réseau social professionnel : fil d'actualité, stories, vidéos courtes et opportunités.",
       },
       { name: "theme-color", content: "#0f6b52" },
-      { property: "og:title", content: "PONZO — Connecte-toi. Crée. Construis." },
+      { property: "og:title", content: "PONZO" },
       { property: "og:description", content: "Le réseau social professionnel pour créer, collaborer et construire." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
