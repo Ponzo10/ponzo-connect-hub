@@ -20,7 +20,7 @@ export const Route = createFileRoute("/bienvenue")({
         content: "Rejoins PONZO : publie, échange, vends et développe ton réseau professionnel en toute sécurité.",
       },
       { property: "og:title", content: "Bienvenue sur PONZO" },
-      { property: "og:description", content: "Connecte-toi. Crée. Construis. Rejoins la communauté PONZO." },
+      { property: "og:description", content: "Rejoins la communauté PONZO." },
       { property: "og:type", content: "website" },
       { name: "twitter:card", content: "summary_large_image" },
     ],
@@ -57,7 +57,6 @@ function Bienvenue() {
       <div className="flex flex-col items-center pt-8">
         <PonzoMark size={112} />
         <h1 className="mt-4 font-display text-3xl font-extrabold tracking-tight text-primary">PONZO</h1>
-        <p className="mt-1 text-xs font-semibold text-primary/70">Connecte-toi. Crée. Construis.</p>
       </div>
 
       <div className="flex flex-1 flex-col justify-center">

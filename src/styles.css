@@ -208,3 +208,25 @@
     letter-spacing: 0;
   }
 }
+
+/* Supprime le badge "Edit with Lovable" et toute bannière de développement
+   injectée par l’éditeur, y compris en mode preview. */
+[data-lovable-badge],
+[data-lovable-edit],
+.lovable-badge,
+.lovable-edit,
+.lovable-edit-button,
+iframe[src*="lovable"][style*="fixed"],
+iframe[src*="lovable"][style*="position: fixed"],
+iframe[src*="lovable.dev"],
+[class*="lovable-badge"],
+[id*="lovable-badge"],
+a[href*="lovable.dev"][target="_blank"][style*="fixed"] {
+  display: none !important;
+  visibility: hidden !important;
+  opacity: 0 !important;
+  pointer-events: none !important;
+  width: 0 !important;
+  height: 0 !important;
+  overflow: hidden !important;
+}
