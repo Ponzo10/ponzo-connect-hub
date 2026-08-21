@@ -77,7 +77,6 @@ async function resumableUpload(
   onProgress?: (progress: number) => void,
   resume = true,
 ) {
-  const accessToken = await activeAccessToken();
   const projectUrl = import.meta.env["VITE_SUPABASE_URL"];
   const publishableKey = import.meta.env["VITE_SUPABASE_PUBLISHABLE_KEY"];
 
@@ -85,42 +84,88 @@ async function resumableUpload(
     throw new Error("Service d'envoi indisponible");
   }
 
-  await new Promise<void>((resolve, reject) => {
-    const upload = new Upload(file, {
-      endpoint: `${projectUrl}/storage/v1/upload/resumable`,
-      headers: {
-        authorization: `Bearer ${accessToken}`,
-        apikey: publishableKey,
-        "x-upsert": "true",
-      },
-      metadata: {
-        bucketName: "media",
-        objectName: path,
-        contentType,
-        cacheControl: "31536000",
-      },
-      uploadSize: file.size,
-      chunkSize: chunkSizeForNetwork(),
-      retryDelays: [0, 1000, 3000, 5000, 10000],
-      removeFingerprintOnSuccess: true,
-      // Le chemin fait partie de l'empreinte. Sans cela, TUS peut reprendre un
-      // ancien envoi du même fichier vers un autre objet après une interruption.
-      fingerprint: async () => `ponzo-v2-${path}-${file.size}-${file.lastModified}`,
-      onProgress: (uploaded, total) => onProgress?.(total > 0 ? uploaded / total : 0),
-      onError: reject,
-      onSuccess: () => {
-        onProgress?.(1);
-        resolve();
-      },
+  let allowResume = resume;
+  // Chaque passe recrée l'objet TUS : la taille de chunk et le jeton sont donc
+  // recalculés, et la reprise repart de l'offset réel renvoyé par le serveur.
+  for (let pass = 0; ; pass += 1) {
+    const accessToken = await activeAccessToken();
+    const chunkSize = chunkSizeForNetwork();
+    let restartOnNetworkChange = false;
+
+    const conn = typeof navigator !== "undefined"
+      ? (navigator as unknown as { connection?: EventTarget & { effectiveType?: string } }).connection
+      : undefined;
+
+    const done = await new Promise<boolean>((resolve, reject) => {
+      const upload = new Upload(file, {
+        endpoint: `${projectUrl}/storage/v1/upload/resumable`,
+        headers: {
+          authorization: `Bearer ${accessToken}`,
+          apikey: publishableKey,
+          "x-upsert": "true",
+        },
+        metadata: {
+          bucketName: "media",
+          objectName: path,
+          contentType,
+          cacheControl: "31536000",
+        },
+        uploadSize: file.size,
+        chunkSize,
+        retryDelays: [0, 1000, 3000, 5000, 10000],
+        removeFingerprintOnSuccess: true,
+        // Le chemin fait partie de l'empreinte. Sans cela, TUS peut reprendre un
+        // ancien envoi du même fichier vers un autre objet après une interruption.
+        fingerprint: async () => `ponzo-v2-${path}-${file.size}-${file.lastModified}`,
+        onProgress: (uploaded, total) => onProgress?.(total > 0 ? uploaded / total : 0),
+        onError: (error) => {
+          cleanup();
+          if (restartOnNetworkChange) resolve(false);
+          else reject(error);
+        },
+        onSuccess: () => {
+          cleanup();
+          onProgress?.(1);
+          resolve(true);
+        },
+      });
+
+      const onNetworkChange = () => {
+        const next = chunkSizeForNetwork();
+        if (next === chunkSize) return;
+        // Le réseau a changé de catégorie : on coupe proprement (sans effacer
+        // l'empreinte) pour repartir de l'offset serveur avec un chunk adapté.
+        restartOnNetworkChange = true;
+        void Promise.resolve(upload.abort(false)).then(() => {
+          cleanup();
+          resolve(false);
+        });
+      };
+
+      function cleanup() {
+        conn?.removeEventListener?.("change", onNetworkChange);
+      }
+
+      conn?.addEventListener?.("change", onNetworkChange);
+
+      void upload
+        .findPreviousUploads()
+        .then((previousUploads) => {
+          const previous = allowResume || pass > 0 ? previousUploads[0] : undefined;
+          if (previous) upload.resumeFromPreviousUpload(previous);
+          upload.start();
+        })
+        .catch((error) => {
+          cleanup();
+          reject(error);
+        });
     });
 
-    void upload.findPreviousUploads().then((previousUploads) => {
-      const previous = resume ? previousUploads[0] : undefined;
-      if (previous) upload.resumeFromPreviousUpload(previous);
-      upload.start();
-    }).catch(reject);
-  });
+    if (done) return;
+    allowResume = true;
+  }
 }
+
 
 export async function uploadMedia(
   userId: string,
