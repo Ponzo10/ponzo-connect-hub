@@ -19,7 +19,7 @@ export const Route = createFileRoute("/")({
         content:
           "PONZO : connecte-toi, crée et construis. Fil d'actualité, stories, vidéos courtes, marketplace et opportunités professionnelles.",
       },
-      { property: "og:title", content: "PONZO — Connecte-toi. Crée. Construis." },
+      { property: "og:title", content: "PONZO" },
       {
         property: "og:description",
         content: "Le réseau social professionnel pour trouver des opportunités, proposer ses services et lancer ses projets.",
