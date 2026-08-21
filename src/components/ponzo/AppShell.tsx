@@ -172,7 +172,7 @@ export function TopBar({ title }: { title?: string | undefined }) {
             </span>
           ) : (
             <Link to="/" aria-label="PONZO — accueil">
-              <PonzoLogo size={38} tagline={false} />
+              <PonzoLogo size={38} />
             </Link>
           )}
         </div>
