@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Pause, Play, Send, Volume2, VolumeX } from "lucide-react";
+import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Pause, Play, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -183,10 +183,61 @@ function VideoCard({
   const [paused, setPaused] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [showComments, setShowComments] = useState(false);
+  const [attempt, setAttempt] = useState(0);
+  const [failed, setFailed] = useState(false);
+  const retryTimer = useRef<number | null>(null);
 
+  const MAX_ATTEMPTS = 3;
+
+  /**
+   * Source de la vidéo.
+   * - `#t=0.001` : le navigateur ne télécharge que le début du flux (première image
+   *   immédiate) au lieu d'attendre le fichier entier.
+   * - `?ponzo_r=n` sur relance : contourne une réponse incomplète mise en cache.
+   */
+  const src = useMemo(() => {
+    if (!warm || !post.media_url) return undefined;
+    const base = post.media_url;
+    const busted = attempt > 0 ? `${base}${base.includes("?") ? "&" : "?"}ponzo_r=${attempt}` : base;
+    return busted.includes("#") ? busted : `${busted}#t=0.001`;
+  }, [warm, post.media_url, attempt]);
 
   const liked = useMemo(() => !!user && post.post_likes.some((l) => l.user_id === user.id), [post.post_likes, user]);
   const saved = useMemo(() => !!user && post.post_saves.some((s) => s.user_id === user.id), [post.post_saves, user]);
+
+  /** Relance progressive du chargement (backoff) après une erreur ou un blocage. */
+  const scheduleRetry = useCallback(() => {
+    if (retryTimer.current) return;
+    setAttempt((n) => {
+      if (n >= MAX_ATTEMPTS) {
+        setFailed(true);
+        return n;
+      }
+      retryTimer.current = window.setTimeout(() => {
+        retryTimer.current = null;
+        const v = ref.current;
+        if (v) {
+          v.preload = "auto";
+          v.load();
+        }
+      }, 400 * (n + 1));
+      return n + 1;
+    });
+  }, []);
+
+  /** Relance manuelle depuis le bouton « Réessayer ». */
+  const retryNow = useCallback(() => {
+    setFailed(false);
+    setBuffering(true);
+    setAttempt((n) => n + 1);
+  }, []);
+
+  useEffect(
+    () => () => {
+      if (retryTimer.current) window.clearTimeout(retryTimer.current);
+    },
+    [],
+  );
 
   // Préchauffage : seule la vidéo suivante est préchargée (économie de données en 2G/3G).
   useEffect(() => {
@@ -213,6 +264,17 @@ function VideoCard({
     };
   }, [onNear]);
 
+  /**
+   * Stratégie en deux temps : métadonnées d'abord (poids minimal, première image
+   * disponible), puis flux complet seulement quand la carte devient active.
+   */
+  useEffect(() => {
+    const v = ref.current;
+    if (!v || !src) return;
+    v.preload = active ? "auto" : "metadata";
+    if (v.readyState === 0) v.load();
+  }, [src, active]);
+
   useEffect(() => {
     const v = ref.current;
     if (!v) return;
@@ -222,7 +284,17 @@ function VideoCard({
       const start = () => {
         claimPlayback(v);
         setPaused(false);
-        void v.play().catch(() => {});
+        v.play().then(
+          () => setFailed(false),
+          (error: unknown) => {
+            // Blocage autoplay : ce n'est pas une erreur de chargement, on ne relance pas.
+            if (error instanceof DOMException && error.name === "NotAllowedError") {
+              setPaused(true);
+              return;
+            }
+            scheduleRetry();
+          },
+        );
       };
       if (v.readyState >= 2) start();
       else v.addEventListener("loadeddata", start, { once: true });
@@ -236,7 +308,17 @@ function VideoCard({
     v.pause();
     if (currentPlaying === v) currentPlaying = null;
     return;
-  }, [active, post.id, counted, user]);
+  }, [active, post.id, counted, user, scheduleRetry, src]);
+
+  /** Chien de garde : si rien ne se charge après 9 s, on relance la source. */
+  useEffect(() => {
+    if (!active || !buffering || failed) return;
+    const timer = window.setTimeout(() => {
+      const v = ref.current;
+      if (v && v.readyState < 3) scheduleRetry();
+    }, 9000);
+    return () => window.clearTimeout(timer);
+  }, [active, buffering, failed, scheduleRetry]);
 
   // Le son original de la vidéo suit le réglage de volume choisi.
   useEffect(() => {
@@ -263,6 +345,7 @@ function VideoCard({
       setPaused(true);
     }
   }, []);
+
 
 
 
@@ -315,7 +398,7 @@ function VideoCard({
     <section ref={sectionRef} className="relative flex h-[calc(100vh-5rem)] snap-start items-end bg-foreground">
       <video
         ref={ref}
-        src={warm && post.media_url ? `${post.media_url}${post.media_url.includes("#") ? "" : "#t=0.001"}` : undefined}
+        src={src}
         className="absolute inset-0 h-full w-full object-contain"
         playsInline
         loop
@@ -325,19 +408,41 @@ function VideoCard({
         onClick={togglePlay}
         onWaiting={() => setBuffering(true)}
         onStalled={() => setBuffering(true)}
-        onPlaying={() => setBuffering(false)}
+        onPlaying={() => {
+          setBuffering(false);
+          setFailed(false);
+        }}
         onCanPlay={() => setBuffering(false)}
+        onLoadedMetadata={() => setFailed(false)}
+        onError={scheduleRetry}
         onPause={() => setPaused(true)}
         onPlay={() => setPaused(false)}
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
 
       {/* Aucun écran de chargement bloquant : un simple voile discret pendant la mise en mémoire tampon. */}
-      {buffering && !paused && (
+      {buffering && !paused && !failed && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <Loader2 className="h-9 w-9 animate-spin text-background/70" />
         </div>
       )}
+
+      {failed && (
+        <div className="absolute inset-0 z-20 grid place-items-center bg-foreground/60 px-8 text-center">
+          <div className="text-background">
+            <p className="text-sm font-bold">Lecture impossible</p>
+            <p className="mt-1 text-xs opacity-70">Le réseau a interrompu le chargement de cette vidéo.</p>
+            <button
+              type="button"
+              onClick={retryNow}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground"
+            >
+              <RotateCcw className="h-4 w-4" /> Réessayer
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {(paused || showControls) && (
         <button
