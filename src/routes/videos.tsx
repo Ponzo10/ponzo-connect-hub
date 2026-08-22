@@ -322,24 +322,36 @@ function VideoCard({
         muted={muted}
         disablePictureInPicture
         preload={active ? "auto" : warm ? "metadata" : "none"}
-        onLoadedData={() => setReady(true)}
+        onClick={togglePlay}
         onWaiting={() => setBuffering(true)}
         onStalled={() => setBuffering(true)}
         onPlaying={() => setBuffering(false)}
         onCanPlay={() => setBuffering(false)}
+        onPause={() => setPaused(true)}
+        onPlay={() => setPaused(false)}
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
 
-      {!ready && (
-        <div className="absolute inset-0 grid place-items-center bg-foreground">
-          <div className="h-14 w-14 animate-pulse rounded-full bg-background/10" />
-        </div>
-      )}
-      {ready && buffering && (
+      {/* Aucun écran de chargement bloquant : un simple voile discret pendant la mise en mémoire tampon. */}
+      {buffering && !paused && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <Loader2 className="h-10 w-10 animate-spin text-background/90" />
+          <Loader2 className="h-9 w-9 animate-spin text-background/70" />
         </div>
       )}
+
+      {(paused || showControls) && (
+        <button
+          type="button"
+          aria-label={paused ? "Lire la vidéo" : "Mettre en pause"}
+          onClick={togglePlay}
+          className="absolute inset-0 z-10 grid place-items-center"
+        >
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-foreground/45 text-background backdrop-blur-sm">
+            {paused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
+          </span>
+        </button>
+      )}
+
 
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
