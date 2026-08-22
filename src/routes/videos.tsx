@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Send, Volume2, VolumeX } from "lucide-react";
+import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Pause, Play, Send, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -92,7 +92,11 @@ function Videos() {
     enabled: !!user,
   });
 
-  const list = videos.data ?? [];
+  const all = videos.data ?? [];
+  // Rendu fenêtré : on ne monte que quelques cartes, les suivantes arrivent au scroll.
+  const [count, setCount] = useState(4);
+  const list = all.slice(0, count);
+  const showMore = useCallback(() => setCount((c) => Math.min(c + 3, 999)), []);
 
   return (
     <div className="relative min-h-screen bg-foreground pb-20">
@@ -110,7 +114,7 @@ function Videos() {
           </div>
         )}
 
-        {!videos.isLoading && list.length === 0 && (
+        {!videos.isLoading && all.length === 0 && (
           <div className="grid h-[calc(100vh-5rem)] place-items-center px-8 text-center text-background">
             <div>
               <p className="text-sm font-bold">Aucune vidéo pour l'instant</p>
@@ -122,21 +126,32 @@ function Videos() {
           <VideoCard
             key={post.id}
             post={post}
-            eager={i < 2}
+            eager={i === 0}
             muted={muted}
             volume={volume}
             onToggleMute={() => persist({ muted: !muted, volume: volume || 1 })}
             onVolume={(v) => persist({ muted: v === 0, volume: v })}
+            onNear={i >= list.length - 2 && count < all.length ? showMore : undefined}
             isFollowing={(following.data ?? []).includes(post.author_id)}
           />
         ))}
       </div>
+
       <BottomNav />
     </div>
   );
 }
 
 const progressStore = new Map<string, number>();
+
+/** Registre global : une seule vidéo joue à la fois. */
+let currentPlaying: HTMLVideoElement | null = null;
+function claimPlayback(el: HTMLVideoElement) {
+  if (currentPlaying && currentPlaying !== el) {
+    currentPlaying.pause();
+  }
+  currentPlaying = el;
+}
 
 function VideoCard({
   post,
@@ -145,6 +160,7 @@ function VideoCard({
   volume,
   onToggleMute,
   onVolume,
+  onNear,
   isFollowing,
 }: {
   post: FeedPost;
@@ -153,6 +169,7 @@ function VideoCard({
   volume: number;
   onToggleMute: () => void;
   onVolume: (value: number) => void;
+  onNear?: (() => void) | undefined;
   isFollowing: boolean;
 }) {
   const { user, profile } = useAuth();
@@ -162,28 +179,31 @@ function VideoCard({
   const [active, setActive] = useState(eager);
   const [warm, setWarm] = useState(eager);
   const [counted, setCounted] = useState(false);
-  const [ready, setReady] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [paused, setPaused] = useState(false);
+  const [showControls, setShowControls] = useState(false);
   const [showComments, setShowComments] = useState(false);
 
 
   const liked = useMemo(() => !!user && post.post_likes.some((l) => l.user_id === user.id), [post.post_likes, user]);
   const saved = useMemo(() => !!user && post.post_saves.some((s) => s.user_id === user.id), [post.post_saves, user]);
 
-  // Préchauffage : dès que la vidéo approche de l'écran on charge le début du flux,
-  // la lecture démarre alors quasi instantanément au scroll.
+  // Préchauffage : seule la vidéo suivante est préchargée (économie de données en 2G/3G).
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
     const warmObserver = new IntersectionObserver(
       ([entry]) => {
-        if (entry?.isIntersecting) setWarm(true);
+        if (entry?.isIntersecting) {
+          setWarm(true);
+          onNear?.();
+        }
       },
-      { rootMargin: "150% 0px" },
+      { rootMargin: "90% 0px" },
     );
     const observer = new IntersectionObserver(
-      ([entry]) => setActive(!!entry && entry.intersectionRatio > 0.6),
-      { threshold: [0, 0.6, 1] },
+      ([entry]) => setActive(!!entry && entry.intersectionRatio > 0.5),
+      { threshold: [0, 0.5, 1] },
     );
     warmObserver.observe(el);
     observer.observe(el);
@@ -191,7 +211,7 @@ function VideoCard({
       warmObserver.disconnect();
       observer.disconnect();
     };
-  }, []);
+  }, [onNear]);
 
   useEffect(() => {
     const v = ref.current;
@@ -199,7 +219,11 @@ function VideoCard({
     if (active) {
       const savedTime = progressStore.get(post.id);
       if (savedTime && Math.abs(v.currentTime - savedTime) > 1) v.currentTime = savedTime;
-      const start = () => void v.play().catch(() => {});
+      const start = () => {
+        claimPlayback(v);
+        setPaused(false);
+        void v.play().catch(() => {});
+      };
       if (v.readyState >= 2) start();
       else v.addEventListener("loadeddata", start, { once: true });
       if (!counted && user) {
@@ -210,6 +234,7 @@ function VideoCard({
     }
     progressStore.set(post.id, v.currentTime);
     v.pause();
+    if (currentPlaying === v) currentPlaying = null;
     return;
   }, [active, post.id, counted, user]);
 
@@ -220,8 +245,25 @@ function VideoCard({
     v.volume = Math.min(1, Math.max(0, volume));
     v.muted = muted;
     // Certains navigateurs bloquent la lecture non muette : on relance après le choix.
-    if (!muted && active) void v.play().catch(() => {});
-  }, [volume, muted, active]);
+    if (!muted && active && !paused) void v.play().catch(() => {});
+  }, [volume, muted, active, paused]);
+
+  /** Tap sur la vidéo : affiche les contrôles et bascule lecture / pause. */
+  const togglePlay = useCallback(() => {
+    const v = ref.current;
+    if (!v) return;
+    setShowControls(true);
+    window.setTimeout(() => setShowControls(false), 1800);
+    if (v.paused) {
+      claimPlayback(v);
+      setPaused(false);
+      void v.play().catch(() => {});
+    } else {
+      v.pause();
+      setPaused(true);
+    }
+  }, []);
+
 
 
   const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: ["videos"] }), [queryClient]);
@@ -280,24 +322,36 @@ function VideoCard({
         muted={muted}
         disablePictureInPicture
         preload={active ? "auto" : warm ? "metadata" : "none"}
-        onLoadedData={() => setReady(true)}
+        onClick={togglePlay}
         onWaiting={() => setBuffering(true)}
         onStalled={() => setBuffering(true)}
         onPlaying={() => setBuffering(false)}
         onCanPlay={() => setBuffering(false)}
+        onPause={() => setPaused(true)}
+        onPlay={() => setPaused(false)}
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
 
-      {!ready && (
-        <div className="absolute inset-0 grid place-items-center bg-foreground">
-          <div className="h-14 w-14 animate-pulse rounded-full bg-background/10" />
-        </div>
-      )}
-      {ready && buffering && (
+      {/* Aucun écran de chargement bloquant : un simple voile discret pendant la mise en mémoire tampon. */}
+      {buffering && !paused && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
-          <Loader2 className="h-10 w-10 animate-spin text-background/90" />
+          <Loader2 className="h-9 w-9 animate-spin text-background/70" />
         </div>
       )}
+
+      {(paused || showControls) && (
+        <button
+          type="button"
+          aria-label={paused ? "Lire la vidéo" : "Mettre en pause"}
+          onClick={togglePlay}
+          className="absolute inset-0 z-10 grid place-items-center"
+        >
+          <span className="grid h-16 w-16 place-items-center rounded-full bg-foreground/45 text-background backdrop-blur-sm">
+            {paused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
+          </span>
+        </button>
+      )}
+
 
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
