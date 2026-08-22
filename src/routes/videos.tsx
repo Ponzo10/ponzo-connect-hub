@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Pause, Play, Send, Volume2, VolumeX } from "lucide-react";
+import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Pause, Play, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
