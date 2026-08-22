@@ -92,7 +92,11 @@ function Videos() {
     enabled: !!user,
   });
 
-  const list = videos.data ?? [];
+  const all = videos.data ?? [];
+  // Rendu fenêtré : on ne monte que quelques cartes, les suivantes arrivent au scroll.
+  const [count, setCount] = useState(4);
+  const list = all.slice(0, count);
+  const showMore = useCallback(() => setCount((c) => Math.min(c + 3, 999)), []);
 
   return (
     <div className="relative min-h-screen bg-foreground pb-20">
@@ -110,7 +114,7 @@ function Videos() {
           </div>
         )}
 
-        {!videos.isLoading && list.length === 0 && (
+        {!videos.isLoading && all.length === 0 && (
           <div className="grid h-[calc(100vh-5rem)] place-items-center px-8 text-center text-background">
             <div>
               <p className="text-sm font-bold">Aucune vidéo pour l'instant</p>
@@ -122,15 +126,17 @@ function Videos() {
           <VideoCard
             key={post.id}
             post={post}
-            eager={i < 2}
+            eager={i === 0}
             muted={muted}
             volume={volume}
             onToggleMute={() => persist({ muted: !muted, volume: volume || 1 })}
             onVolume={(v) => persist({ muted: v === 0, volume: v })}
+            onNear={i >= list.length - 2 && count < all.length ? showMore : undefined}
             isFollowing={(following.data ?? []).includes(post.author_id)}
           />
         ))}
       </div>
+
       <BottomNav />
     </div>
   );
