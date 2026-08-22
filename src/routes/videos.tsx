@@ -398,7 +398,7 @@ function VideoCard({
     <section ref={sectionRef} className="relative flex h-[calc(100vh-5rem)] snap-start items-end bg-foreground">
       <video
         ref={ref}
-        src={warm && post.media_url ? `${post.media_url}${post.media_url.includes("#") ? "" : "#t=0.001"}` : undefined}
+        src={src}
         className="absolute inset-0 h-full w-full object-contain"
         playsInline
         loop
@@ -408,19 +408,41 @@ function VideoCard({
         onClick={togglePlay}
         onWaiting={() => setBuffering(true)}
         onStalled={() => setBuffering(true)}
-        onPlaying={() => setBuffering(false)}
+        onPlaying={() => {
+          setBuffering(false);
+          setFailed(false);
+        }}
         onCanPlay={() => setBuffering(false)}
+        onLoadedMetadata={() => setFailed(false)}
+        onError={scheduleRetry}
         onPause={() => setPaused(true)}
         onPlay={() => setPaused(false)}
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
 
       {/* Aucun écran de chargement bloquant : un simple voile discret pendant la mise en mémoire tampon. */}
-      {buffering && !paused && (
+      {buffering && !paused && !failed && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <Loader2 className="h-9 w-9 animate-spin text-background/70" />
         </div>
       )}
+
+      {failed && (
+        <div className="absolute inset-0 z-20 grid place-items-center bg-foreground/60 px-8 text-center">
+          <div className="text-background">
+            <p className="text-sm font-bold">Lecture impossible</p>
+            <p className="mt-1 text-xs opacity-70">Le réseau a interrompu le chargement de cette vidéo.</p>
+            <button
+              type="button"
+              onClick={retryNow}
+              className="mt-3 inline-flex items-center gap-2 rounded-full bg-brand px-4 py-2 text-xs font-bold text-primary-foreground"
+            >
+              <RotateCcw className="h-4 w-4" /> Réessayer
+            </button>
+          </div>
+        </div>
+      )}
+
 
       {(paused || showControls) && (
         <button
