@@ -1,6 +1,6 @@
 import { createFileRoute } from "@tanstack/react-router";
 import { useQuery, useQueryClient } from "@tanstack/react-query";
-import { Bookmark, Download, Eye, Heart, Loader2, MessageCircle, Music2, Pause, Play, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
+import { Bookmark, Download, Eye, Heart, Loader2, Maximize, MessageCircle, Music2, Pause, Play, RotateCcw, Send, Volume2, VolumeX } from "lucide-react";
 import { useCallback, useEffect, useMemo, useRef, useState } from "react";
 import { toast } from "sonner";
 
@@ -176,16 +176,21 @@ function VideoCard({
   const queryClient = useQueryClient();
   const ref = useRef<HTMLVideoElement>(null);
   const sectionRef = useRef<HTMLElement>(null);
+  const canvasRef = useRef<HTMLCanvasElement>(null);
   const [active, setActive] = useState(eager);
   const [warm, setWarm] = useState(eager);
   const [counted, setCounted] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [showSpinner, setShowSpinner] = useState(false);
   const [paused, setPaused] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [showComments, setShowComments] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
+  const [poster, setPoster] = useState<string | undefined>(undefined);
+  const [showHeart, setShowHeart] = useState(false);
   const retryTimer = useRef<number | null>(null);
+  const tapTimer = useRef<number | null>(null);
 
   const MAX_ATTEMPTS = 3;
 
@@ -204,6 +209,33 @@ function VideoCard({
 
   const liked = useMemo(() => !!user && post.post_likes.some((l) => l.user_id === user.id), [post.post_likes, user]);
   const saved = useMemo(() => !!user && post.post_saves.some((s) => s.user_id === user.id), [post.post_saves, user]);
+
+  /** Capture la première frame comme poster pour un affichage immédiat. */
+  useEffect(() => {
+    const v = ref.current;
+    const canvas = canvasRef.current;
+    if (!v || !canvas || poster) return;
+    const capture = () => {
+      try {
+        if (v.readyState < 2) return;
+        canvas.width = Math.min(v.videoWidth || 640, 1280);
+        canvas.height = Math.min(v.videoHeight || 360, 720);
+        const ctx = canvas.getContext("2d");
+        if (!ctx) return;
+        ctx.drawImage(v, 0, 0, canvas.width, canvas.height);
+        const url = canvas.toDataURL("image/jpeg", 0.55);
+        setPoster(url);
+      } catch {
+        /* capture impossible : on laisse le navigateur gérer */
+      }
+    };
+    v.addEventListener("loadeddata", capture, { once: true });
+    v.addEventListener("canplay", capture, { once: true });
+    return () => {
+      v.removeEventListener("loadeddata", capture);
+      v.removeEventListener("canplay", capture);
+    };
+  }, [poster]);
 
   /** Relance progressive du chargement (backoff) après une erreur ou un blocage. */
   const scheduleRetry = useCallback(() => {
@@ -235,11 +267,12 @@ function VideoCard({
   useEffect(
     () => () => {
       if (retryTimer.current) window.clearTimeout(retryTimer.current);
+      if (tapTimer.current) window.clearTimeout(tapTimer.current);
     },
     [],
   );
 
-  // Préchauffage : seule la vidéo suivante est préchargée (économie de données en 2G/3G).
+  // Préchauffage : les vidéos N+1 et N+2 sont préchargées (metadata) pour une transition fluide.
   useEffect(() => {
     const el = sectionRef.current;
     if (!el) return;
@@ -250,7 +283,7 @@ function VideoCard({
           onNear?.();
         }
       },
-      { rootMargin: "90% 0px" },
+      { rootMargin: "200% 0px" },
     );
     const observer = new IntersectionObserver(
       ([entry]) => setActive(!!entry && entry.intersectionRatio > 0.5),
@@ -320,6 +353,16 @@ function VideoCard({
     return () => window.clearTimeout(timer);
   }, [active, buffering, failed, scheduleRetry]);
 
+  /** Spinner léger différé à 300 ms pour éviter les flashs. */
+  useEffect(() => {
+    if (!buffering) {
+      setShowSpinner(false);
+      return;
+    }
+    const timer = window.setTimeout(() => setShowSpinner(true), 300);
+    return () => window.clearTimeout(timer);
+  }, [buffering]);
+
   // Le son original de la vidéo suit le réglage de volume choisi.
   useEffect(() => {
     const v = ref.current;
@@ -329,6 +372,22 @@ function VideoCard({
     // Certains navigateurs bloquent la lecture non muette : on relance après le choix.
     if (!muted && active && !paused) void v.play().catch(() => {});
   }, [volume, muted, active, paused]);
+
+  /** Tap sur la vidéo : simple tap = play/pause, double tap = like. */
+  const handleVideoTap = useCallback(() => {
+    if (tapTimer.current) {
+      window.clearTimeout(tapTimer.current);
+      tapTimer.current = null;
+      void like();
+      setShowHeart(true);
+      window.setTimeout(() => setShowHeart(false), 800);
+    } else {
+      tapTimer.current = window.setTimeout(() => {
+        tapTimer.current = null;
+        togglePlay();
+      }, 260);
+    }
+  }, []);
 
   /** Tap sur la vidéo : affiche les contrôles et bascule lecture / pause. */
   const togglePlay = useCallback(() => {
@@ -346,8 +405,23 @@ function VideoCard({
     }
   }, []);
 
-
-
+  const toggleFullscreen = useCallback(async () => {
+    const section = sectionRef.current;
+    const video = ref.current;
+    if (!section && !video) return;
+    try {
+      if (document.fullscreenElement) {
+        await document.exitFullscreen();
+      } else if (section?.requestFullscreen) {
+        await section.requestFullscreen();
+      } else {
+        const anyVideo = video as any;
+        if (anyVideo?.webkitEnterFullscreen) await anyVideo.webkitEnterFullscreen();
+      }
+    } catch {
+      /* plein écran non supporté ou refusé */
+    }
+  }, []);
 
   const refresh = useCallback(() => queryClient.invalidateQueries({ queryKey: ["videos"] }), [queryClient]);
 
@@ -396,16 +470,18 @@ function VideoCard({
 
   return (
     <section ref={sectionRef} className="relative flex h-[calc(100vh-5rem)] snap-start items-end bg-foreground">
+      <canvas ref={canvasRef} className="hidden" />
       <video
         ref={ref}
         src={src}
+        poster={poster}
         className="absolute inset-0 h-full w-full object-contain"
         playsInline
         loop
         muted={muted}
         disablePictureInPicture
         preload={active ? "auto" : warm ? "metadata" : "none"}
-        onClick={togglePlay}
+        onClick={handleVideoTap}
         onWaiting={() => setBuffering(true)}
         onStalled={() => setBuffering(true)}
         onPlaying={() => {
@@ -420,8 +496,8 @@ function VideoCard({
         onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
       />
 
-      {/* Aucun écran de chargement bloquant : un simple voile discret pendant la mise en mémoire tampon. */}
-      {buffering && !paused && !failed && (
+      {/* Indicateur de chargement léger différé à 300 ms. */}
+      {showSpinner && !paused && !failed && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <Loader2 className="h-9 w-9 animate-spin text-background/70" />
         </div>
@@ -443,6 +519,12 @@ function VideoCard({
         </div>
       )}
 
+      {/* Animation double-tap like. */}
+      {showHeart && (
+        <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
+          <Heart className="h-24 w-24 fill-destructive text-destructive animate-ping" />
+        </div>
+      )}
 
       {(paused || showControls) && (
         <button
@@ -457,11 +539,17 @@ function VideoCard({
         </button>
       )}
 
-
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
-
       <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-background/15 px-2 py-1.5 backdrop-blur-sm">
+        <button
+          type="button"
+          aria-label="Plein écran"
+          onClick={toggleFullscreen}
+          className="grid h-8 w-8 place-items-center rounded-full text-background"
+        >
+          <Maximize className="h-5 w-5" />
+        </button>
         <button
           type="button"
           aria-label={muted ? "Activer le son" : "Couper le son"}
