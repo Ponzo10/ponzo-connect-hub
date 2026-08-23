@@ -133,6 +133,7 @@ function Videos() {
             onVolume={(v) => persist({ muted: v === 0, volume: v })}
             onNear={i >= list.length - 2 && count < all.length ? showMore : undefined}
             isFollowing={(following.data ?? []).includes(post.author_id)}
+            suggestions={all.filter((p) => p.id !== post.id).slice(0, 3)}
           />
         ))}
       </div>
