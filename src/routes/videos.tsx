@@ -38,7 +38,7 @@ export const Route = createFileRoute("/videos")({
         content: "Découvre les vidéos courtes PONZO en défilement vertical : créateurs, projets et conseils business.",
       },
       { property: "og:title", content: "Vidéos courtes — PONZO" },
-      { property: "og:og:description", content: "Défilement vertical, lecture automatique, réactions et partages." },
+      { property: "og:description", content: "Défilement vertical, lecture automatique, réactions et partages." },
     ],
   }),
   component: VideosPage,
