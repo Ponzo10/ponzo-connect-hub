@@ -163,6 +163,7 @@ function VideoCard({
   onVolume,
   onNear,
   isFollowing,
+  suggestions,
 }: {
   post: FeedPost;
   eager: boolean;
@@ -172,6 +173,7 @@ function VideoCard({
   onVolume: (value: number) => void;
   onNear?: (() => void) | undefined;
   isFollowing: boolean;
+  suggestions: FeedPost[];
 }) {
   const { user, profile } = useAuth();
   const queryClient = useQueryClient();
@@ -184,14 +186,44 @@ function VideoCard({
   const [buffering, setBuffering] = useState(false);
   const [showSpinner, setShowSpinner] = useState(false);
   const [paused, setPaused] = useState(false);
-  const [showControls, setShowControls] = useState(false);
+  const [showControls, setShowControls] = useState(true);
   const [showComments, setShowComments] = useState(false);
   const [attempt, setAttempt] = useState(0);
   const [failed, setFailed] = useState(false);
   const [poster, setPoster] = useState<string | undefined>(undefined);
   const [showHeart, setShowHeart] = useState(false);
+  const [ready, setReady] = useState(false);
+  const [ended, setEnded] = useState(false);
+  const [expanded, setExpanded] = useState(false);
+  const [progress, setProgress] = useState(0);
+  const [buffered, setBuffered] = useState(0);
+  const [duration, setDuration] = useState(0);
   const retryTimer = useRef<number | null>(null);
   const tapTimer = useRef<number | null>(null);
+  const controlsTimer = useRef<number | null>(null);
+
+  /** Petite vibration haptique (ignorée si non supportée). */
+  const buzz = useCallback((ms = 10) => {
+    try {
+      navigator.vibrate?.(ms);
+    } catch {
+      /* haptique indisponible */
+    }
+  }, []);
+
+  /** Affiche les contrôles puis les masque après 2 s d'inactivité. */
+  const revealControls = useCallback(() => {
+    setShowControls(true);
+    if (controlsTimer.current) window.clearTimeout(controlsTimer.current);
+    controlsTimer.current = window.setTimeout(() => setShowControls(false), 2000);
+  }, []);
+
+  useEffect(() => {
+    revealControls();
+    return () => {
+      if (controlsTimer.current) window.clearTimeout(controlsTimer.current);
+    };
+  }, [revealControls]);
 
   const MAX_ATTEMPTS = 3;
 
