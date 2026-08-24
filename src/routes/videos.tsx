@@ -501,16 +501,74 @@ function VideoCard({
     }
   };
 
+  const fmt = (s: number) => {
+    if (!Number.isFinite(s) || s <= 0) return "0:00";
+    const m = Math.floor(s / 60);
+    const r = Math.floor(s % 60);
+    return `${m}:${String(r).padStart(2, "0")}`;
+  };
+
+  /** Badge émotion : lecture rapide de la popularité de la vidéo. */
+  const emotion =
+    post.post_likes.length >= 100 ? "🔥 Populaire" : post.post_likes.length >= 20 ? "❤️ Aimée" : "✨ Nouveau";
+
+  const replay = () => {
+    const v = ref.current;
+    if (!v) return;
+    setEnded(false);
+    v.currentTime = 0;
+    claimPlayback(v);
+    void v.play().catch(() => {});
+  };
+
+  const goNext = () => {
+    const next = sectionRef.current?.nextElementSibling;
+    next?.scrollIntoView({ behavior: "smooth", block: "start" });
+  };
+
+  const isFull = typeof document !== "undefined" && !!document.fullscreenElement;
+
   return (
-    <section ref={sectionRef} className="relative flex h-[calc(100vh-5rem)] snap-start items-end bg-foreground">
+    <section
+      ref={sectionRef}
+      onPointerDown={revealControls}
+      className="relative flex h-[calc(100vh-5rem)] snap-start items-end overflow-hidden bg-foreground"
+    >
       <canvas ref={canvasRef} className="hidden" />
+
+      {/* Fond cinéma : poster très flouté et assombri derrière la vidéo. */}
+      {poster && (
+        <img
+          src={poster}
+          alt=""
+          aria-hidden
+          className="pointer-events-none absolute inset-0 h-full w-full scale-110 object-cover blur-[40px] brightness-[0.4]"
+        />
+      )}
+
+      {/* Poster net légèrement flouté pendant le chargement, crossfade vers la vidéo. */}
+      {poster && (
+        <img
+          src={poster}
+          alt=""
+          aria-hidden
+          className={cn(
+            "pointer-events-none absolute inset-0 h-full w-full object-contain blur-[10px] transition-opacity duration-300",
+            ready ? "opacity-0" : "opacity-100",
+          )}
+        />
+      )}
+
       <video
         ref={ref}
         src={src}
         poster={poster}
-        className="absolute inset-0 h-full w-full object-contain"
+        className={cn(
+          "video-cine animate-cine-in absolute inset-0 h-full w-full object-contain transition-opacity duration-300",
+          isFull ? "rounded-none" : "rounded-xl shadow-lift",
+          ready ? "opacity-100" : "opacity-0",
+        )}
         playsInline
-        loop
         muted={muted}
         disablePictureInPicture
         preload={active ? "auto" : warm ? "metadata" : "none"}
@@ -520,17 +578,33 @@ function VideoCard({
         onPlaying={() => {
           setBuffering(false);
           setFailed(false);
+          setReady(true);
+          setEnded(false);
         }}
-        onCanPlay={() => setBuffering(false)}
-        onLoadedMetadata={() => setFailed(false)}
+        onCanPlay={() => {
+          setBuffering(false);
+          setReady(true);
+        }}
+        onLoadedMetadata={(e) => {
+          setFailed(false);
+          setDuration(e.currentTarget.duration || 0);
+        }}
         onError={scheduleRetry}
         onPause={() => setPaused(true)}
         onPlay={() => setPaused(false)}
-        onTimeUpdate={(e) => progressStore.set(post.id, e.currentTarget.currentTime)}
+        onEnded={() => setEnded(true)}
+        onProgress={(e) => {
+          const v = e.currentTarget;
+          if (v.buffered.length) setBuffered(v.buffered.end(v.buffered.length - 1));
+        }}
+        onTimeUpdate={(e) => {
+          progressStore.set(post.id, e.currentTarget.currentTime);
+          setProgress(e.currentTarget.currentTime);
+        }}
       />
 
-      {/* Indicateur de chargement léger différé à 300 ms. */}
-      {showSpinner && !paused && !failed && (
+      {/* Indicateur de chargement léger différé. */}
+      {showSpinner && !ready && !paused && !failed && (
         <div className="pointer-events-none absolute inset-0 grid place-items-center">
           <Loader2 className="h-9 w-9 animate-spin text-background/70" />
         </div>
@@ -555,18 +629,18 @@ function VideoCard({
       {/* Animation double-tap like. */}
       {showHeart && (
         <div className="pointer-events-none absolute inset-0 z-30 grid place-items-center">
-          <Heart className="h-24 w-24 fill-destructive text-destructive animate-ping" />
+          <Heart className="animate-heart-burst h-24 w-24 fill-destructive text-destructive" />
         </div>
       )}
 
-      {(paused || showControls) && (
+      {(paused || showControls) && !ended && (
         <button
           type="button"
           aria-label={paused ? "Lire la vidéo" : "Mettre en pause"}
           onClick={togglePlay}
           className="absolute inset-0 z-10 grid place-items-center"
         >
-          <span className="grid h-16 w-16 place-items-center rounded-full bg-foreground/45 text-background backdrop-blur-sm">
+          <span className="glass-btn grid h-16 w-16 place-items-center rounded-full text-background">
             {paused ? <Play className="h-8 w-8" /> : <Pause className="h-8 w-8" />}
           </span>
         </button>
@@ -574,12 +648,30 @@ function VideoCard({
 
       <span className="pointer-events-none absolute inset-x-0 bottom-0 h-1/2 bg-gradient-to-t from-foreground/85 to-transparent" />
 
-      <div className="absolute right-4 top-4 flex items-center gap-2 rounded-full bg-background/15 px-2 py-1.5 backdrop-blur-sm">
+      {/* Badge émotion (haut gauche) et durée (haut droite). */}
+      <span
+        className={cn(
+          "glass-btn absolute left-4 top-4 rounded-full px-3 py-1 text-[11px] font-bold text-background transition-opacity duration-300",
+          showControls ? "opacity-100" : "opacity-0",
+        )}
+      >
+        {emotion}
+      </span>
+
+      <div
+        className={cn(
+          "absolute right-4 top-4 flex items-center gap-2 transition-opacity duration-300",
+          showControls ? "opacity-100" : "opacity-0",
+        )}
+      >
+        <span className="glass-btn rounded-full px-2.5 py-1 text-[11px] font-bold text-background">
+          {fmt(duration - progress)}
+        </span>
         <button
           type="button"
           aria-label="Plein écran"
           onClick={toggleFullscreen}
-          className="grid h-8 w-8 place-items-center rounded-full text-background"
+          className="glass-btn grid h-11 w-11 place-items-center rounded-full text-background"
         >
           <Maximize className="h-5 w-5" />
         </button>
@@ -587,7 +679,7 @@ function VideoCard({
           type="button"
           aria-label={muted ? "Activer le son" : "Couper le son"}
           onClick={onToggleMute}
-          className="grid h-8 w-8 place-items-center rounded-full text-background"
+          className="glass-btn grid h-11 w-11 place-items-center rounded-full text-background"
         >
           {muted ? <VolumeX className="h-5 w-5" /> : <Volume2 className="h-5 w-5" />}
         </button>
@@ -608,13 +700,26 @@ function VideoCard({
       <div className="relative z-10 flex w-full items-end justify-between gap-4 p-5 pb-8">
         <div className="min-w-0 flex-1 text-background">
           <div className="flex min-w-0 items-center gap-2">
-            <Avatar person={asPerson(post.author)} size={38} zoomable />
-            <span className="truncate text-sm font-bold">{post.author?.full_name ?? "Membre PONZO"}</span>
+            <span className="bg-cine rounded-full p-[2px]">
+              <Avatar person={asPerson(post.author)} size={38} zoomable />
+            </span>
+            <span className="truncate text-base font-bold [text-shadow:0_1px_4px_oklch(0_0_0/0.6)]">
+              {post.author?.full_name ?? "Membre PONZO"}
+            </span>
             <FollowButton targetId={post.author_id} initialFollowing={isFollowing} size="sm" />
           </div>
-          <p className="mt-3 line-clamp-3 text-sm leading-relaxed">
+          <p className={cn("mt-3 text-sm leading-relaxed", !expanded && "line-clamp-2")}>
             <HashtagText text={post.body} />
           </p>
+          {(post.body?.length ?? 0) > 80 && (
+            <button
+              type="button"
+              onClick={() => setExpanded((v) => !v)}
+              className="mt-1 text-xs font-semibold opacity-80"
+            >
+              {expanded ? "Voir moins" : "Voir plus"}
+            </button>
+          )}
           <p className="mt-2 flex items-center gap-3 text-xs opacity-80">
             <span className="flex items-center gap-1">
               <Music2 className="h-3.5 w-3.5" /> Son original
@@ -626,21 +731,31 @@ function VideoCard({
           </p>
         </div>
 
-        <div className="flex shrink-0 flex-col items-center gap-4 text-background">
+        <div
+          className={cn(
+            "flex shrink-0 flex-col items-center gap-3 text-background transition-opacity duration-300",
+            showControls ? "opacity-100" : "opacity-60",
+          )}
+        >
           <Action
-            onClick={() => void like()}
-            icon={<Heart className={cn("h-7 w-7", liked && "fill-destructive text-destructive")} />}
+            onClick={() => {
+              buzz();
+              setShowHeart(true);
+              window.setTimeout(() => setShowHeart(false), 900);
+              void like();
+            }}
+            icon={<Heart className={cn("h-6 w-6", liked && "fill-destructive text-destructive")} />}
             value={compactCount(post.post_likes.length)}
           />
           <Action
             onClick={() => setShowComments(true)}
-            icon={<MessageCircle className="h-7 w-7" />}
+            icon={<MessageCircle className="h-6 w-6" />}
             value={compactCount(post.post_comments.length)}
           />
-          <Action onClick={() => void share()} icon={<Send className="h-7 w-7" />} value={compactCount(post.share_count)} />
+          <Action onClick={() => void share()} icon={<Send className="h-6 w-6" />} value={compactCount(post.share_count)} />
           <Action
             onClick={() => void save()}
-            icon={<Bookmark className={cn("h-7 w-7", saved && "fill-background")} />}
+            icon={<Bookmark className={cn("h-6 w-6", saved && "fill-background")} />}
             value="Enreg."
           />
           {(post.author?.allow_video_download ?? true) && post.media_url && (
@@ -649,17 +764,68 @@ function VideoCard({
                 toast.info("Téléchargement en cours…");
                 void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
               }}
-              icon={<Download className="h-7 w-7" />}
+              icon={<Download className="h-6 w-6" />}
               value="Télécharger"
             />
           )}
         </div>
       </div>
 
+      {/* Barre de progression cinéma : buffer gris + progression dégradée. */}
+      <div className="absolute inset-x-0 bottom-0 z-20 h-1.5 touch-none bg-background/20">
+        <span
+          className="absolute inset-y-0 left-0 bg-background/30"
+          style={{ width: `${duration ? Math.min(100, (buffered / duration) * 100) : 0}%` }}
+        />
+        <span
+          className="bg-cine absolute inset-y-0 left-0"
+          style={{ width: `${duration ? Math.min(100, (progress / duration) * 100) : 0}%` }}
+        />
+      </div>
+
+      {/* Écran de fin : revoir, suivante et suggestions. */}
+      {ended && (
+        <div className="absolute inset-0 z-30 flex flex-col items-center justify-center gap-4 bg-foreground/60 px-6">
+          <div className="flex gap-3">
+            <button
+              type="button"
+              onClick={replay}
+              className="glass-btn flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold text-background"
+            >
+              <RotateCcw className="h-4 w-4" /> Revoir
+            </button>
+            <button
+              type="button"
+              onClick={goNext}
+              className="bg-cine flex items-center gap-2 rounded-full px-4 py-2.5 text-xs font-bold text-background"
+            >
+              <Play className="h-4 w-4" /> Vidéo suivante
+            </button>
+          </div>
+          {suggestions.length > 0 && (
+            <div className="grid w-full max-w-xs grid-cols-3 gap-2">
+              {suggestions.map((s) => (
+                <button
+                  key={s.id}
+                  type="button"
+                  onClick={goNext}
+                  className="aspect-[9/16] overflow-hidden rounded-lg bg-background/15 text-left"
+                >
+                  <span className="line-clamp-3 block p-1.5 text-[9px] font-semibold text-background">
+                    {s.body || "Vidéo PONZO"}
+                  </span>
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
+      )}
+
       {showComments && <VideoComments post={post} onClose={() => setShowComments(false)} onChange={refresh} />}
     </section>
   );
 }
+
 
 function VideoComments({
   post,
