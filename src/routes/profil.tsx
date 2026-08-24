@@ -40,6 +40,7 @@ function Profil() {
   const { user, profile, isStaff, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
+  const [view, setView] = useState<"grid" | "list">("grid");
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
