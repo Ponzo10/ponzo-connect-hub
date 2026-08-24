@@ -40,6 +40,7 @@ function Profil() {
   const { user, profile, isStaff, refreshProfile } = useAuth();
   const [editing, setEditing] = useState(false);
   const [followList, setFollowList] = useState<"followers" | "following" | null>(null);
+  const [view, setView] = useState<"grid" | "list">("grid");
   const avatarRef = useRef<HTMLInputElement>(null);
   const coverRef = useRef<HTMLInputElement>(null);
 
@@ -158,10 +159,40 @@ function Profil() {
         </div>
       </div>
 
-      <div className="mt-4 space-y-2 px-0 py-3 sm:px-3">
-        {(posts.data ?? []).map((p) => (
-          <PostCard key={p.id} post={p} />
-        ))}
+      <div className="mt-4 px-0 py-3 sm:px-3">
+        <div className="mb-3 flex gap-2 px-3">
+          {(["grid", "list"] as const).map((m) => (
+            <button
+              key={m}
+              type="button"
+              onClick={() => setView(m)}
+              className={
+                view === m
+                  ? "rounded-full bg-brand px-4 py-1.5 text-xs font-bold text-primary-foreground"
+                  : "rounded-full bg-surface px-4 py-1.5 text-xs font-semibold text-muted-foreground shadow-soft"
+              }
+            >
+              {m === "grid" ? "Grille" : "Liste"}
+            </button>
+          ))}
+        </div>
+
+        {view === "grid" ? (
+          <div className="grid grid-cols-3 gap-0.5 px-0.5">
+            {(posts.data ?? [])
+              .filter((p) => !!p.media_url)
+              .map((p) => (
+                <MediaTile key={p.id} id={p.id} url={p.media_url!} type={p.media_type} />
+              ))}
+          </div>
+        ) : (
+          <div className="space-y-2">
+            {(posts.data ?? []).map((p) => (
+              <PostCard key={p.id} post={p} />
+            ))}
+          </div>
+        )}
+
         {!posts.isLoading && (posts.data ?? []).length === 0 && (
           <p className="py-8 text-center text-sm text-muted-foreground">
             Tu n'as pas encore publié.{" "}
@@ -171,6 +202,7 @@ function Profil() {
           </p>
         )}
       </div>
+
     </AppShell>
   );
 }
@@ -264,5 +296,46 @@ function EditForm({ profile, onDone }: { profile: Profile; onDone: () => Promise
         {busy ? "Enregistrement…" : "Enregistrer"}
       </button>
     </div>
+  );
+}
+
+/** Vignette de la grille : aperçu animé (la vidéo se lance au survol / toucher). */
+function MediaTile({ id, url, type }: { id: string; url: string; type: string | null }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isVideo = type === "video";
+
+  const play = () => void videoRef.current?.play().catch(() => {});
+  const stop = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    v.currentTime = 0;
+  };
+
+  return (
+    <Link
+      to="/publication/$id"
+      params={{ id }}
+      onMouseEnter={play}
+      onMouseLeave={stop}
+      onTouchStart={play}
+      onTouchEnd={stop}
+      className="relative block aspect-square overflow-hidden bg-muted"
+    >
+      {isVideo ? (
+        <video
+          ref={videoRef}
+          src={`${url}#t=0.001`}
+          className="h-full w-full object-cover"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <SmartImg src={url} alt="Publication" width={220} quality={55} className="h-full w-full object-cover" />
+      )}
+      {isVideo && <span className="absolute right-1 top-1 text-[10px] text-background drop-shadow">▶</span>}
+    </Link>
   );
 }
