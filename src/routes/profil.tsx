@@ -298,3 +298,44 @@ function EditForm({ profile, onDone }: { profile: Profile; onDone: () => Promise
     </div>
   );
 }
+
+/** Vignette de la grille : aperçu animé (la vidéo se lance au survol / toucher). */
+function MediaTile({ id, url, type }: { id: string; url: string; type: string | null }) {
+  const videoRef = useRef<HTMLVideoElement>(null);
+  const isVideo = type === "video";
+
+  const play = () => void videoRef.current?.play().catch(() => {});
+  const stop = () => {
+    const v = videoRef.current;
+    if (!v) return;
+    v.pause();
+    v.currentTime = 0;
+  };
+
+  return (
+    <Link
+      to="/publication/$id"
+      params={{ id }}
+      onMouseEnter={play}
+      onMouseLeave={stop}
+      onTouchStart={play}
+      onTouchEnd={stop}
+      className="relative block aspect-square overflow-hidden bg-muted"
+    >
+      {isVideo ? (
+        <video
+          ref={videoRef}
+          src={`${url}#t=0.001`}
+          className="h-full w-full object-cover"
+          muted
+          loop
+          playsInline
+          preload="metadata"
+        />
+      ) : (
+        <SmartImg src={url} alt="Publication" width={220} quality={55} className="h-full w-full object-cover" />
+      )}
+      {isVideo && <span className="absolute right-1 top-1 text-[10px] text-background drop-shadow">▶</span>}
+    </Link>
+  );
+}
