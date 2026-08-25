@@ -49,43 +49,22 @@ export const Route = createFileRoute("/videos")({
 function VideosPage() {
   return (
     <AuthGate>
-      <Videos />
+      <VideosExperience />
     </AuthGate>
   );
 }
 
-const SOUND_KEY = "ponzo.video.sound";
-
-/** Mémorise le choix de son de l'utilisateur d'une session à l'autre. */
-function useSoundPreference() {
-  const [muted, setMuted] = useState(true);
-  const [volume, setVolume] = useState(1);
-
-  useEffect(() => {
-    if (typeof window === "undefined") return;
-    try {
-      const raw = window.localStorage.getItem(SOUND_KEY);
-      if (!raw) return;
-      const saved = JSON.parse(raw) as { muted?: boolean; volume?: number };
-      if (typeof saved.muted === "boolean") setMuted(saved.muted);
-      if (typeof saved.volume === "number") setVolume(Math.min(1, Math.max(0, saved.volume)));
-    } catch {
-      /* préférence illisible : on garde les valeurs par défaut */
-    }
-  }, []);
-
-  const persist = useCallback((next: { muted: boolean; volume: number }) => {
-    setMuted(next.muted);
-    setVolume(next.volume);
-    if (typeof window !== "undefined") window.localStorage.setItem(SOUND_KEY, JSON.stringify(next));
-  }, []);
-
-  return { muted, volume, persist };
-}
-
-function Videos() {
+export function VideosExperience({
+  startId,
+  soundOn,
+  onBack,
+}: {
+  startId?: string | undefined;
+  soundOn?: boolean | undefined;
+  onBack?: (() => void) | undefined;
+}) {
   const { user } = useAuth();
-  const { muted, volume, persist } = useSoundPreference();
+  const { muted, volume, persist } = useSoundPreference(!soundOn);
   const pendingVideos = usePublishQueue().filter((i) => i.mediaType === "video");
   const videos = useQuery({ queryKey: ["videos"], queryFn: fetchVideoPosts, staleTime: 20000 });
   const following = useQuery({
@@ -94,7 +73,14 @@ function Videos() {
     enabled: !!user,
   });
 
-  const all = videos.data ?? [];
+  // Ouverture depuis l'accueil : la vidéo demandée passe en tête du défilement.
+  const all = useMemo(() => {
+    const data = videos.data ?? [];
+    if (!startId) return data;
+    const target = data.find((p) => p.id === startId);
+    if (!target) return data;
+    return [target, ...data.filter((p) => p.id !== startId)];
+  }, [videos.data, startId]);
   // Rendu fenêtré : on ne monte que quelques cartes, les suivantes arrivent au scroll.
   const [count, setCount] = useState(4);
   const list = all.slice(0, count);
@@ -102,6 +88,16 @@ function Videos() {
 
   return (
     <div className="relative min-h-screen bg-foreground pb-20">
+      {onBack && (
+        <button
+          type="button"
+          onClick={onBack}
+          aria-label="Retour à l'accueil"
+          className="glass-btn absolute left-3 top-3 z-30 grid h-11 w-11 place-items-center rounded-full text-background"
+        >
+          <ArrowLeft className="h-5 w-5" />
+        </button>
+      )}
       {pendingVideos.length > 0 && (
         <div className="pointer-events-none absolute inset-x-0 top-3 z-20 flex flex-col items-center gap-1 px-4">
           {pendingVideos.map((item) => (
@@ -138,6 +134,7 @@ function Videos() {
             suggestions={all.filter((p) => p.id !== post.id).slice(0, 3)}
           />
         ))}
+
       </div>
 
       <BottomNav />
