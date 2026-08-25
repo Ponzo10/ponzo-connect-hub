@@ -30,6 +30,7 @@ import {
   type FeedPost,
 } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
+import { claimPlayback, releasePlayback, useSoundPreference } from "@/lib/video-sound";
 
 export const Route = createFileRoute("/videos")({
   head: () => ({
