@@ -460,40 +460,87 @@ export const PostCard = memo(PostCardBase, (a, b) => {
   );
 });
 
-/** La vidéo n'ouvre une connexion réseau qu'à l'approche de l'écran. */
-function LazyVideo({ src }: { src: string }) {
+/**
+ * Lecture automatique type Facebook : muet par défaut, démarre quand 60 % de la
+ * carte est visible, se met en pause dès qu'elle sort, et un clic au centre
+ * ouvre le lecteur plein écran avec le son.
+ */
+function FeedVideo({ post }: { post: FeedPost }) {
+  const navigate = useNavigate();
   const ref = useRef<HTMLVideoElement | null>(null);
   const wrapRef = useRef<HTMLDivElement | null>(null);
+  const { muted, volume, persist } = useSoundPreference();
   const [near, setNear] = useState(false);
+  const [active, setActive] = useState(false);
   const [ready, setReady] = useState(false);
   const [buffering, setBuffering] = useState(false);
+  const [progress, setProgress] = useState(0);
 
+  // Préchargement (métadonnées) à l'approche de l'écran + détection du seuil 60 %.
   useEffect(() => {
     const node = wrapRef.current;
-    if (!node || near || typeof IntersectionObserver === "undefined") return;
-    const observer = new IntersectionObserver(
-      (entries) => {
-        if (entries[0]?.isIntersecting) {
+    if (!node || typeof IntersectionObserver === "undefined") return;
+    const warm = new IntersectionObserver(
+      ([entry]) => {
+        if (entry?.isIntersecting) {
           setNear(true);
-          observer.disconnect();
+          warm.disconnect();
         }
       },
-      { rootMargin: "400px 0px" },
+      { rootMargin: "600px 0px" },
     );
-    observer.observe(node);
-    return () => observer.disconnect();
-  }, [near]);
+    const play = new IntersectionObserver(([entry]) => setActive(!!entry && entry.intersectionRatio >= 0.6), {
+      threshold: [0, 0.6, 1],
+    });
+    warm.observe(node);
+    play.observe(node);
+    return () => {
+      warm.disconnect();
+      play.disconnect();
+    };
+  }, []);
 
-  // #t=0.001 force iOS/Android à ne télécharger que le premier segment (chunk)
-  // et à afficher une image au lieu d'un cadre noir, sans charger toute la vidéo.
-  const streamSrc = near ? `${src}${src.includes("#") ? "" : "#t=0.001"}` : undefined;
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    v.muted = muted;
+    v.volume = Math.min(1, Math.max(0, volume));
+  }, [muted, volume]);
+
+  useEffect(() => {
+    const v = ref.current;
+    if (!v) return;
+    if (active) {
+      setNear(true);
+      v.preload = "auto";
+      claimPlayback(v);
+      void v.play().catch(() => {});
+      return;
+    }
+    v.pause();
+    releasePlayback(v);
+    return;
+  }, [active]);
+
+  useEffect(() => {
+    const v = ref.current;
+    return () => {
+      if (v) releasePlayback(v);
+    };
+  }, []);
+
+  // #t=0.001 force iOS/Android à n'obtenir que le premier segment : première
+  // image immédiate au lieu d'un cadre noir.
+  const streamSrc = near ? `${post.media_url}${post.media_url?.includes("#") ? "" : "#t=0.001"}` : undefined;
+  const views = post.view_count ?? 0;
 
   return (
-    <div ref={wrapRef} className="relative w-full bg-black">
+    <div ref={wrapRef} className="relative w-full overflow-hidden rounded-xl bg-black">
       <video
         ref={ref}
         {...(streamSrc ? { src: streamSrc } : {})}
-        controls
+        muted={muted}
+        loop
         playsInline
         preload={near ? "metadata" : "none"}
         onLoadedMetadata={() => setReady(true)}
@@ -501,8 +548,50 @@ function LazyVideo({ src }: { src: string }) {
         onStalled={() => setBuffering(true)}
         onPlaying={() => setBuffering(false)}
         onCanPlay={() => setBuffering(false)}
-        className="max-h-[520px] w-full bg-black object-contain"
+        onTimeUpdate={(e) => {
+          const el = e.currentTarget;
+          if (el.duration) setProgress((el.currentTime / el.duration) * 100);
+        }}
+        className="aspect-[4/5] w-full bg-black object-cover"
       />
+
+      {/* Zone centrale cliquable : ouvre le lecteur plein écran avec le son. */}
+      <button
+        type="button"
+        aria-label="Ouvrir la vidéo en plein écran"
+        onClick={() => {
+          saveHomeScroll();
+          void navigate({ to: "/video/$id", params: { id: post.id } });
+        }}
+        className="absolute inset-0"
+      />
+
+      <div className="pointer-events-none absolute inset-x-0 bottom-0 bg-gradient-to-t from-black/75 to-transparent px-3 pb-4 pt-10">
+        <div className="flex items-center gap-2">
+          <Avatar person={asPerson(post.author)} size={28} />
+          <span className="truncate text-xs font-semibold text-white">{post.author?.full_name ?? "Membre PONZO"}</span>
+        </div>
+        {post.body && <p className="mt-1 line-clamp-1 text-xs text-white/90">{post.body}</p>}
+        <p className="mt-0.5 flex items-center gap-1.5 text-[11px] text-white/70">
+          <Eye className="h-3 w-3" />
+          {views.toLocaleString("fr-FR")} vues
+          {muted && <VolumeX className="ml-1 h-3 w-3" />}
+        </p>
+      </div>
+
+      <button
+        type="button"
+        aria-label={muted ? "Activer le son" : "Couper le son"}
+        onClick={() => persist({ muted: !muted, volume: volume || 1 })}
+        className="glass-btn absolute bottom-3 right-3 grid h-9 w-9 place-items-center rounded-full text-white"
+      >
+        {muted ? <VolumeX className="h-4 w-4" /> : <Volume2 className="h-4 w-4" />}
+      </button>
+
+      <div className="absolute inset-x-0 bottom-0 h-[2px] bg-white/20">
+        <div className="h-full bg-white/90 transition-[width] duration-200" style={{ width: `${progress}%` }} />
+      </div>
+
       {!ready && (
         <div className="absolute inset-0 grid animate-pulse place-items-center bg-muted/30">
           <Loader2 className="h-6 w-6 animate-spin text-background/80" />
@@ -516,6 +605,7 @@ function LazyVideo({ src }: { src: string }) {
     </div>
   );
 }
+
 
 
 function CommentRow({
