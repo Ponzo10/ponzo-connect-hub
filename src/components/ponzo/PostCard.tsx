@@ -20,11 +20,13 @@ import { toast } from "sonner";
 import { Avatar } from "./Avatar";
 import { Badge3D } from "./Badge3D";
 import { FollowButton } from "./FollowButton";
+import { offlineSuccessToast } from "./OfflineToast";
 import { usePhotoViewer } from "./PhotoViewer";
 import { SmartImg } from "./SmartImg";
 
 import { HashtagText } from "@/components/ponzo/HashtagText";
 import { useAuth } from "@/lib/auth";
+import { saveVideoOffline } from "@/lib/offline-videos";
 import { downloadMedia } from "@/lib/trending-api";
 import {
   addReply,
@@ -342,7 +344,14 @@ function PostCardBase({ post }: { post: FeedPost }) {
               aria-label="Télécharger la vidéo"
               onClick={() => {
                 toast.info("Téléchargement en cours…");
-                void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+                void (async () => {
+                  const result = await saveVideoOffline(post.id, post.media_url!, post.body.slice(0, 60) || "Vidéo PONZO");
+                  if (result.status === "saved") offlineSuccessToast(result.count);
+                  else if (result.status === "already") toast.info("Déjà disponible hors-ligne");
+                  else if (result.status === "limit")
+                    toast.error("Limite de 20 vidéos hors-ligne atteinte. Supprime-en une pour continuer.");
+                  else void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+                })();
               }}
               className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/80 backdrop-blur-sm"
             >
