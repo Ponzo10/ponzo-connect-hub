@@ -8,9 +8,11 @@ import { AuthGate, BottomNav } from "@/components/ponzo/AppShell";
 import { Avatar } from "@/components/ponzo/Avatar";
 import { FollowButton } from "@/components/ponzo/FollowButton";
 import { HashtagText } from "@/components/ponzo/HashtagText";
+import { offlineSuccessToast } from "@/components/ponzo/OfflineToast";
 import { usePublishQueue } from "@/components/ponzo/PublishQueue";
 import { UploadPill, uploadLabel } from "@/components/ponzo/UploadProgress";
 import { useAuth } from "@/lib/auth";
+import { saveVideoOffline } from "@/lib/offline-videos";
 import { downloadMedia } from "@/lib/trending-api";
 import {
   addReply,
@@ -762,7 +764,14 @@ function VideoCard({
             <Action
               onClick={() => {
                 toast.info("Téléchargement en cours…");
-                void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+                void (async () => {
+                  const result = await saveVideoOffline(post.id, post.media_url!, post.body.slice(0, 60) || "Vidéo PONZO");
+                  if (result.status === "saved") offlineSuccessToast(result.count);
+                  else if (result.status === "already") toast.info("Déjà disponible hors-ligne");
+                  else if (result.status === "limit")
+                    toast.error("Limite de 20 vidéos hors-ligne atteinte. Supprime-en une pour continuer.");
+                  else void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+                })();
               }}
               icon={<Download className="h-6 w-6" />}
               value="Télécharger"
