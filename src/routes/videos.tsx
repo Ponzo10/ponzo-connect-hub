@@ -374,7 +374,7 @@ function VideoCard({
     }
     progressStore.set(post.id, v.currentTime);
     v.pause();
-    if (currentPlaying === v) currentPlaying = null;
+    releasePlayback(v);
     return;
   }, [active, post.id, counted, user, scheduleRetry, src]);
 
