@@ -147,14 +147,6 @@ function Videos() {
 
 const progressStore = new Map<string, number>();
 
-/** Registre global : une seule vidéo joue à la fois. */
-let currentPlaying: HTMLVideoElement | null = null;
-function claimPlayback(el: HTMLVideoElement) {
-  if (currentPlaying && currentPlaying !== el) {
-    currentPlaying.pause();
-  }
-  currentPlaying = el;
-}
 
 function VideoCard({
   post,
