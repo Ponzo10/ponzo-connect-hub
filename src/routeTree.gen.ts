@@ -32,6 +32,7 @@ import { Route as GroupeIdRouteImport } from './routes/groupe.$id'
 import { Route as HashtagTagRouteImport } from './routes/hashtag.$tag'
 import { Route as MembreIdRouteImport } from './routes/membre.$id'
 import { Route as PublicationIdRouteImport } from './routes/publication.$id'
+import { Route as VideoIdRouteImport } from './routes/video.$id'
 import { Route as ApiPublicHooksNewsSyncRouteImport } from './routes/api/public/hooks/news-sync'
 
 const IndexRoute = IndexRouteImport.update({
@@ -149,6 +150,11 @@ const PublicationIdRoute = PublicationIdRouteImport.update({
   path: '/publication/$id',
   getParentRoute: () => rootRouteImport,
 } as any)
+const VideoIdRoute = VideoIdRouteImport.update({
+  id: '/video/$id',
+  path: '/video/$id',
+  getParentRoute: () => rootRouteImport,
+} as any)
 const ApiPublicHooksNewsSyncRoute = ApiPublicHooksNewsSyncRouteImport.update({
   id: '/api/public/hooks/news-sync',
   path: '/api/public/hooks/news-sync',
@@ -179,6 +185,7 @@ export interface FileRoutesByFullPath {
   '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
+  '/video/$id': typeof VideoIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRoutesByTo {
@@ -205,6 +212,7 @@ export interface FileRoutesByTo {
   '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
+  '/video/$id': typeof VideoIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRoutesById {
@@ -232,6 +240,7 @@ export interface FileRoutesById {
   '/hashtag/$tag': typeof HashtagTagRoute
   '/membre/$id': typeof MembreIdRoute
   '/publication/$id': typeof PublicationIdRoute
+  '/video/$id': typeof VideoIdRoute
   '/api/public/hooks/news-sync': typeof ApiPublicHooksNewsSyncRoute
 }
 export interface FileRouteTypes {
@@ -260,6 +269,7 @@ export interface FileRouteTypes {
     | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
+    | '/video/$id'
     | '/api/public/hooks/news-sync'
   fileRoutesByTo: FileRoutesByTo
   to:
@@ -286,6 +296,7 @@ export interface FileRouteTypes {
     | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
+    | '/video/$id'
     | '/api/public/hooks/news-sync'
   id:
     | '__root__'
@@ -312,6 +323,7 @@ export interface FileRouteTypes {
     | '/hashtag/$tag'
     | '/membre/$id'
     | '/publication/$id'
+    | '/video/$id'
     | '/api/public/hooks/news-sync'
   fileRoutesById: FileRoutesById
 }
@@ -339,6 +351,7 @@ export interface RootRouteChildren {
   HashtagTagRoute: typeof HashtagTagRoute
   MembreIdRoute: typeof MembreIdRoute
   PublicationIdRoute: typeof PublicationIdRoute
+  VideoIdRoute: typeof VideoIdRoute
   ApiPublicHooksNewsSyncRoute: typeof ApiPublicHooksNewsSyncRoute
 }
 
@@ -505,6 +518,13 @@ declare module '@tanstack/react-router' {
       preLoaderRoute: typeof PublicationIdRouteImport
       parentRoute: typeof rootRouteImport
     }
+    '/video/$id': {
+      id: '/video/$id'
+      path: '/video/$id'
+      fullPath: '/video/$id'
+      preLoaderRoute: typeof VideoIdRouteImport
+      parentRoute: typeof rootRouteImport
+    }
     '/api/public/hooks/news-sync': {
       id: '/api/public/hooks/news-sync'
       path: '/api/public/hooks/news-sync'
@@ -539,6 +559,7 @@ const rootRouteChildren: RootRouteChildren = {
   HashtagTagRoute: HashtagTagRoute,
   MembreIdRoute: MembreIdRoute,
   PublicationIdRoute: PublicationIdRoute,
+  VideoIdRoute: VideoIdRoute,
   ApiPublicHooksNewsSyncRoute: ApiPublicHooksNewsSyncRoute,
 }
 export const routeTree = rootRouteImport
