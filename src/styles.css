@@ -238,9 +238,6 @@ a[href*="lovable.dev"][target="_blank"][style*="fixed"] {
 }
 
 /* ============ Lecteur vidéo cinéma PONZO ============ */
-:root {
-  --gradient-cine: linear-gradient(90deg, oklch(0.55 0.27 300), oklch(0.65 0.29 350));
-}
 
 @utility bg-cine {
   background-image: var(--gradient-cine);
