@@ -347,21 +347,31 @@ function PostCardBase({ post }: { post: FeedPost }) {
           {(post.author?.allow_video_download ?? true) && (
             <button
               type="button"
-              aria-label="Télécharger la vidéo"
+              aria-label={savingOffline ? "Sauvegarde en cours" : "Télécharger la vidéo"}
+              disabled={savingOffline}
               onClick={() => {
-                toast.info("Téléchargement en cours…");
+                setSavingOffline(true);
                 void (async () => {
-                  const result = await saveVideoOffline(post.id, post.media_url!, post.body.slice(0, 60) || "Vidéo PONZO");
+                  const title = post.body.slice(0, 60) || "Vidéo PONZO";
+                  const result = await saveVideoOffline(post.id, post.media_url!, title);
                   if (result.status === "saved") offlineSuccessToast(result.count);
                   else if (result.status === "already") toast.info("Déjà disponible hors-ligne");
                   else if (result.status === "limit")
                     toast.error("Limite de 20 vidéos hors-ligne atteinte. Supprime-en une pour continuer.");
-                  else void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+                  else {
+                    toast.info("Téléchargement en cours…");
+                    void downloadMedia(post.media_url!, `ponzo-video-${post.id.slice(0, 8)}.mp4`);
+                  }
+                  setSavingOffline(false);
                 })();
               }}
-              className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/80 backdrop-blur-sm"
+              className="absolute right-3 top-3 grid h-9 w-9 place-items-center rounded-full bg-background/80 backdrop-blur-sm disabled:opacity-60"
             >
-              <Download className="h-4 w-4" />
+              {savingOffline ? (
+                <Loader2 className="h-4 w-4 animate-spin" />
+              ) : (
+                <Download className="h-4 w-4" />
+              )}
             </button>
           )}
         </div>
