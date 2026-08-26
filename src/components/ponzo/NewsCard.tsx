@@ -81,6 +81,9 @@ function NewsCardBase({ article, detailed = false }: { article: NewsItem; detail
     queryKey: ["news-comments", article.id],
     queryFn: () => fetchNewsComments(article.id),
     enabled: openComments,
+    // Les commentaires déjà chargés sont gardés en cache : rouvrir la
+    // section ne relance plus de requête réseau.
+    staleTime: 60_000,
   });
 
   const commentM = useMutation({

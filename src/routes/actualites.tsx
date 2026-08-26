@@ -56,6 +56,11 @@ function Actualites() {
   const news = useQuery({
     queryKey: ["news", category, debounced],
     queryFn: () => fetchNews({ category, search: debounced }),
+    // Cache agressif : la liste des actualités change peu, on la garde
+    // 2 minutes en mémoire pour éviter les requêtes répétées.
+    staleTime: 2 * 60_000,
+    gcTime: 15 * 60_000,
+    refetchOnWindowFocus: false,
   });
 
   return (
