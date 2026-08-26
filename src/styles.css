@@ -101,6 +101,12 @@
   --gradient-gold: linear-gradient(135deg, oklch(0.86 0.16 92), oklch(0.78 0.16 70));
   --shadow-soft: 0 1px 2px oklch(0.21 0.03 160 / 0.05), 0 8px 24px oklch(0.21 0.03 160 / 0.06);
   --shadow-lift: 0 12px 40px oklch(0.21 0.03 160 / 0.12);
+  --gradient-cine: linear-gradient(90deg, oklch(0.55 0.27 300), oklch(0.65 0.29 350));
+  /* Transitions partagées (miroir de src/lib/theme.ts) */
+  --ease-fluid: cubic-bezier(0.22, 1, 0.36, 1);
+  --duration-fast: 150ms;
+  --duration-normal: 250ms;
+  --duration-slow: 420ms;
 }
 
 .dark {
@@ -232,9 +238,6 @@ a[href*="lovable.dev"][target="_blank"][style*="fixed"] {
 }
 
 /* ============ Lecteur vidéo cinéma PONZO ============ */
-:root {
-  --gradient-cine: linear-gradient(90deg, oklch(0.55 0.27 300), oklch(0.65 0.29 350));
-}
 
 @utility bg-cine {
   background-image: var(--gradient-cine);
@@ -267,4 +270,31 @@ a[href*="lovable.dev"][target="_blank"][style*="fixed"] {
 
 @utility animate-cine-in {
   animation: cine-in 420ms cubic-bezier(0.22, 1, 0.36, 1);
+}
+
+/* ============ Transitions d'écrans PONZO ============ */
+@keyframes page-enter {
+  from {
+    opacity: 0;
+    transform: translateY(10px);
+  }
+  to {
+    opacity: 1;
+    transform: translateY(0);
+  }
+}
+
+@utility animate-page-enter {
+  animation: page-enter var(--duration-normal) var(--ease-fluid) both;
+}
+
+/* Interactions uniformes : liens, boutons et cartes réagissent en douceur. */
+@layer base {
+  a,
+  button,
+  [role="button"] {
+    transition-property: color, background-color, border-color, opacity, transform, box-shadow;
+    transition-duration: var(--duration-fast);
+    transition-timing-function: var(--ease-fluid);
+  }
 }
