@@ -1,7 +1,7 @@
 import { Link } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { Bookmark, Eye, Heart, MessageSquare, Newspaper, Repeat2, Send, Trash2 } from "lucide-react";
-import { useState } from "react";
+import { memo, useState } from "react";
 import { toast } from "sonner";
 
 import { Avatar } from "./Avatar";
@@ -23,7 +23,7 @@ import { asPerson, timeAgo } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
 import { SmartImg } from "./SmartImg";
 
-export function NewsCard({ article, detailed = false }: { article: NewsItem; detailed?: boolean }) {
+function NewsCardBase({ article, detailed = false }: { article: NewsItem; detailed?: boolean }) {
   const { user } = useAuth();
   const queryClient = useQueryClient();
   const [openComments, setOpenComments] = useState(detailed);
