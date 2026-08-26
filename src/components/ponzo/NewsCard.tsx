@@ -256,6 +256,10 @@ function NewsCardBase({ article, detailed = false }: { article: NewsItem; detail
   );
 }
 
+// Mémorisé : une actualité n'est re-rendue que si son contenu change,
+// pas à chaque rafraîchissement de la liste parente.
+export const NewsCard = memo(NewsCardBase, (a, b) => a.article === b.article && a.detailed === b.detailed);
+
 function CommentRow({
   comment,
   canDelete,
