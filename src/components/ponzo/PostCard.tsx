@@ -68,6 +68,7 @@ function PostCardBase({ post }: { post: FeedPost }) {
   const [editDraft, setEditDraft] = useState(post.body);
   const [draft, setDraft] = useState("");
   const [replyTo, setReplyTo] = useState<Comment | null>(null);
+  const [savingOffline, setSavingOffline] = useState(false);
 
   // États optimistes : la réaction est instantanée et n'oblige plus à recharger
   // tout le fil (une invalidation complète rendait chaque « J'aime » très lent).
