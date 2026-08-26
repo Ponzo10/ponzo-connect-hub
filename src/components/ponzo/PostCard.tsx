@@ -1,6 +1,7 @@
 import {
   Bookmark,
   Download,
+  Eye,
   Flag,
   Heart,
   Loader2,
@@ -11,8 +12,10 @@ import {
   Repeat2,
   Send,
   Trash2,
+  Volume2,
+  VolumeX,
 } from "lucide-react";
-import { Link } from "@tanstack/react-router";
+import { Link, useNavigate } from "@tanstack/react-router";
 import { useMutation, useQuery, useQueryClient } from "@tanstack/react-query";
 import { memo, useEffect, useRef, useState } from "react";
 import { toast } from "sonner";
@@ -26,6 +29,7 @@ import { SmartImg } from "./SmartImg";
 
 import { HashtagText } from "@/components/ponzo/HashtagText";
 import { useAuth } from "@/lib/auth";
+import { saveHomeScroll } from "@/lib/home-scroll";
 import { saveVideoOffline } from "@/lib/offline-videos";
 import { downloadMedia } from "@/lib/trending-api";
 import {
@@ -46,6 +50,7 @@ import {
   type FeedPost,
 } from "@/lib/ponzo-api";
 import { cn } from "@/lib/utils";
+import { claimPlayback, releasePlayback, useSoundPreference } from "@/lib/video-sound";
 
 const tagStyle: Record<string, string> = {
   "Je cherche": "bg-primary-soft text-primary",
@@ -337,7 +342,7 @@ function PostCardBase({ post }: { post: FeedPost }) {
       )}
       {post.media_url && post.media_type === "video" && (
         <div className="relative">
-          <LazyVideo src={post.media_url} />
+          <FeedVideo post={post} />
           {(post.author?.allow_video_download ?? true) && (
             <button
               type="button"

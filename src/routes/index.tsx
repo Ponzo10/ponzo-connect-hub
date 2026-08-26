@@ -7,6 +7,7 @@ import { PostCard } from "@/components/ponzo/PostCard";
 import { PendingPosts } from "@/components/ponzo/PublishQueue";
 import { StoriesBar } from "@/components/ponzo/StoriesBar";
 import { useAuth } from "@/lib/auth";
+import { restoreHomeScroll } from "@/lib/home-scroll";
 import { FEED_PAGE_SIZE, fetchFeed } from "@/lib/ponzo-api";
 
 
@@ -32,6 +33,9 @@ export const Route = createFileRoute("/")({
 
 function Feed() {
   const { user } = useAuth();
+  useEffect(() => {
+    restoreHomeScroll();
+  }, []);
   const feed = useInfiniteQuery({
     queryKey: ["feed", user?.id ?? null],
     queryFn: ({ pageParam }) => fetchFeed(pageParam, FEED_PAGE_SIZE, user?.id ?? null),
