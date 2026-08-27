@@ -303,11 +303,12 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background">
+      <div className="grid min-h-screen place-items-center bg-background pb-24">
         <div className="flex flex-col items-center gap-3">
           <PonzoMark size={72} className="animate-pulse" />
           <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
         </div>
+        <BottomNav />
       </div>
     );
   }
