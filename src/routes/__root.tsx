@@ -137,6 +137,10 @@ function RootComponent() {
   const { queryClient } = Route.useRouteContext();
   const location = useLocation();
 
+  useEffect(() => {
+    registerServiceWorker();
+  }, []);
+
   return (
     <QueryClientProvider client={queryClient}>
       <AuthProvider>
