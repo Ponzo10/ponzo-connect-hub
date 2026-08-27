@@ -18,6 +18,7 @@ import { PublishQueueRunner } from "@/components/ponzo/PublishQueue";
 import { PhotoViewerProvider } from "../components/ponzo/PhotoViewer";
 import { UsageTracker } from "../components/ponzo/UsageTracker";
 import { reportLovableError } from "../lib/lovable-error-reporting";
+import { registerServiceWorker } from "../lib/pwa";
 
 function NotFoundComponent() {
   return (
