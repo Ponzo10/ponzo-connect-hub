@@ -303,7 +303,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background pb-24">
+      <div className="grid min-h-screen place-items-center bg-background pb-[90px]">
         <div className="flex flex-col items-center gap-3">
           <PonzoMark size={72} className="animate-pulse" />
           <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
@@ -328,7 +328,7 @@ export function AppShell({
   publicAccess?: boolean | undefined;
 }) {
   const content = (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-[90px]">
       {!bare && <TopBar title={title} />}
       <main className="mx-auto max-w-2xl px-0 pb-4">{children}</main>
       <BottomNav />
