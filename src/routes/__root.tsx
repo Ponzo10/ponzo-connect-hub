@@ -152,6 +152,9 @@ function RootComponent() {
             <div key={location.pathname} className="animate-page-enter">
               <Outlet />
             </div>
+            {/* Barre de navigation globale : hors du conteneur animé (un transform
+                casserait le position:fixed et la ferait défiler avec le fil). */}
+            <BottomNav />
             <Toaster position="top-center" />
           </PhotoViewerProvider>
         </I18nProvider>
