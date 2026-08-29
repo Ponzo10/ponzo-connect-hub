@@ -230,8 +230,8 @@ export function BottomNav() {
 
 
   return (
-    <nav className="fixed inset-x-0 bottom-0 z-40 border-t border-border/70 bg-surface/95 pb-[env(safe-area-inset-bottom)] backdrop-blur-xl">
-      <ul className="mx-auto flex max-w-2xl items-end justify-between px-2 py-1.5">
+    <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/70 bg-surface pb-[env(safe-area-inset-bottom)]">
+      <ul className="mx-auto flex h-[70px] max-w-2xl items-center justify-between px-2">
         {navItems.map((item) => {
           const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
           const Icon = item.icon;
@@ -241,11 +241,11 @@ export function BottomNav() {
               <li key={item.to} className="flex-1">
                 <Link
                   to={item.to}
-                  className="mx-auto flex w-full flex-col items-center gap-1 py-1"
+                  className="mx-auto flex w-full translate-y-[-10px] flex-col items-center gap-1 py-1"
                   aria-label={t(item.key)}
                 >
-                  <span className="grid h-11 w-11 place-items-center rounded-full bg-brand text-primary-foreground shadow-lift transition-transform active:scale-95">
-                    <Icon className="h-6 w-6" />
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-brand text-primary-foreground shadow-lift transition-transform active:scale-95">
+                    <Icon className="h-7 w-7" />
                   </span>
                   <span className="text-[10px] font-medium text-muted-foreground">{t(item.key)}</span>
                 </Link>
@@ -303,7 +303,7 @@ export function AuthGate({ children }: { children: ReactNode }) {
 
   if (loading || !user) {
     return (
-      <div className="grid min-h-screen place-items-center bg-background pb-24">
+      <div className="grid min-h-screen place-items-center bg-background pb-[90px]">
         <div className="flex flex-col items-center gap-3">
           <PonzoMark size={72} className="animate-pulse" />
           <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
@@ -328,7 +328,7 @@ export function AppShell({
   publicAccess?: boolean | undefined;
 }) {
   const content = (
-    <div className="min-h-screen bg-background pb-24">
+    <div className="min-h-screen bg-background pb-[90px]">
       {!bare && <TopBar title={title} />}
       <main className="mx-auto max-w-2xl px-0 pb-4">{children}</main>
       <BottomNav />

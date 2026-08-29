@@ -16,8 +16,32 @@ export default defineConfig({
   vite: {
     plugins: [
       VitePWA({
-        // Le manifeste est servi statiquement depuis public/manifest.webmanifest.
-        manifest: false,
+        outDir: "dist/client",
+        includeAssets: ["favicon.png", "robots.txt", "apple-touch-icon.png"],
+        manifest: {
+          id: "/",
+          name: "PONZO - Réseau Pro Africain",
+          short_name: "PONZO",
+          description: "Le réseau social professionnel africain",
+          theme_color: "#22c55e",
+          background_color: "#ffffff",
+          display: "standalone",
+          orientation: "portrait",
+          lang: "fr",
+          dir: "ltr",
+          categories: ["social", "business"],
+          start_url: "/",
+          scope: "/",
+          icons: [
+            { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "any" },
+            { src: "/icon-192.png", sizes: "192x192", type: "image/png", purpose: "maskable" },
+            { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "any" },
+            { src: "/icon-512.png", sizes: "512x512", type: "image/png", purpose: "maskable" },
+          ],
+          screenshots: [
+            { src: "/screenshot-1.png", sizes: "1088x1920", type: "image/png", form_factor: "narrow" },
+          ],
+        },
         registerType: "autoUpdate",
         injectRegister: null,
         filename: "sw.js",
