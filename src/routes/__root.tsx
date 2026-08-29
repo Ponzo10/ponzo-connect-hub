@@ -15,6 +15,7 @@ import { AuthProvider } from "../lib/auth";
 import { I18nProvider } from "../lib/i18n";
 import { Toaster } from "../components/ui/sonner";
 import { PublishQueueRunner } from "@/components/ponzo/PublishQueue";
+import { BottomNav } from "@/components/ponzo/AppShell";
 import { PhotoViewerProvider } from "../components/ponzo/PhotoViewer";
 import { UsageTracker } from "../components/ponzo/UsageTracker";
 import { reportLovableError } from "../lib/lovable-error-reporting";
