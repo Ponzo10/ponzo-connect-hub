@@ -241,11 +241,11 @@ export function BottomNav() {
               <li key={item.to} className="flex-1">
                 <Link
                   to={item.to}
-                  className="mx-auto flex w-full flex-col items-center gap-1 py-1"
+                  className="mx-auto flex w-full translate-y-[-10px] flex-col items-center gap-1 py-1"
                   aria-label={t(item.key)}
                 >
-                  <span className="grid h-11 w-11 place-items-center rounded-full bg-brand text-primary-foreground shadow-lift transition-transform active:scale-95">
-                    <Icon className="h-6 w-6" />
+                  <span className="grid h-14 w-14 place-items-center rounded-full bg-brand text-primary-foreground shadow-lift transition-transform active:scale-95">
+                    <Icon className="h-7 w-7" />
                   </span>
                   <span className="text-[10px] font-medium text-muted-foreground">{t(item.key)}</span>
                 </Link>
