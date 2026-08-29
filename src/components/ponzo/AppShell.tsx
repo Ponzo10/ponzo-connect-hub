@@ -330,7 +330,6 @@ export function AppShell({
     <div className="min-h-screen bg-background pb-[90px]">
       {!bare && <TopBar title={title} />}
       <main className="mx-auto max-w-2xl px-0 pb-4">{children}</main>
-      <BottomNav />
     </div>
   );
 
