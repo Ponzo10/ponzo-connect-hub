@@ -231,7 +231,7 @@ export function BottomNav() {
 
   return (
     <nav className="fixed bottom-0 left-0 right-0 z-50 border-t border-border/70 bg-surface pb-[env(safe-area-inset-bottom)]">
-      <ul className="mx-auto flex h-[70px] max-w-2xl items-center justify-between px-2">
+      <ul className="mx-auto flex h-[72px] max-w-2xl items-center justify-between px-2">
         {navItems.map((item) => {
           const active = item.to === "/" ? pathname === "/" : pathname.startsWith(item.to);
           const Icon = item.icon;
@@ -308,7 +308,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
           <PonzoMark size={72} className="animate-pulse" />
           <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
         </div>
-        <BottomNav />
       </div>
     );
   }
@@ -331,7 +330,6 @@ export function AppShell({
     <div className="min-h-screen bg-background pb-[90px]">
       {!bare && <TopBar title={title} />}
       <main className="mx-auto max-w-2xl px-0 pb-4">{children}</main>
-      <BottomNav />
     </div>
   );
 
