@@ -307,10 +307,6 @@ export function AuthGate({ children }: { children: ReactNode }) {
         <div className="flex flex-col items-center gap-3">
           <PonzoMark size={72} className="animate-pulse" />
           <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
-      <div className="grid min-h-screen place-items-center bg-background pb-[90px]">
-        <div className="flex flex-col items-center gap-3">
-          <PonzoMark size={72} className="animate-pulse" />
-          <p className="text-xs text-muted-foreground">{t("common.loading")}</p>
         </div>
       </div>
     );
